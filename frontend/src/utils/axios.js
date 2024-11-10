@@ -1,11 +1,7 @@
 import axios from 'axios';
+import API_CONFIG from '../config/api.config';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+const api = axios.create(API_CONFIG);
 
 // Request interceptor
 api.interceptors.request.use(
@@ -16,9 +12,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
@@ -29,7 +23,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
-    return Promise.reject(error);
+    return Promise.reject(error.response?.data || 'Something went wrong');
   }
 );
 
