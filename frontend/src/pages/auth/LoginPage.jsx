@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, clearError } from '../../redux/features/authSlice';
-import ErrorMessage from '../common/ErrorMessage';
+import ErrorMessage from '../../components/common/ErrorMessage';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
