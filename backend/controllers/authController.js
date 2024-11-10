@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { sendEmail } = require('../utils/email');
 const crypto = require('crypto');
 const AppError = require('../utils/appError');
-const { catchAsync } = require('../utils/catchAsync');
+const catchAsync = require('../utils/catchAsync');
 
 // Generate JWT Token
 const generateToken = (id) => {
