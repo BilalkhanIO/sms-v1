@@ -6,7 +6,8 @@ const initialState = {
   token: localStorage.getItem('token'),
   loading: false,
   error: null,
-  forgotPasswordSuccess: false
+  forgotPasswordSuccess: false,
+  resetPasswordSuccess: false
 };
 
 export const login = createAsyncThunk(
@@ -33,6 +34,18 @@ export const forgotPassword = createAsyncThunk(
   }
 );
 
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (resetData, { rejectWithValue }) => {
+    try {
+      const data = await authService.resetPassword(resetData);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to reset password');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -42,6 +55,9 @@ const authSlice = createSlice({
     },
     clearForgotPasswordSuccess: (state) => {
       state.forgotPasswordSuccess = false;
+    },
+    clearResetPasswordSuccess: (state) => {
+      state.resetPasswordSuccess = false;
     },
     logout: (state) => {
       state.user = null;
@@ -76,9 +92,28 @@ const authSlice = createSlice({
       .addCase(forgotPassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.resetPasswordSuccess = false;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.loading = false;
+        state.resetPasswordSuccess = true;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearError, clearForgotPasswordSuccess, logout } = authSlice.actions;
+export const { 
+  clearError, 
+  clearForgotPasswordSuccess, 
+  clearResetPasswordSuccess, 
+  logout 
+} = authSlice.actions;
+
 export default authSlice.reducer; 

@@ -17,10 +17,16 @@ const forgotPassword = async (email) => {
   return response.data;
 };
 
+const resetPassword = async (resetData) => {
+  const response = await api.post('/auth/reset-password', resetData);
+  return response.data;
+};
+
 const authService = {
   login,
   logout,
-  forgotPassword
+  forgotPassword,
+  resetPassword
 };
 
 export default authService; 
