@@ -6,6 +6,7 @@ const initialState = {
   token: localStorage.getItem('token'),
   loading: false,
   error: null,
+  forgotPasswordSuccess: false
 };
 
 export const login = createAsyncThunk(
@@ -20,12 +21,27 @@ export const login = createAsyncThunk(
   }
 );
 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email, { rejectWithValue }) => {
+    try {
+      const data = await authService.forgotPassword(email);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to send password reset email');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    clearForgotPasswordSuccess: (state) => {
+      state.forgotPasswordSuccess = false;
     },
     logout: (state) => {
       state.user = null;
@@ -47,9 +63,22 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(forgotPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.forgotPasswordSuccess = false;
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.loading = false;
+        state.forgotPasswordSuccess = true;
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearError, logout } = authSlice.actions;
+export const { clearError, clearForgotPasswordSuccess, logout } = authSlice.actions;
 export default authSlice.reducer; 
