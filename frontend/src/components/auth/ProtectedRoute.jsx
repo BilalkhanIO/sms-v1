@@ -7,11 +7,15 @@ export const ProtectedRoute = ({ children, roles = [] }) => {
   const location = useLocation();
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   if (roles.length > 0 && !roles.includes(user?.role)) {

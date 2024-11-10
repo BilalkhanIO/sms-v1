@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../utils/axios';
+import authService from '../../services/authService';
+import api from '../../config/axios';
 
 // Async thunks
 export const login = createAsyncThunk(
@@ -7,10 +8,17 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      const { token, user } = response.data;
+      
+      // Store token
+      localStorage.setItem('token', token);
+      
+      return { token, user };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      if (error.response?.data?.message) {
+        return rejectWithValue(error.response.data.message);
+      }
+      return rejectWithValue('Network error. Please try again.');
     }
   }
 );
@@ -19,11 +27,9 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/auth/register', userData);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      return await authService.register(userData);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      return rejectWithValue(error);
     }
   }
 );
@@ -32,10 +38,9 @@ export const forgotPassword = createAsyncThunk(
   'auth/forgotPassword',
   async (email, { rejectWithValue }) => {
     try {
-      const response = await api.post('/auth/forgot-password', { email });
-      return response.data;
+      return await authService.forgotPassword(email);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to send reset email');
+      return rejectWithValue(error);
     }
   }
 );
@@ -44,36 +49,44 @@ export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async ({ token, password }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/auth/reset-password/${token}`, { password });
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      return await authService.resetPassword(token, password);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to reset password');
+      return rejectWithValue(error);
     }
   }
 );
-
-export const logout = createAsyncThunk('auth/logout', async () => {
-  localStorage.removeItem('token');
-  return null;
-});
 
 export const getMe = createAsyncThunk(
   'auth/getMe',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/auth/me');
-      return response.data;
+      return await authService.getProfile();
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
+      return rejectWithValue(error);
     }
   }
 );
 
+export const updatePassword = createAsyncThunk(
+  'auth/updatePassword',
+  async ({ currentPassword, newPassword }, { rejectWithValue }) => {
+    try {
+      return await authService.updatePassword(currentPassword, newPassword);
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const logout = createAsyncThunk('auth/logout', async () => {
+  authService.logout();
+  return null;
+});
+
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: authService.getToken(),
+  isAuthenticated: authService.isAuthenticated(),
   loading: false,
   error: null,
 };
@@ -88,7 +101,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login cases
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -103,7 +115,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Register cases
       .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -118,11 +129,9 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Get profile cases
       .addCase(getMe.fulfilled, (state, action) => {
         state.user = action.payload.data;
       })
-      // Logout case
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.token = null;

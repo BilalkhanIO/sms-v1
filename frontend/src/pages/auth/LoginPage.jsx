@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, clearError } from '../../redux/features/authSlice';
+import ErrorMessage from '../common/ErrorMessage';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -31,11 +32,7 @@ const LoginPage = () => {
             Sign in to your account
           </h2>
         </div>
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            {error}
-          </div>
-        )}
+        {error && <ErrorMessage message={error} />}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
