@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import LoginPage from '../pages/auth/LoginPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import Layout from '../components/layout/Layout';
 

@@ -1,35 +1,53 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../utils/api';
+import api from '../../utils/axios';
 
 export const fetchUsers = createAsyncThunk(
   'user/fetchUsers',
-  async () => {
-    const response = await api.get('/users');
-    return response.data;
-  }
-);
-
-export const createUser = createAsyncThunk(
-  'user/createUser',
-  async (userData) => {
-    const response = await api.post('/users', userData);
-    return response.data;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/users');
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch users');
+    }
   }
 );
 
 export const updateUser = createAsyncThunk(
   'user/updateUser',
-  async ({ userId, userData }) => {
-    const response = await api.put(`/users/${userId}`, userData);
-    return response.data;
+  async ({ id, userData }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update user');
+    }
   }
 );
 
-export const deleteUser = createAsyncThunk(
-  'user/deleteUser',
-  async (userId) => {
-    await api.delete(`/users/${userId}`);
-    return userId;
+export const updateProfile = createAsyncThunk(
+  'user/updateProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await api.put('/users/profile', profileData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
+    }
+  }
+);
+
+export const uploadProfilePicture = createAsyncThunk(
+  'user/uploadProfilePicture',
+  async (file, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+      const response = await api.post('/users/profile/picture', formData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to upload picture');
+    }
   }
 );
 
@@ -47,33 +65,18 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Users
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload;
+        state.users = action.payload.data;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       })
-      // Create User
-      .addCase(createUser.fulfilled, (state, action) => {
-        state.users.push(action.payload);
-      })
-      // Update User
-      .addCase(updateUser.fulfilled, (state, action) => {
-        const index = state.users.findIndex(user => user.id === action.payload.id);
-        if (index !== -1) {
-          state.users[index] = action.payload;
-        }
-      })
-      // Delete User
-      .addCase(deleteUser.fulfilled, (state, action) => {
-        state.users = state.users.filter(user => user.id !== action.payload);
-      });
+      // Add other cases for updateUser, updateProfile, etc.
   },
 });
 

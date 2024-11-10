@@ -1,40 +1,37 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { useParams, useNavigate } from 'react-router-dom';
 import { resetPassword } from '../../redux/features/authSlice';
+import { useToast } from '../../components/common/ToastContext';
 
 const ResetPasswordPage = () => {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
+  const [formData, setFormData] = useState({
+    password: '',
+    confirmPassword: '',
+  });
+  const [loading, setLoading] = useState(false);
   
+  const { token } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { token } = useParams();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { addToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setValidationError('');
-
-    if (password !== confirmPassword) {
-      setValidationError('Passwords do not match');
+    if (formData.password !== formData.confirmPassword) {
+      addToast('Passwords do not match', 'error');
       return;
     }
 
-    if (password.length < 6) {
-      setValidationError('Password must be at least 6 characters long');
-      return;
-    }
-
+    setLoading(true);
     try {
-      await dispatch(resetPassword({ token, password })).unwrap();
-      navigate('/login', { 
-        replace: true,
-        state: { message: 'Password reset successful. Please login with your new password.' }
-      });
-    } catch (err) {
-      // Error is handled by the slice
+      await dispatch(resetPassword({ token, password: formData.password })).unwrap();
+      addToast('Password reset successful', 'success');
+      navigate('/login');
+    } catch (error) {
+      addToast(error || 'Failed to reset password', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,66 +40,41 @@ const ResetPasswordPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Reset your password
+            Set new password
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="password" className="sr-only">
-                New Password
-              </label>
               <input
-                id="password"
-                name="password"
                 type="password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="New password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm Password
-              </label>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
                 type="password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm new password"
               />
             </div>
           </div>
-
-          {(error || validationError) && (
-            <div className="text-red-600 text-sm text-center">
-              {error || validationError}
-            </div>
-          )}
 
           <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>
-          </div>
-
-          <div className="text-center">
-            <Link
-              to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Back to login
-            </Link>
           </div>
         </form>
       </div>

@@ -1,33 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { validateRegistration, validateLogin } = require('../middleware/validateAuth');
 const { 
   register, 
   login, 
   forgotPassword, 
-  resetPassword 
+  resetPassword,
+  getMe,
+  updatePassword 
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Validation rules
-const registerValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters'),
-  body('role').optional().isIn(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'])
-];
-
-const loginValidation = [
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').notEmpty().withMessage('Password is required')
-];
-
-// Routes
-router.post('/register', registerValidation, register);
-router.post('/login', loginValidation, login);
+// Public routes
+router.post('/register', validateRegistration, register);
+router.post('/login', validateLogin, login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+
+// Protected routes
+router.use(protect);
+router.get('/me', getMe);
+router.put('/update-password', updatePassword);
 
 module.exports = router; 

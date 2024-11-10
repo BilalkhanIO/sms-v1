@@ -1,14 +1,20 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import LoadingSpinner from '../common/LoadingSpinner';
 
-export const ProtectedRoute = ({ children, permissions = [] }) => {
-  const { user, isAuthenticated } = useSelector(state => state.auth);
+export const ProtectedRoute = ({ children, roles = [] }) => {
+  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+  const location = useLocation();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (loading) {
+    return <LoadingSpinner />;
   }
 
-  if (permissions.length > 0 && !permissions.some(p => user.permissions.includes(p))) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (roles.length > 0 && !roles.includes(user?.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
