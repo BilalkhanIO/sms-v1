@@ -1,13 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../../utils/axios';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
+// Async thunks
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, credentials);
+      const response = await api.post('/auth/login', credentials);
       localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
@@ -16,29 +15,23 @@ export const login = createAsyncThunk(
   }
 );
 
-export const forgotPassword = createAsyncThunk(
-  'auth/forgotPassword',
-  async (email, { rejectWithValue }) => {
+export const register = createAsyncThunk(
+  'auth/register',
+  async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      const response = await api.post('/auth/register', userData);
+      localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to send reset link');
+      return rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
 );
 
-export const resetPassword = createAsyncThunk(
-  'auth/resetPassword',
-  async ({ token, password }, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/reset-password/${token}`, { password });
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to reset password');
-    }
-  }
-);
+export const logout = createAsyncThunk('auth/logout', async () => {
+  localStorage.removeItem('token');
+  return null;
+});
 
 const initialState = {
   user: null,
@@ -52,18 +45,13 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout: (state) => {
-      localStorage.removeItem('token');
-      state.user = null;
-      state.token = null;
-      state.isAuthenticated = false;
-    },
     clearError: (state) => {
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      // Login cases
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -78,30 +66,29 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(forgotPassword.pending, (state) => {
+      // Register cases
+      .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(forgotPassword.fulfilled, (state) => {
+      .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
       })
-      .addCase(forgotPassword.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(resetPassword.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(resetPassword.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(resetPassword.rejected, (state, action) => {
+      .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Logout cases
+      .addCase(logout.fulfilled, (state) => {
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
       });
   },
 });
 
-export const { logout, clearError } = authSlice.actions;
+export const { clearError } = authSlice.actions;
 export default authSlice.reducer; 

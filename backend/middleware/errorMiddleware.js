@@ -1,12 +1,5 @@
-const logger = require('../utils/logger');
-
 const errorHandler = (err, req, res, next) => {
-  logger.error({
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method
-  });
+  console.error(err.stack);
 
   const error = {
     success: false,
@@ -19,23 +12,6 @@ const errorHandler = (err, req, res, next) => {
   if (err.code === 11000) {
     error.message = 'Duplicate field value entered';
     error.statusCode = 400;
-  }
-
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    error.message = Object.values(err.errors).map(val => val.message);
-    error.statusCode = 400;
-  }
-
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    error.message = 'Invalid token';
-    error.statusCode = 401;
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    error.message = 'Token expired';
-    error.statusCode = 401;
   }
 
   res.status(error.statusCode).json({
