@@ -138,4 +138,44 @@ exports.resetPassword = catchAsync(async (req, res) => {
       role: user.role,
     },
   });
+});
+
+// Get current user
+exports.getMe = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id).select('-password');
+  res.json({
+    success: true,
+    data: user
+  });
+});
+
+// Update password
+exports.updatePassword = catchAsync(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  // Get user with password
+  const user = await User.findById(req.user.id).select('+password');
+
+  // Check current password
+  if (!(await user.matchPassword(currentPassword))) {
+    throw new AppError('Current password is incorrect', 401);
+  }
+
+  // Update password
+  user.password = newPassword;
+  await user.save();
+
+  // Generate new token
+  const token = generateToken(user._id);
+
+  res.json({
+    success: true,
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  });
 }); 
