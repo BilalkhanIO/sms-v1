@@ -6,10 +6,8 @@ const catchAsync = require('../utils/catchAsync');
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  // Get token from header
+  if (req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
@@ -18,10 +16,21 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   try {
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.status !== 'ACTIVE') {
+      throw new AppError('Account is inactive', 403);
+    }
+
+    req.user = user;
     next();
-  } catch (err) {
+  } catch (error) {
     throw new AppError('Not authorized to access this route', 401);
   }
 });

@@ -28,10 +28,47 @@ export const register = createAsyncThunk(
   }
 );
 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to send reset email');
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async ({ token, password }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/auth/reset-password/${token}`, { password });
+      localStorage.setItem('token', response.data.token);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to reset password');
+    }
+  }
+);
+
 export const logout = createAsyncThunk('auth/logout', async () => {
   localStorage.removeItem('token');
   return null;
 });
+
+export const getMe = createAsyncThunk(
+  'auth/getMe',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
+    }
+  }
+);
 
 const initialState = {
   user: null,
@@ -81,7 +118,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Logout cases
+      // Get profile cases
+      .addCase(getMe.fulfilled, (state, action) => {
+        state.user = action.payload.data;
+      })
+      // Logout case
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.token = null;
