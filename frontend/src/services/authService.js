@@ -1,37 +1,20 @@
-import api from '../utils/axios';
+import api from '../utils/api';
 
-export const authService = {
-  async login(credentials) {
-    const response = await api.post('/auth/login', credentials);
-    return response.data;
-  },
-
-  async register(userData) {
-    const response = await api.post('/auth/register', userData);
-    return response.data;
-  },
-
-  async forgotPassword(email) {
-    const response = await api.post('/auth/forgot-password', { email });
-    return response.data;
-  },
-
-  async resetPassword(token, password) {
-    const response = await api.post(`/auth/reset-password/${token}`, { password });
-    return response.data;
-  },
-
-  async getProfile() {
-    const response = await api.get('/auth/me');
-    return response.data;
-  },
-
-  async updatePassword(passwords) {
-    const response = await api.put('/auth/update-password', passwords);
-    return response.data;
-  },
-
-  logout() {
-    localStorage.removeItem('token');
+const login = async (credentials) => {
+  const response = await api.post('/auth/login', credentials);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
   }
-}; 
+  return response.data;
+};
+
+const logout = () => {
+  localStorage.removeItem('token');
+};
+
+const authService = {
+  login,
+  logout
+};
+
+export default authService; 
