@@ -9,46 +9,76 @@ import {
 } from '@heroicons/react/24/outline';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { ROLES } from '../../utils/constants';
+import { useToast } from '../../contexts/ToastContext';
 
 const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
   const dispatch = useDispatch();
+  const { addToast } = useToast();
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const handleRoleChange = async (userId, role) => {
+  const handleRoleChange = async (user, newRole) => {
     try {
+      if (!user || !user.id) {
+        throw new Error('Invalid user data');
+      }
+
       await dispatch(updateUser({ 
-        id: userId._id || userId,
-        userData: { role } 
+        id: user.id,
+        userData: { role: newRole } 
       })).unwrap();
+
+      addToast('Role updated successfully', 'success');
     } catch (error) {
+      addToast(error.message || 'Failed to update role', 'error');
       console.error('Failed to update role:', error);
     }
   };
 
-  const handleStatusToggle = async (userId, currentStatus) => {
-    if (!userId) return;
-    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  const handleStatusToggle = async (user) => {
+    if (!user || !user.id) return;
+    
     try {
+      const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       await dispatch(updateUser({ 
-        id: userId._id || userId,
+        id: user.id,
         userData: { status: newStatus } 
       })).unwrap();
+      
+      addToast(`User status updated to ${newStatus.toLowerCase()}`, 'success');
     } catch (error) {
+      addToast(error.message || 'Failed to update status', 'error');
       console.error('Failed to update status:', error);
     }
   };
 
   const handleDelete = async () => {
-    if (!selectedUser?._id) return;
+    if (!selectedUser?.id) return;
+    
     try {
-      await dispatch(deleteUser(selectedUser._id)).unwrap();
+      await dispatch(deleteUser(selectedUser.id)).unwrap();
       setShowDeleteDialog(false);
       setSelectedUser(null);
-      onDelete?.(selectedUser._id);
+      onDelete?.(selectedUser.id);
+      addToast('User deleted successfully', 'success');
     } catch (error) {
+      addToast(error.message || 'Failed to delete user', 'error');
       console.error('Failed to delete user:', error);
     }
+  };
+
+  const StatusBadge = ({ status }) => {
+    const statusColors = {
+      ACTIVE: 'bg-green-100 text-green-800',
+      INACTIVE: 'bg-red-100 text-red-800',
+      PENDING: 'bg-yellow-100 text-yellow-800'
+    };
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status]}`}>
+        {status}
+      </span>
+    );
   };
 
   if (loading) {
@@ -84,19 +114,22 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => (
-              <tr key={user.id || user._id}>
+              <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <img
-                        className="h-10 w-10 rounded-full"
-                        src={user.avatar || 'https://via.placeholder.com/40'}
-                        alt=""
+                        className="h-10 w-10 rounded-full object-cover"
+                        src={user.profilePicture || '/default-avatar.png'}
+                        alt={`${user.firstName} ${user.lastName}`}
                       />
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
                         {user.firstName} {user.lastName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {user.email}
                       </div>
                     </div>
                   </div>
@@ -107,32 +140,18 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                    onChange={(e) => handleRoleChange(user, e.target.value)}
                     className="text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   >
                     {Object.values(ROLES).map((role) => (
-                      <option key={`role-${role}`} value={role}>
+                      <option key={`${user.id}-role-${role}`} value={role}>
                         {role}
                       </option>
                     ))}
                   </select>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => handleStatusToggle(user.id, user.status)}
-                    className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium
-                      ${user.status === 'ACTIVE'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                      }`}
-                  >
-                    {user.status === 'ACTIVE' ? (
-                      <CheckCircleIcon className="mr-1 h-4 w-4" />
-                    ) : (
-                      <XCircleIcon className="mr-1 h-4 w-4" />
-                    )}
-                    {user.status}
-                  </button>
+                  <StatusBadge status={user.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button

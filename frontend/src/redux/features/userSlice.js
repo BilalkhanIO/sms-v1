@@ -61,10 +61,24 @@ export const createUser = createAsyncThunk(
   'user/createUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/users', userData);
+      const formattedData = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role,
+        status: userData.status,
+      };
+
+      const response = await api.post('/users', formattedData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create user');
+      console.error('Create user error:', error);
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to create user'
+      );
     }
   }
 );

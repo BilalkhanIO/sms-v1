@@ -96,6 +96,31 @@ const userSchema = new mongoose.Schema({
   twoFactorSecret: {
     type: String,
     select: false
+  },
+  firstName: {
+    type: String,
+    required: [true, 'First name is required'],
+    trim: true,
+    minlength: [2, 'First name must be at least 2 characters']
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Last name is required'],
+    trim: true,
+    minlength: [2, 'Last name must be at least 2 characters']
+  },
+  profilePicture: {
+    type: String,
+    default: null
+  },
+  phoneNumber: {
+    type: String,
+    validate: {
+      validator: function(v) {
+        return /^\+?[\d\s-]+$/.test(v);
+      },
+      message: 'Please enter a valid phone number'
+    }
   }
 }, {
   timestamps: true
@@ -107,6 +132,11 @@ userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ resetPasswordExpire: 1 }, { sparse: true });
 userSchema.index({ emailVerificationExpire: 1 }, { sparse: true });
+
+// Add virtual for full name
+userSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
+});
 
 // Encrypt password using bcrypt
 userSchema.pre('save', async function(next) {
