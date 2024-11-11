@@ -43,7 +43,7 @@ const AppRoutes = () => {
         
         {/* Admin Routes */}
         <Route path="admin">
-          <Route path="users" element={
+          <Route path="/admin/users" element={
             <ProtectedRoute roles={['SUPER_ADMIN', 'SCHOOL_ADMIN']}>
               <UserManagementPage />
             </ProtectedRoute>
