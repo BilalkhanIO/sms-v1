@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../utils/axios';
 
+// Thunk actions
 export const fetchUsers = createAsyncThunk(
   'user/fetchUsers',
   async (_, { rejectWithValue }) => {
@@ -15,9 +16,11 @@ export const fetchUsers = createAsyncThunk(
 
 export const updateUser = createAsyncThunk(
   'user/updateUser',
-  async ({ id, userData }, { rejectWithValue }) => {
+  async ({ id, userData }, { rejectWithValue, dispatch }) => {
     try {
       const response = await api.put(`/users/${id}`, userData);
+      // Refresh the users list after update
+      dispatch(fetchUsers());
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update user');
@@ -43,7 +46,11 @@ export const uploadProfilePicture = createAsyncThunk(
     try {
       const formData = new FormData();
       formData.append('profilePicture', file);
-      const response = await api.post('/users/profile/picture', formData);
+      const response = await api.post('/users/profile/picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to upload picture');
@@ -53,9 +60,11 @@ export const uploadProfilePicture = createAsyncThunk(
 
 export const createUser = createAsyncThunk(
   'user/createUser',
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue, dispatch }) => {
     try {
       const response = await api.post('/users', userData);
+      // Refresh the users list after creation
+      dispatch(fetchUsers());
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create user');
@@ -63,49 +72,139 @@ export const createUser = createAsyncThunk(
   }
 );
 
+// Initial state
+const initialState = {
+  users: [],
+  selectedUser: null,
+  loading: false,
+  error: null,
+  success: false,
+  profileUpdateSuccess: false,
+  profilePictureUpdateSuccess: false,
+};
+
 const userSlice = createSlice({
   name: 'user',
-  initialState: {
-    users: [],
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
+    clearSuccess: (state) => {
+      state.success = false;
+      state.profileUpdateSuccess = false;
+      state.profilePictureUpdateSuccess = false;
+    },
+    setSelectedUser: (state, action) => {
+      state.selectedUser = action.payload;
+    },
+    clearSelectedUser: (state) => {
+      state.selectedUser = null;
+    },
   },
   extraReducers: (builder) => {
     builder
+      // Fetch Users
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload.data; // Assuming your API response has a `data` property
+        state.users = action.payload.data || action.payload;
+        state.error = null;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+
+      // Create User
       .addCase(createUser.pending, (state) => {
         state.loading = true;
+        state.error = null;
+        state.success = false;
       })
-      .addCase(createUser.fulfilled, (state, action) => {
-        // Update state with the newly created user data
+      .addCase(createUser.fulfilled, (state) => {
         state.loading = false;
-        // Option 1: Append the new user to the existing users array
-        state.users.push(action.payload);  
-        // Option 2: Fetch users again to ensure updated list
-        // You might need to dispatch fetchUsers again here
+        state.success = true;
+        state.error = null;
       })
       .addCase(createUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.success = false;
       })
-      // ... other cases for updateUser, updateProfile, etc.
+
+      // Update User
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(updateUser.fulfilled, (state) => {
+        state.loading = false;
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.success = false;
+      })
+
+      // Update Profile
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.profileUpdateSuccess = false;
+      })
+      .addCase(updateProfile.fulfilled, (state) => {
+        state.loading = false;
+        state.profileUpdateSuccess = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.profileUpdateSuccess = false;
+      })
+
+      // Upload Profile Picture
+      .addCase(uploadProfilePicture.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.profilePictureUpdateSuccess = false;
+      })
+      .addCase(uploadProfilePicture.fulfilled, (state) => {
+        state.loading = false;
+        state.profilePictureUpdateSuccess = true;
+        state.error = null;
+      })
+      .addCase(uploadProfilePicture.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.profilePictureUpdateSuccess = false;
+      });
   },
 });
 
-export const { clearError } = userSlice.actions;
+// Export actions
+export const {
+  clearError,
+  clearSuccess,
+  setSelectedUser,
+  clearSelectedUser,
+} = userSlice.actions;
+
+// Export reducer
 export default userSlice.reducer;
+
+// Selectors
+export const selectUsers = (state) => state.user.users;
+export const selectLoading = (state) => state.user.loading;
+export const selectError = (state) => state.user.error;
+export const selectSuccess = (state) => state.user.success;
+export const selectSelectedUser = (state) => state.user.selectedUser;
+export const selectProfileUpdateSuccess = (state) => state.user.profileUpdateSuccess;
+export const selectProfilePictureUpdateSuccess = (state) => state.user.profilePictureUpdateSuccess;

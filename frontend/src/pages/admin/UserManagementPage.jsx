@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUsers } from '../../redux/features/userSlice';
+import {
+  selectUsers,
+  selectLoading,
+  selectError,
+  selectSuccess,
+  selectSelectedUser,
+  fetchUsers,
+  clearError,
+  clearSuccess,
+  setSelectedUser as setReduxSelectedUser,
+  clearSelectedUser
+} from '../../redux/features/userSlice';
 import UserTable from '../../components/admin/UserTable';
 import UserFilters from '../../components/admin/UserFilters';
 import UserCreateForm from '../../components/user/UserCreateForm';
@@ -10,26 +21,62 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 
 const UserManagementPage = () => {
+  const dispatch = useDispatch();
+  
+  // Use selectors with default values
+  const users = useSelector(selectUsers);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  const success = useSelector(selectSuccess);
+  const selectedUser = useSelector(selectSelectedUser);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [filters, setFilters] = useState({
     role: '',
     status: '',
     search: '',
   });
 
-  const dispatch = useDispatch();
-  const { users, loading, error } = useSelector((state) => state.user);
-
+  // Fetch users on mount
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
+  // Clear states when modals close
+  useEffect(() => {
+    if (!showCreateModal && !showEditModal) {
+      dispatch(clearError());
+      dispatch(clearSuccess());
+      dispatch(clearSelectedUser());
+    }
+  }, [showCreateModal, showEditModal, dispatch]);
+
   const handleEdit = (user) => {
-    setSelectedUser(user);
+    dispatch(setReduxSelectedUser(user));
     setShowEditModal(true);
   };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  // Filter users safely
+  const filteredUsers = Array.isArray(users) ? users.filter(user => {
+    if (!user) return false;
+    
+    const matchesRole = !filters.role || user.role === filters.role;
+    const matchesStatus = !filters.status || user.status === filters.status;
+    const matchesSearch = !filters.search || 
+      (user.name?.toLowerCase().includes(filters.search.toLowerCase()) || 
+       user.email?.toLowerCase().includes(filters.search.toLowerCase()));
+    
+    return matchesRole && matchesStatus && matchesSearch;
+  }) : [];
 
   if (loading) {
     return <LoadingSpinner />;
@@ -52,31 +99,34 @@ const UserManagementPage = () => {
           </button>
         </div>
 
-        <UserFilters filters={filters} setFilters={setFilters} />
+        <UserFilters 
+          filters={filters} 
+          setFilters={setFilters} 
+        />
 
         <div className="mt-4">
           <UserTable
-            users={users}
+            users={filteredUsers}
             onEdit={handleEdit}
           />
         </div>
 
         <Modal
           isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+          onClose={handleCloseCreateModal}
           title="Create New User"
         >
-          <UserCreateForm onClose={() => setShowCreateModal(false)} />
+          <UserCreateForm onClose={handleCloseCreateModal} />
         </Modal>
 
         <Modal
           isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
+          onClose={handleCloseEditModal}
           title="Edit User"
         >
           <UserEditForm
             user={selectedUser}
-            onClose={() => setShowEditModal(false)}
+            onClose={handleCloseEditModal}
           />
         </Modal>
       </div>
@@ -84,4 +134,4 @@ const UserManagementPage = () => {
   );
 };
 
-export default UserManagementPage; 
+export default UserManagementPage;
