@@ -24,20 +24,25 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
   };
 
   const handleStatusToggle = async (userId, currentStatus) => {
+    if (!userId) return;
     const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      await dispatch(updateUser({ id: userId, userData: { status: newStatus } })).unwrap();
+      await dispatch(updateUser({ 
+        id: userId, 
+        userData: { status: newStatus } 
+      })).unwrap();
     } catch (error) {
       console.error('Failed to update status:', error);
     }
   };
 
   const handleDelete = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser?._id) return;
     try {
-      await dispatch(deleteUser(selectedUser.id)).unwrap();
+      await dispatch(deleteUser(selectedUser._id)).unwrap();
       setShowDeleteDialog(false);
       setSelectedUser(null);
+      onDelete?.(selectedUser._id);
     } catch (error) {
       console.error('Failed to delete user:', error);
     }
