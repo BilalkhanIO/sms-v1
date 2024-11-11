@@ -1,26 +1,42 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useSelector } from 'react-redux';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 const PerformanceChart = () => {
-  // Mock data - replace with actual data from API
-  const data = [
-    { name: 'Jan', value: 85 },
-    { name: 'Feb', value: 78 },
-    { name: 'Mar', value: 82 },
-    { name: 'Apr', value: 75 },
-    { name: 'May', value: 80 },
-  ];
+  const performanceData = useSelector((state) => state.dashboard.performanceData);
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="value" name="Performance Score" fill="#8884d8" />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={performanceData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="month" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="attendance"
+            stroke="#4F46E5"
+            name="Attendance"
+          />
+          <Line
+            type="monotone"
+            dataKey="performance"
+            stroke="#10B981"
+            name="Performance"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 

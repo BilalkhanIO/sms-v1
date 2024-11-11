@@ -1,25 +1,69 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
+import MainLayout from '../components/layout/MainLayout';
+
+// Auth Pages
 import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
-import DashboardPage from '../pages/DashboardPage';
-import ProtectedRoute from '../components/auth/ProtectedRoute';
+
+// Dashboard Pages
+import DashboardPage from '../pages/dashboard/DashboardPage';
+import AdminDashboard from '../pages/dashboard/AdminDashboard';
+import TeacherDashboard from '../pages/dashboard/TeacherDashboard';
+
+// Admin Pages
+import UserManagementPage from '../pages/admin/UserManagementPage';
 
 const AppRoutes = () => {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      {/* Public Routes */}
+      <Route path="/login" element={
+        !isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />
+      } />
+      <Route path="/register" element={
+        !isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" replace />
+      } />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/" element={<LoginPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+      {/* Protected Routes */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <MainLayout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        
+        {/* Admin Routes */}
+        <Route path="admin">
+          <Route path="users" element={
+            <ProtectedRoute roles={['SUPER_ADMIN', 'SCHOOL_ADMIN']}>
+              <UserManagementPage />
+            </ProtectedRoute>
+          } />
+        </Route>
+
+        {/* Teacher Routes */}
+        <Route path="teacher">
+          <Route path="dashboard" element={
+            <ProtectedRoute roles={['TEACHER']}>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          } />
+        </Route>
+
+        {/* Add other routes here */}
+      </Route>
+
+      {/* 404 Route */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };

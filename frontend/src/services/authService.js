@@ -1,32 +1,68 @@
-import api from '../utils/api';
+import api from '../utils/axios';
 
-const login = async (credentials) => {
-  const response = await api.post('/auth/login', credentials);
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
+class AuthService {
+  async login(credentials) {
+    try {
+      const response = await api.post('/auth/login', credentials);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Login failed';
+    }
   }
-  return response.data;
-};
 
-const logout = () => {
-  localStorage.removeItem('token');
-};
+  async register(userData) {
+    try {
+      const response = await api.post('/auth/register', userData);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Registration failed';
+    }
+  }
 
-const forgotPassword = async (email) => {
-  const response = await api.post('/auth/forgot-password', { email });
-  return response.data;
-};
+  async forgotPassword(email) {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Failed to send reset email';
+    }
+  }
 
-const resetPassword = async (resetData) => {
-  const response = await api.post('/auth/reset-password', resetData);
-  return response.data;
-};
+  async resetPassword(token, password) {
+    try {
+      const response = await api.post(`/auth/reset-password/${token}`, { password });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Failed to reset password';
+    }
+  }
 
-const authService = {
-  login,
-  logout,
-  forgotPassword,
-  resetPassword
-};
+  async getProfile() {
+    try {
+      const response = await api.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Failed to fetch profile';
+    }
+  }
 
-export default authService; 
+  logout() {
+    localStorage.removeItem('token');
+  }
+
+  getToken() {
+    return localStorage.getItem('token');
+  }
+
+  isAuthenticated() {
+    return !!this.getToken();
+  }
+}
+
+export default new AuthService(); 

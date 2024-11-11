@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { login, clearError } from '../../redux/features/authSlice';
-import ErrorMessage from '../../components/common/ErrorMessage';
+import { useDispatch } from 'react-redux';
+import { login } from '../../redux/features/authSlice';
+import { Link } from 'react-router-dom';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -11,17 +10,10 @@ const LoginPage = () => {
   });
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.auth);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      await dispatch(login(formData)).unwrap();
-      navigate('/dashboard');
-    } catch (err) {
-      // Error is handled by the slice
-    }
+    dispatch(login(formData));
   };
 
   return (
@@ -32,7 +24,6 @@ const LoginPage = () => {
             Sign in to your account
           </h2>
         </div>
-        {error && <ErrorMessage message={error} />}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -68,10 +59,9 @@ const LoginPage = () => {
           <div>
             <button
               type="submit"
-              disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              Sign in
             </button>
           </div>
         </form>

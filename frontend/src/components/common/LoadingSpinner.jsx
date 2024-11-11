@@ -1,16 +1,7 @@
-const LoadingSpinner = ({ size = 'md' }) => {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-    xl: 'h-16 w-16',
-  };
-
+const LoadingSpinner = () => {
   return (
-    <div className="flex justify-center items-center">
-      <div
-        className={`${sizeClasses[size]} border-2 border-gray-200 border-t-indigo-600 rounded-full animate-spin`}
-      />
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
     </div>
   );
 };

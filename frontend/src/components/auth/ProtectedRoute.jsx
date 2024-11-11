@@ -1,21 +1,13 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import LoadingSpinner from '../common/LoadingSpinner';
+import PropTypes from 'prop-types';
 
-export const ProtectedRoute = ({ children, roles = [] }) => {
-  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+const ProtectedRoute = ({ children, roles = [] }) => {
+  const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (roles.length > 0 && !roles.includes(user?.role)) {
@@ -23,4 +15,11 @@ export const ProtectedRoute = ({ children, roles = [] }) => {
   }
 
   return children;
-}; 
+};
+
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+  roles: PropTypes.arrayOf(PropTypes.string)
+};
+
+export default ProtectedRoute; 
