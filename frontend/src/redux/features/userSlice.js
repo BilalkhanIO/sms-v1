@@ -16,11 +16,10 @@ export const fetchUsers = createAsyncThunk(
 
 export const updateUser = createAsyncThunk(
   'user/updateUser',
-  async ({ id, userData }, { rejectWithValue, dispatch }) => {
+  async ({ id, userData }, { rejectWithValue }) => {
     try {
+      if (!id) throw new Error('User ID is required');
       const response = await api.put(`/users/${id}`, userData);
-      // Refresh the users list after update
-      dispatch(fetchUsers());
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update user');
@@ -60,11 +59,9 @@ export const uploadProfilePicture = createAsyncThunk(
 
 export const createUser = createAsyncThunk(
   'user/createUser',
-  async (userData, { rejectWithValue, dispatch }) => {
+  async (userData, { rejectWithValue }) => {
     try {
       const response = await api.post('/users', userData);
-      // Refresh the users list after creation
-      dispatch(fetchUsers());
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create user');
@@ -76,6 +73,7 @@ export const deleteUser = createAsyncThunk(
   'user/deleteUser',
   async (userId, { rejectWithValue }) => {
     try {
+      if (!userId) throw new Error('User ID is required');
       await api.delete(`/users/${userId}`);
       return userId;
     } catch (error) {

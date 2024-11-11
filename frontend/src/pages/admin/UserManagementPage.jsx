@@ -60,6 +60,7 @@ const UserManagementPage = () => {
 
   const handleDelete = async (userId) => {
     try {
+      if (!userId) return;
       await dispatch(deleteUser(userId)).unwrap();
       dispatch(fetchUsers());
     } catch (error) {
