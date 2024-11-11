@@ -6,7 +6,8 @@ import { ROLES } from '../../utils/permissions';
 
 const UserCreateForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     role: 'TEACHER',
@@ -14,7 +15,7 @@ const UserCreateForm = ({ onClose }) => {
   });
 
   const dispatch = useDispatch();
-  const { showToast } = useToast();
+  const { addToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,10 +28,10 @@ const UserCreateForm = ({ onClose }) => {
         status: formData.status,
       };
       await dispatch(createUser(userData)).unwrap();
-      showToast('User created successfully', 'success');
+      addToast('User created successfully', 'success');
       onClose();
     } catch (error) {
-      showToast(error.message || 'Failed to create user', 'error');
+      addToast(error.message || 'Failed to create user', 'error');
     }
   };
 
@@ -99,7 +100,6 @@ const UserCreateForm = ({ onClose }) => {
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           >
-            <option value="">Select Role</option>
             {Object.values(ROLES).map((role) => (
               <option key={role} value={role}>
                 {role}
