@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateUserRole, updateUserStatus, deleteUser } from '../../redux/features/adminSlice';
+import { updateUser, deleteUser } from '../../redux/features/adminSlice';
 import { 
   PencilIcon, 
   TrashIcon,
@@ -9,14 +9,14 @@ import {
 } from '@heroicons/react/24/outline';
 import ConfirmDialog from '../common/ConfirmDialog';
 
-const UserTable = ({ users, loading, roles }) => {
+const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
+  const dispatch = useDispatch();
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const dispatch = useDispatch();
 
   const handleRoleChange = async (userId, role) => {
     try {
-      await dispatch(updateUserRole({ userId, role })).unwrap();
+      await dispatch(updateUser({ id: userId, userData: { role } })).unwrap();
     } catch (error) {
       console.error('Failed to update role:', error);
     }
@@ -25,7 +25,7 @@ const UserTable = ({ users, loading, roles }) => {
   const handleStatusToggle = async (userId, currentStatus) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      await dispatch(updateUserStatus({ userId, status: newStatus })).unwrap();
+      await dispatch(updateUser({ id: userId, userData: { status: newStatus } })).unwrap();
     } catch (error) {
       console.error('Failed to update status:', error);
     }

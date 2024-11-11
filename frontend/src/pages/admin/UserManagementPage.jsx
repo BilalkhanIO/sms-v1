@@ -10,7 +10,8 @@ import {
   clearError,
   clearSuccess,
   setSelectedUser as setReduxSelectedUser,
-  clearSelectedUser
+  clearSelectedUser,
+  deleteUser
 } from '../../redux/features/userSlice';
 import UserTable from '../../components/admin/UserTable';
 import UserFilters from '../../components/admin/UserFilters';
@@ -24,7 +25,7 @@ const UserManagementPage = () => {
   const dispatch = useDispatch();
   
   // Use selectors with default values
-  const users = useSelector(selectUsers);
+  const users = useSelector(selectUsers) || [];
   const loading = useSelector(selectLoading);
   const error = useSelector(selectError);
   const success = useSelector(selectSuccess);
@@ -57,6 +58,15 @@ const UserManagementPage = () => {
     setShowEditModal(true);
   };
 
+  const handleDelete = async (userId) => {
+    try {
+      await dispatch(deleteUser(userId)).unwrap();
+      dispatch(fetchUsers());
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
+  };
+
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
   };
@@ -65,18 +75,26 @@ const UserManagementPage = () => {
     setShowEditModal(false);
   };
 
+  const handleCreateSuccess = () => {
+    setShowCreateModal(false);
+    dispatch(fetchUsers());
+  };
+
+  const handleEditSuccess = () => {
+    setShowEditModal(false);
+    dispatch(fetchUsers());
+  };
+
   // Filter users safely
-  const filteredUsers = Array.isArray(users) ? users.filter(user => {
-    if (!user) return false;
-    
+  const filteredUsers = users.filter(user => {
     const matchesRole = !filters.role || user.role === filters.role;
     const matchesStatus = !filters.status || user.status === filters.status;
     const matchesSearch = !filters.search || 
-      (user.name?.toLowerCase().includes(filters.search.toLowerCase()) || 
-       user.email?.toLowerCase().includes(filters.search.toLowerCase()));
+      user.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      user.email?.toLowerCase().includes(filters.search.toLowerCase());
     
     return matchesRole && matchesStatus && matchesSearch;
-  }) : [];
+  });
 
   if (loading) {
     return <LoadingSpinner />;
@@ -107,7 +125,9 @@ const UserManagementPage = () => {
         <div className="mt-4">
           <UserTable
             users={filteredUsers}
+            loading={loading}
             onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
 
@@ -116,7 +136,7 @@ const UserManagementPage = () => {
           onClose={handleCloseCreateModal}
           title="Create New User"
         >
-          <UserCreateForm onClose={handleCloseCreateModal} />
+          <UserCreateForm onClose={handleCloseCreateModal} onSuccess={handleCreateSuccess} />
         </Modal>
 
         <Modal
@@ -127,6 +147,7 @@ const UserManagementPage = () => {
           <UserEditForm
             user={selectedUser}
             onClose={handleCloseEditModal}
+            onSuccess={handleEditSuccess}
           />
         </Modal>
       </div>

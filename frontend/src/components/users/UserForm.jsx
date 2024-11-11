@@ -3,11 +3,12 @@ import { useDispatch } from 'react-redux';
 import { createUser, updateUser } from '../../redux/features/userSlice';
 import { ROLES } from '../../utils/constants';
 
-const UserForm = ({ user, onClose }) => {
+const UserForm = ({ user, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     email: user?.email || '',
-    role: user?.role || ROLES.TEACHER,
+    role: user?.role || 'TEACHER',
     password: '',
     confirmPassword: '',
   });
@@ -17,7 +18,8 @@ const UserForm = ({ user, onClose }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name) newErrors.name = 'Name is required';
+    if (!formData.firstName) newErrors.firstName = 'First Name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last Name is required';
     if (!formData.email) newErrors.email = 'Email is required';
     if (!user && !formData.password) newErrors.password = 'Password is required';
     if (formData.password !== formData.confirmPassword) {
@@ -32,7 +34,8 @@ const UserForm = ({ user, onClose }) => {
     if (!validateForm()) return;
 
     const userData = {
-      name: formData.name,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       email: formData.email,
       role: formData.role,
       ...(formData.password && { password: formData.password }),
@@ -44,24 +47,38 @@ const UserForm = ({ user, onClose }) => {
       } else {
         await dispatch(createUser(userData)).unwrap();
       }
+      onSuccess?.();
       onClose();
     } catch (error) {
-      setErrors({ submit: error.message });
+      console.error('Form submission failed:', error);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Name</label>
+        <label className="block text-sm font-medium text-gray-700">First Name</label>
         <input
           type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          value={formData.firstName}
+          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         />
-        {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+        {errors.firstName && (
+          <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Last Name</label>
+        <input
+          type="text"
+          value={formData.lastName}
+          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+        {errors.lastName && (
+          <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
         )}
       </div>
 
