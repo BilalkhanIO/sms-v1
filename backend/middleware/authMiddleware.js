@@ -6,22 +6,35 @@ const catchAsync = require('../utils/catchAsync');
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
 
-  // Get token from header
-  if (req.headers.authorization?.startsWith('Bearer')) {
+  if (
+    req.headers.authorization?.startsWith('Bearer') &&
+    req.headers.authorization.split(' ')[1]
+  ) {
     token = req.headers.authorization.split(' ')[1];
   }
 
   if (!token) {
-    throw new AppError('Not authorized to access this route', 401);
+    throw new AppError('Please authenticate', 401);
   }
 
   try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256']
+    });
+
+    const user = await User.findById(decoded.userId)
+      .select('-password')
+      .select('+passwordChangedAt');
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('User no longer exists', 401);
+    }
+
+    if (user.passwordChangedAt) {
+      const changedTimestamp = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
+      if (decoded.iat < changedTimestamp) {
+        throw new AppError('Password recently changed. Please login again', 401);
+      }
     }
 
     if (user.status !== 'ACTIVE') {
@@ -31,7 +44,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    throw new AppError('Not authorized to access this route', 401);
+    throw new AppError('Invalid token', 401);
   }
 });
 
@@ -45,4 +58,4 @@ exports.authorize = (...roles) => {
     }
     next();
   };
-}; 
+};

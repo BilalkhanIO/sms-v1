@@ -14,6 +14,7 @@ import {
 
 const Sidebar = () => {
   const { hasPermission } = usePermissions();
+  const isActive = true;
 
   const navigation = [
     { name: 'Dashboard', path: '/dashboard', icon: HomeIcon, permission: null },

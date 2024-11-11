@@ -51,6 +51,18 @@ export const uploadProfilePicture = createAsyncThunk(
   }
 );
 
+export const createUser = createAsyncThunk(
+  'user/createUser',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/users', userData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to create user');
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState: {
@@ -70,15 +82,30 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload.data;
+        state.users = action.payload.data; // Assuming your API response has a `data` property
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Add other cases for updateUser, updateProfile, etc.
+      .addCase(createUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createUser.fulfilled, (state, action) => {
+        // Update state with the newly created user data
+        state.loading = false;
+        // Option 1: Append the new user to the existing users array
+        state.users.push(action.payload);  
+        // Option 2: Fetch users again to ensure updated list
+        // You might need to dispatch fetchUsers again here
+      })
+      .addCase(createUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // ... other cases for updateUser, updateProfile, etc.
   },
 });
 
 export const { clearError } = userSlice.actions;
-export default userSlice.reducer; 
+export default userSlice.reducer;

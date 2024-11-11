@@ -3,7 +3,6 @@ import { usePermissions } from '../../hooks/usePermissions';
 import AdminDashboard from './AdminDashboard';
 import TeacherDashboard from './TeacherDashboard';
 import StudentDashboard from './StudentDashboard';
-import ParentDashboard from './ParentDashboard';
 
 const DashboardPage = () => {
   const { user } = useSelector((state) => state.auth);
