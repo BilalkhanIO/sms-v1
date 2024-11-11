@@ -6,19 +6,18 @@ const initialState = {
   token: localStorage.getItem('token'),
   loading: false,
   error: null,
-  forgotPasswordSuccess: false,
-  resetPasswordSuccess: false,
-  registerSuccess: false,
+  isAuthenticated: false,
+  authChecked: false
 };
 
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const data = await authService.login(credentials);
-      return data;
+      const response = await authService.login(credentials);
+      return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -78,8 +77,12 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
-      authService.logout();
+      state.isAuthenticated = false;
+      localStorage.removeItem('token');
     },
+    setAuthChecked: (state) => {
+      state.authChecked = true;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -91,6 +94,8 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.isAuthenticated = true;
+        localStorage.setItem('token', action.payload.token);
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -119,6 +124,7 @@ export const {
   clearResetPasswordSuccess,
   clearRegisterSuccess,
   logout,
+  setAuthChecked
 } = authSlice.actions;
 
 export default authSlice.reducer;

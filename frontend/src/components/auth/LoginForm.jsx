@@ -11,12 +11,31 @@ const LoginForm = () => {
 
   const dispatch = useDispatch();
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.password) newErrors.password = 'Password is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
+    setLoading(true);
+    setError(null);
     try {
       await dispatch(login(formData)).unwrap();
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (err) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
