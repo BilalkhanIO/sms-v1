@@ -76,7 +76,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => (
-              <tr key={user.id}>
+              <tr key={user.id || user._id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
@@ -103,7 +103,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
                     className="text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   >
                     {Object.values(ROLES).map((role) => (
-                      <option key={role} value={role}>
+                      <option key={`role-${role}`} value={role}>
                         {role}
                       </option>
                     ))}
