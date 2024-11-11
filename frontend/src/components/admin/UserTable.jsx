@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateUser, deleteUser } from '../../redux/features/adminSlice';
+import { updateUser, deleteUser } from '../../redux/features/userSlice';
 import { 
   PencilIcon, 
   TrashIcon,
@@ -8,6 +8,7 @@ import {
   XCircleIcon 
 } from '@heroicons/react/24/outline';
 import ConfirmDialog from '../common/ConfirmDialog';
+import { ROLES } from '../../utils/constants';
 
 const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
   const dispatch = useDispatch();
@@ -101,7 +102,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
                     onChange={(e) => handleRoleChange(user.id, e.target.value)}
                     className="text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   >
-                    {roles.map((role) => (
+                    {Object.values(ROLES).map((role) => (
                       <option key={role} value={role}>
                         {role}
                       </option>
