@@ -6,8 +6,7 @@ import { ROLES } from '../../utils/permissions';
 
 const UserEditForm = ({ user, onClose }) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     role: '',
     status: '',
@@ -18,9 +17,10 @@ const UserEditForm = ({ user, onClose }) => {
 
   useEffect(() => {
     if (user) {
+      const [firstName = '', lastName = ''] = (user.name || '').split(' ');
       setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName,
+        lastName,
         email: user.email,
         role: user.role,
         status: user.status,
@@ -31,7 +31,13 @@ const UserEditForm = ({ user, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(updateUser({ userId: user.id, userData: formData })).unwrap();
+      const userData = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        role: formData.role,
+        status: formData.status,
+      };
+      await dispatch(updateUser({ id: user._id, userData })).unwrap();
       showToast('User updated successfully', 'success');
       onClose();
     } catch (error) {

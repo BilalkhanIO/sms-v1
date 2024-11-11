@@ -6,11 +6,10 @@ import { ROLES } from '../../utils/permissions';
 
 const UserCreateForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
-    role: '',
+    role: 'TEACHER',
     status: 'ACTIVE',
   });
 
@@ -20,7 +19,14 @@ const UserCreateForm = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(createUser(formData)).unwrap();
+      const userData = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        status: formData.status,
+      };
+      await dispatch(createUser(userData)).unwrap();
       showToast('User created successfully', 'success');
       onClose();
     } catch (error) {

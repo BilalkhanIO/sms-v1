@@ -17,7 +17,10 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
 
   const handleRoleChange = async (userId, role) => {
     try {
-      await dispatch(updateUser({ id: userId, userData: { role } })).unwrap();
+      await dispatch(updateUser({ 
+        id: userId._id || userId,
+        userData: { role } 
+      })).unwrap();
     } catch (error) {
       console.error('Failed to update role:', error);
     }
@@ -28,7 +31,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await dispatch(updateUser({ 
-        id: userId, 
+        id: userId._id || userId,
         userData: { status: newStatus } 
       })).unwrap();
     } catch (error) {
