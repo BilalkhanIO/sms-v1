@@ -1,4 +1,7 @@
+// userController.js
 const User = require('../models/User');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
@@ -26,122 +29,174 @@ const upload = multer({
   }
 }).single('profilePicture');
 
-// Get all users
-exports.getUsers = async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json(users);
-  } catch (error) {
-    console.error('Get users error:', error);
-    res.status(500).json({ message: 'Error fetching users' });
+// User Management
+exports.getUsers = catchAsync(async (req, res) => {
+  const users = await User.find().select('-password');
+  res.json({
+    success: true,
+    data: users
+  });
+});
+
+exports.getUserById = catchAsync(async (req, res) => {
+  const user = await User.findById(req.params.id).select('-password');
+  
+  if (!user) {
+    throw new AppError('User not found', 404);
   }
-};
 
-// Create new user with profile picture
-exports.createUser = async (req, res) => {
-  try {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ message: err.message });
-      }
+  res.json({
+    success: true,
+    data: user
+  });
+});
 
-      const { email } = req.body;
-      let user = await User.findOne({ email });
-      
-      if (user) {
-        return res.status(400).json({ message: 'User already exists' });
-      }
+exports.updateUser = catchAsync(async (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      throw new AppError(err.message, 400);
+    }
 
-      const userData = {
-        ...req.body,
-        profilePicture: req.file ? `/uploads/profiles/${req.file.filename}` : null
-      };
+    const updates = { ...req.body };
+    delete updates.password; // Prevent password update through this route
 
-      user = new User(userData);
-      await user.save();
-
-      const userResponse = user.toObject();
-      delete userResponse.password;
-
-      res.status(201).json(userResponse);
-    });
-  } catch (error) {
-    console.error('Create user error:', error);
-    res.status(500).json({ message: 'Error creating user' });
-  }
-};
-
-// Update user with profile picture
-exports.updateUser = async (req, res) => {
-  try {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ message: err.message });
-      }
-
-      const { id } = req.params;
-      const updates = { ...req.body };
-
-      if (req.file) {
-        const user = await User.findById(id);
-        if (user.profilePicture) {
-          try {
-            await fs.unlink(path.join(__dirname, '..', user.profilePicture));
-          } catch (error) {
-            console.error('Error deleting old profile picture:', error);
-          }
+    if (req.file) {
+      const user = await User.findById(req.params.id);
+      if (user.profilePicture) {
+        try {
+          await fs.unlink(path.join(__dirname, '..', user.profilePicture));
+        } catch (error) {
+          console.error('Error deleting old profile picture:', error);
         }
-        updates.profilePicture = `/uploads/profiles/${req.file.filename}`;
       }
+      updates.profilePicture = `/uploads/profiles/${req.file.filename}`;
+    }
 
-      const updatedUser = await User.findByIdAndUpdate(
-        id,
-        { $set: updates },
-        { new: true, runValidators: true }
-      ).select('-password');
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password');
 
-      if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
 
-      res.json(updatedUser);
+    res.json({
+      success: true,
+      data: user
     });
-  } catch (error) {
-    console.error('Update user error:', error);
-    res.status(500).json({ message: 'Error updating user' });
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id).select('+password');
+
+  if (!(await user.matchPassword(req.body.currentPassword))) {
+    throw new AppError('Current password is incorrect', 401);
   }
-};
 
-// Delete user
-exports.deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findByIdAndDelete(id);
+  if (!isPasswordComplex(req.body.newPassword)) {
+    throw new AppError(
+      'Password must contain at least 8 characters, including uppercase, lowercase, numbers, and special characters',
+      400
+    );
+  }
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+  user.password = req.body.newPassword;
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Password updated successfully'
+  });
+});
+
+exports.deleteUser = catchAsync(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Delete profile picture if exists
+  if (user.profilePicture) {
+    try {
+      await fs.unlink(path.join(__dirname, '..', user.profilePicture));
+    } catch (error) {
+      console.error('Error deleting profile picture:', error);
     }
-
-    res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Delete user error:', error);
-    res.status(500).json({ message: 'Error deleting user' });
   }
-};
 
-// Get user by ID
-exports.getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findById(id).select('-password');
+  await user.deleteOne();
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+  res.json({
+    success: true,
+    message: 'User deleted successfully'
+  });
+});
+
+// 2FA Management
+exports.enableTwoFactor = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id).select('+twoFactorSecret');
+  
+  if (user.twoFactorEnabled) {
+    throw new AppError('Two-factor authentication is already enabled', 400);
+  }
+
+  const secret = speakeasy.generateSecret();
+  user.twoFactorSecret = secret.base32;
+  await user.save();
+
+  const otpAuthUrl = speakeasy.otpauthURL({
+    secret: secret.base32,
+    label: process.env.APP_NAME,
+    issuer: process.env.APP_NAME,
+    encoding: 'base32'
+  });
+
+  res.json({
+    success: true,
+    data: {
+      secret: secret.base32,
+      otpAuthUrl
     }
+  });
+});
 
-    res.json(user);
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ message: 'Error fetching user' });
+exports.disableTwoFactor = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id);
+  
+  if (!user.twoFactorEnabled) {
+    throw new AppError('Two-factor authentication is not enabled', 400);
   }
-}; 
+
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Two-factor authentication disabled successfully'
+  });
+});
+
+// Device Management
+exports.getActiveDevices = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id);
+  
+  res.json({
+    success: true,
+    data: user.activeDevices
+  });
+});
+
+exports.removeDevice = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id);
+  await user.removeDevice(req.params.deviceId);
+
+  res.json({
+    success: true,
+    message: 'Device removed successfully'
+  });
+});
