@@ -1,28 +1,28 @@
+// routes/userRoutes.js
 const express = require('express');
-const { body } = require('express-validator');
-const userController = require('../controllers/user.controller');
-const auth = require('../middleware/auth');
-const validateRequest = require('../middleware/validateRequest');
-const { hasPermission } = require('../middleware/checkPermission');
-
 const router = express.Router();
+const userController = require('../controllers/userController');
+const { protect, authorize } = require('../middleware/auth');
 
-// Validation middleware
-const userValidation = [
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('role').isIn(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'])
-    .withMessage('Invalid role'),
-  body('status').isIn(['ACTIVE', 'INACTIVE', 'PENDING'])
-    .withMessage('Invalid status')
-];
+// User management routes
+router.use(protect); // Protect all routes after this middleware
 
-// Routes
-router.get('/', auth, hasPermission('MANAGE_USERS'), userController.getUsers);
-router.post('/', auth, hasPermission('MANAGE_USERS'), userValidation, validateRequest, userController.createUser);
-router.get('/:id', auth, hasPermission('MANAGE_USERS'), userController.getUserById);
-router.put('/:id', auth, hasPermission('MANAGE_USERS'), userValidation, validateRequest, userController.updateUser);
-router.delete('/:id', auth, hasPermission('MANAGE_USERS'), userController.deleteUser);
+// Routes accessible by all authenticated users
+router.get('/me', userController.getUserById);
+router.put('/update-password', userController.updatePassword);
+router.get('/active-devices', userController.getActiveDevices);
+router.delete('/devices/:deviceId', userController.removeDevice);
 
-module.exports = router; 
+// 2FA routes
+router.post('/enable-2fa', userController.enableTwoFactor);
+router.post('/disable-2fa', userController.disableTwoFactor);
+
+// Admin only routes
+router.use(authorize('ADMIN')); // Restrict access to admins only
+router.get('/', userController.getUsers);
+router.route('/:id')
+  .get(userController.getUserById)
+  .put(userController.updateUser)
+  .delete(userController.deleteUser);
+
+module.exports = router;
