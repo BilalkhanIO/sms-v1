@@ -6,24 +6,20 @@ import { ROLES } from '../../utils/permissions';
 
 const UserEditForm = ({ user, onClose }) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     role: '',
     status: '',
     phoneNumber: '',
   });
-  const [profilePicture, setProfilePicture] = useState(null);
 
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
   useEffect(() => {
     if (user) {
-      const [firstName = '', lastName = ''] = (user.name || '').split(' ');
       setFormData({
-        firstName,
-        lastName,
+        name:user.name,
         email: user.email,
         role: user.role,
         status: user.status,
@@ -32,15 +28,6 @@ const UserEditForm = ({ user, onClose }) => {
     }
   }, [user]);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setProfilePicture(file);
-    } else {
-      showToast('Please select a valid image file', 'error');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -48,10 +35,6 @@ const UserEditForm = ({ user, onClose }) => {
       Object.keys(formData).forEach(key => {
         formDataToSend.append(key, formData[key]);
       });
-      
-      if (profilePicture) {
-        formDataToSend.append('profilePicture', profilePicture);
-      }
 
       await dispatch(updateUser({ 
         id: user._id, 
@@ -70,7 +53,7 @@ const UserEditForm = ({ user, onClose }) => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            First Name
+            Name
           </label>
           <input
             type="text"
@@ -80,20 +63,6 @@ const UserEditForm = ({ user, onClose }) => {
             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
           />
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Last Name
-          </label>
-          <input
-            type="text"
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-          />
-        </div>
-
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Email
@@ -141,19 +110,6 @@ const UserEditForm = ({ user, onClose }) => {
           </select>
         </div>
       </div>
-
-      <div className="col-span-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Profile Picture
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="mt-1 block w-full"
-        />
-      </div>
-
       <div>
         <label className="block text-sm font-medium text-gray-700">
           Phone Number

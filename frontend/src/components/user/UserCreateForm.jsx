@@ -3,18 +3,19 @@ import { useDispatch } from 'react-redux';
 import { createUser } from '../../redux/features/userSlice';
 import { useToast } from '../../contexts/ToastContext';
 import { ROLES } from '../../utils/constants';
+import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorMessage from '../common/ErrorMessage';
+import Toast from '../common/Toast';
 
 const UserCreateForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
     role: 'TEACHER',
     status: 'ACTIVE',
     phoneNumber: ''
   });
-  const [profilePicture, setProfilePicture] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -24,8 +25,7 @@ const UserCreateForm = ({ onClose }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
     if (formData.password && formData.password.length < 6) {
@@ -39,15 +39,6 @@ const UserCreateForm = ({ onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setProfilePicture(file);
-    } else {
-      addToast('Please select a valid image file', 'error');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -58,10 +49,6 @@ const UserCreateForm = ({ onClose }) => {
       Object.keys(formData).forEach(key => {
         formDataToSend.append(key, formData[key]);
       });
-      
-      if (profilePicture) {
-        formDataToSend.append('profilePicture', profilePicture);
-      }
 
       await dispatch(createUser(formDataToSend)).unwrap();
       addToast('User created successfully', 'success');
@@ -72,37 +59,27 @@ const UserCreateForm = ({ onClose }) => {
       setLoading(false);
     }
   };
+  if(loading){
+    <LoadingSpinner/>
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            First Name *
+            Name *
           </label>
           <input
             type="text"
-            value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm
-              ${errors.firstName ? 'border-red-300' : 'border-gray-300'}`}
+              ${errors.name ? 'border-red-300' : 'border-gray-300'}`}
           />
           {errors.firstName && (
-            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
           )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Last Name *
-          </label>
-          <input
-            type="text"
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-          />
         </div>
 
         <div>
@@ -164,17 +141,6 @@ const UserCreateForm = ({ onClose }) => {
           </select>
         </div>
 
-        <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Profile Picture
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="mt-1 block w-full"
-          />
-        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">

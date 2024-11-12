@@ -8,6 +8,9 @@ import {
   XCircleIcon 
 } from '@heroicons/react/24/outline';
 import ConfirmDialog from '../common/ConfirmDialog';
+import LoadingSpinner from '../common/LoadingSpinner';
+import Modal from '../common/Modal';
+import UserEditForm from '../user/UserEditForm';
 import { ROLES } from '../../utils/constants';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -16,6 +19,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
   const { addToast } = useToast();
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showModal,setShowModal] = useState(false);
 
   const handleRoleChange = async (user, newRole) => {
     try {
@@ -82,11 +86,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+  <LoadingSpinner/>
   }
 
   return (
@@ -121,17 +121,12 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
                       <img
                         className="h-10 w-10 rounded-full object-cover"
                         src={user.profilePicture || '/default-avatar.png'}
-                        alt={`${user.firstName} ${user.lastName}`}
+                        alt={user.name}
                       />
                     </div>
-                    <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {user.firstName} {user.lastName}
+                        {user.name}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {user.email}
-                      </div>
-                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -163,6 +158,14 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>
+                  <button
+                    onClick={() => {
+                      setShowModal(true);
+                    }}
+                    className="text-red-600 hover:text-blue-900 ml-4"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -175,8 +178,12 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={handleDelete}
         title="Delete User"
-        message={`Are you sure you want to delete ${selectedUser?.firstName} ${selectedUser?.lastName}? This action cannot be undone.`}
+        message={`Are you sure you want to delete ${selectedUser?.name}? This action cannot be undone.`}
       />
+
+      <Modal onOpen = {showModal} onClose={()=>{setShowModal(false)}}>
+        <UserEditForm/>
+      </Modal>
     </>
   );
 };

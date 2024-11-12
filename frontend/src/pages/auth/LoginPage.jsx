@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { login } from '../../redux/features/authSlice';
 import { Link } from 'react-router-dom';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ErrorMessage from '../../components/common/ErrorMessage';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +17,9 @@ const LoginPage = () => {
     e.preventDefault();
     dispatch(login(formData));
   };
-
+if (loading){
+  <LoadingSpinner/>
+}
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -63,6 +67,11 @@ const LoginPage = () => {
             >
               Sign in
             </button>
+          </div>
+          <div className="text-sm text-center">
+            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Don't have an account? Sign up
+            </Link>
           </div>
         </form>
       </div>
