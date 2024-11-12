@@ -7,7 +7,7 @@ import {
   ClockIcon,
   PlusIcon,
   DocumentTextIcon,
-} from '@heroicons/react/outline';
+} from '@heroicons/react/24/outline';
 
 const ExamManagementPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

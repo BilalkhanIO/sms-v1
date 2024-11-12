@@ -17,6 +17,10 @@ import TeacherDashboard from '../pages/dashboard/TeacherDashboard';
 // Admin Pages
 import UserManagementPage from '../pages/admin/UserManagementPage';
 
+//others Pages
+import ExamManagementPage from '../pages/exam/ExamManagementPage';
+import FeeDashboardPage from '../pages/fee/FeeDashboardPage';
+
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -60,6 +64,8 @@ const AppRoutes = () => {
         </Route>
 
         {/* Add other routes here */}
+        {/* <Route path='/exam' element={<ExamManagementPage/>}/> */}
+        <Route path='/fee' element ={<FeeDashboardPage/>}/>
       </Route>
 
       {/* 404 Route */}

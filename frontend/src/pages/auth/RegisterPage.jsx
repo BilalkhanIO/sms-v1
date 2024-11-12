@@ -1,21 +1,52 @@
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { register } from '../../redux/features/authSlice';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { register, clearError, clearAllSuccess } from '../../redux/features/authSlice';
+import { Link, useNavigate } from 'react-router-dom';
+import ErrorMessage from '../../components/common/ErrorMessage';
 
 const RegisterPage = () => {
+  const { loading, error, registerSuccess} = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    name: ''
   });
+  const [passwordError, setPasswordError] = useState('');
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    dispatch(clearError());
+    dispatch(clearAllSuccess());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (registerSuccess) {
+      navigate('/login');
+    }
+  }, [registerSuccess, navigate]);
+
+  const validateForm = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return false;
+    }
+    if (formData.password.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(register(formData));
+    if (validateForm()) {
+      const { confirmPassword, ...registrationData } = formData;
+      dispatch(register(registrationData));
+    }
   };
 
   return (
@@ -27,19 +58,26 @@ const RegisterPage = () => {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && <ErrorMessage message={error} />}
+          {passwordError && <ErrorMessage message={passwordError} />}
+          
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
+              <label htmlFor="name" className="sr-only">Full Name</label>
               <input
+                id="name"
                 type="text"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Full name"
+                placeholder="Full Name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
+                id="email"
                 type="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
@@ -49,7 +87,9 @@ const RegisterPage = () => {
               />
             </div>
             <div>
+              <label htmlFor="password" className="sr-only">Password</label>
               <input
+                id="password"
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
@@ -59,11 +99,13 @@ const RegisterPage = () => {
               />
             </div>
             <div>
+              <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
               <input
+                id="confirmPassword"
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm password"
+                placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
@@ -74,11 +116,12 @@ const RegisterPage = () => {
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading}
             >
-              Register
+              {loading ? 'Creating account...' : 'Sign up'}
             </button>
           </div>
-
+          
           <div className="text-sm text-center">
             <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
               Already have an account? Sign in
@@ -90,4 +133,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage; 
+export default RegisterPage;
