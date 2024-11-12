@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please add a name'],
     trim: true,
     minlength: [2, 'Name must be at least 2 characters'],
     maxlength: [50, 'Name cannot exceed 50 characters'],
@@ -29,13 +28,6 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please add a password'],
     minlength: [8, 'Password must be at least 8 characters'],
     select: false,
-    // validate: {
-    //   validator: function(password) {
-    //     // Password must contain at least one uppercase, lowercase, number, and special character
-    //     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
-    //   },
-    //   message: 'Password must contain at least one uppercase letter, lowercase letter, number, and special character'
-    // }
   },
   role: {
     type: String,
@@ -97,18 +89,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     select: false
   },
-  firstName: {
-    type: String,
-    required: [true, 'First name is required'],
-    trim: true,
-    minlength: [2, 'First name must be at least 2 characters']
-  },
-  lastName: {
-    type: String,
-    required: [true, 'Last name is required'],
-    trim: true,
-    minlength: [2, 'Last name must be at least 2 characters']
-  },
   profilePicture: {
     type: String,
     default: null
@@ -132,11 +112,6 @@ userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ resetPasswordExpire: 1 }, { sparse: true });
 userSchema.index({ emailVerificationExpire: 1 }, { sparse: true });
-
-// Add virtual for full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
 
 // Encrypt password using bcrypt
 userSchema.pre('save', async function(next) {
