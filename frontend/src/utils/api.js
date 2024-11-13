@@ -12,6 +12,13 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Log request for debugging
+    console.log('API Request:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers
+    });
+
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -27,14 +34,25 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
+    // Log successful response for debugging
+    console.log('API Response:', {
+      status: response.status,
+      data: response.data
+    });
     return response;
   },
   (error) => {
+    // Log error response for debugging
+    console.error('API Error:', {
+      message: error.message,
+      response: error.response,
+      request: error.request
+    });
+
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/auth/login';
     }
-    console.error('API Error:', error.response || error);
     return Promise.reject(error);
   }
 );
