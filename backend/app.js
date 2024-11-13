@@ -10,30 +10,17 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = [
-  'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev',
   'http://localhost:5173',
+  'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev',
   'https://effective-cod-9jx56r7jjvjcprx-6000.app.github.dev'
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
+  origin: allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
-
-// Pre-flight requests
-app.options('*', cors());
 
 app.use(express.json());
 

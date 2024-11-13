@@ -73,69 +73,22 @@ exports.register = catchAsync(async (req, res) => {
   });
 });
 
-exports.login = catchAsync(async (req, res) => {
+exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-  const deviceInfo = {
-    deviceId: req.body.deviceId || req.headers['x-device-id'],
-    userAgent: req.headers['user-agent'],
-    ip: req.ip
-  };
 
-  const user = await User.findOne({ email })
-    .select('+password +failedLoginAttempts +lockUntil +twoFactorEnabled +twoFactorSecret');
+  // Validate email and password
+  if (!email || !password) {
+    return next(new AppError('Please provide email and password', 400));
+  }
 
+  const user = await User.findOne({ email }).select('+password');
   if (!user || !(await user.matchPassword(password))) {
-    if (user) {
-      await user.incrementLoginAttempts();
-    }
-    throw new AppError('Invalid credentials', 401);
+    return next(new AppError('Incorrect email or password', 401));
   }
 
-  if (user.isLocked()) {
-    throw new AppError('Account is locked. Please try again later.', 423);
-  }
-
-  if (user.status !== 'ACTIVE') {
-    throw new AppError('Account is not active. Please verify your email.', 403);
-  }
-
-  // Handle 2FA if enabled
-  if (user.twoFactorEnabled) {
-    if (!req.body.twoFactorToken) {
-      return res.status(200).json({
-        success: true,
-        requires2FA: true,
-        message: 'Please provide 2FA token'
-      });
-    }
-
-    const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
-      encoding: 'base32',
-      token: req.body.twoFactorToken,
-      window: 1
-    });
-
-    if (!verified) {
-      throw new AppError('Invalid 2FA token', 401);
-    }
-  }
-
-  await user.resetLoginAttempts();
-  await user.addDevice(deviceInfo);
-
-  const token = generateToken(user._id);
-
-  res.json({
-    success: true,
-    token,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    }
-  });
+  // Generate JWT token and send response
+  const token = user.generateAuthToken(); // Assuming you have a method to generate token
+  res.status(200).json({ token, user });
 });
 
 exports.forgotPassword = catchAsync(async (req, res) => {
