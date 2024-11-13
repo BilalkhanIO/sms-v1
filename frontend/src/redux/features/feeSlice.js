@@ -15,10 +15,11 @@ export const fetchFeeStats = createAsyncThunk(
 
 const initialState = {
   stats: {
+    totalStudents: 0,
     totalCollection: 0,
     totalOutstanding: 0,
-    defaulterCount: 0,
     collectionRate: 0,
+    defaulterCount: 0,
     collectionTrend: [],
     feeTypeDistribution: [],
     classWiseCollection: [],

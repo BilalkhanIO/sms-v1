@@ -1,51 +1,86 @@
-import { useSelector } from 'react-redux';
-import StatsCard from '../../components/dashboard/StatsCard';
-import RecentActivities from '../../components/dashboard/RecentActivities';
-import PerformanceChart from '../../components/dashboard/PerformanceChart';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchFeeStats } from '../../redux/features/feeSlice';
+import {
+  ChartBarIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
+  CurrencyDollarIcon
+} from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
-  const stats = useSelector((state) => state.dashboard.stats);
+  const dispatch = useDispatch();
+  // Provide default values to prevent undefined errors
+  const { stats = {}, loading } = useSelector((state) => state.fee || { stats: {}, loading: false });
+
+  useEffect(() => {
+    dispatch(fetchFeeStats());
+  }, [dispatch]);
+
+  const statsCards = [
+    {
+      title: 'Total Students',
+      value: stats.totalStudents || 0,
+      icon: UserGroupIcon,
+      color: 'text-blue-600'
+    },
+    {
+      title: 'Total Revenue',
+      value: stats.totalCollection || 0,
+      icon: CurrencyDollarIcon,
+      color: 'text-green-600'
+    },
+    {
+      title: 'Pending Fees',
+      value: stats.totalOutstanding || 0,
+      icon: DocumentTextIcon,
+      color: 'text-yellow-600'
+    },
+    {
+      title: 'Collection Rate',
+      value: `${stats.collectionRate || 0}%`,
+      icon: ChartBarIcon,
+      color: 'text-purple-600'
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatsCard
-          title="Total Students"
-          value={stats?.totalStudents || 0}
-          trend={stats?.studentTrend || 0}
-          icon="users"
-        />
-        <StatsCard
-          title="Total Teachers"
-          value={stats?.totalTeachers || 0}
-          trend={stats?.teacherTrend || 0}
-          icon="academic-cap"
-        />
-        <StatsCard
-          title="Total Classes"
-          value={stats?.totalClasses || 0}
-          trend={stats?.classTrend || 0}
-          icon="book-open"
-        />
-        <StatsCard
-          title="Attendance Rate"
-          value={`${stats?.attendanceRate || 0}%`}
-          trend={stats?.attendanceTrend || 0}
-          icon="chart-bar"
-        />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statsCards.map((stat, index) => (
+          <div key={index} className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className={`p-3 rounded-full ${stat.color} bg-opacity-10`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {typeof stat.value === 'number' && stat.title.includes('Revenue') 
+                    ? new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                      }).format(stat.value)
+                    : stat.value}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Charts and Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Performance Overview</h3>
-          <PerformanceChart />
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Recent Activities</h3>
-          <RecentActivities />
-        </div>
+      {/* Additional dashboard content */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Add your charts or other dashboard widgets here */}
       </div>
     </div>
   );
