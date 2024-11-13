@@ -3,6 +3,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const feeRoutes = require('./routes/fee.routes');
+const calendarRoutes = require('./routes/calendar.routes');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/fees', feeRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
