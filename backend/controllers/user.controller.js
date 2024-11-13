@@ -52,41 +52,43 @@ exports.getUserById = catchAsync(async (req, res) => {
 });
 
 exports.updateUser = catchAsync(async (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      throw new AppError(err.message, 400);
-    }
-
-    const updates = { ...req.body };
-    delete updates.password; // Prevent password update through this route
-
-    if (req.file) {
-      const user = await User.findById(req.params.id);
-      if (user.profilePicture) {
-        try {
-          await fs.unlink(path.join(__dirname, '..', user.profilePicture));
-        } catch (error) {
-          console.error('Error deleting old profile picture:', error);
-        }
+  try {
+    upload(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
       }
-      updates.profilePicture = `/uploads/profiles/${req.file.filename}`;
-    }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { $set: updates },
-      { new: true, runValidators: true }
-    ).select('-password');
+      const { id } = req.params;
+      const updates = { ...req.body };
 
-    if (!user) {
-      throw new AppError('User not found', 404);
-    }
+      if (req.file) {
+        const user = await User.findById(id);
+        if (user.profilePicture) {
+          try {
+            await fs.unlink(path.join(__dirname, '..', user.profilePicture));
+          } catch (error) {
+            console.error('Error deleting old profile picture:', error);
+          }
+        }
+        updates.profilePicture = `/uploads/profiles/${req.file.filename}`;
+      }
 
-    res.json({
-      success: true,
-      data: user
+      const updatedUser = await User.findByIdAndUpdate(
+        id,
+        { $set: updates },
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json(updatedUser);
     });
-  });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ message: 'Error updating user' });
+  }
 });
 
 exports.updatePassword = catchAsync(async (req, res) => {
@@ -200,3 +202,37 @@ exports.removeDevice = catchAsync(async (req, res) => {
     message: 'Device removed successfully'
   });
 });
+
+// Create new user with profile picture
+exports.createUser = async (req, res) => {
+  try {
+    upload(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+
+      const { email } = req.body;
+      let user = await User.findOne({ email });
+      
+      if (user) {
+        return res.status(400).json({ message: 'User already exists' });
+      }
+
+      const userData = {
+        ...req.body,
+        profilePicture: req.file ? `/uploads/profiles/${req.file.filename}` : null
+      };
+
+      user = new User(userData);
+      await user.save();
+
+      const userResponse = user.toObject();
+      delete userResponse.password;
+
+      res.status(201).json(userResponse);
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+};

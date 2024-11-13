@@ -1,61 +1,31 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
 
-exports.protect = catchAsync(async (req, res, next) => {
-  let token;
-
-  if (
-    req.headers.authorization?.startsWith('Bearer') &&
-    req.headers.authorization.split(' ')[1]
-  ) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-
-  if (!token) {
-    throw new AppError('Please authenticate', 401);
-  }
-
+const auth = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-      algorithms: ['HS256']
-    });
-
-    const user = await User.findById(decoded.userId)
-      .select('-password')
-      .select('+passwordChangedAt');
-
-    if (!user) {
-      throw new AppError('User no longer exists', 401);
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (user.passwordChangedAt) {
-      const changedTimestamp = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
-      if (decoded.iat < changedTimestamp) {
-        throw new AppError('Password recently changed. Please login again', 401);
-      }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
     }
 
     if (user.status !== 'ACTIVE') {
-      throw new AppError('Account is inactive', 403);
+      return res.status(403).json({ message: 'Account is not active' });
     }
 
     req.user = user;
+    req.token = token;
     next();
   } catch (error) {
-    throw new AppError('Invalid token', 401);
+    res.status(401).json({ message: 'Invalid token' });
   }
-});
-
-exports.authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      throw new AppError(
-        `User role ${req.user.role} is not authorized to access this route`,
-        403
-      );
-    }
-    next();
-  };
 };
+
+module.exports = auth;

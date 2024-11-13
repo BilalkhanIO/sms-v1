@@ -101,6 +101,18 @@ const userSchema = new mongoose.Schema({
       },
       message: 'Please enter a valid phone number'
     }
+  },
+  firstName: {
+    type: String,
+    required: [true, 'First name is required'],
+    trim: true,
+    minlength: [2, 'First name must be at least 2 characters']
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Last name is required'],
+    trim: true,
+    minlength: [2, 'Last name must be at least 2 characters']
   }
 }, {
   timestamps: true
@@ -232,5 +244,10 @@ userSchema.methods.isPasswordStale = function() {
   const maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days
   return Date.now() - this.lastPasswordChange.getTime() > maxAge;
 };
+
+// Add virtual for full name
+userSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
+});
 
 module.exports = mongoose.model('User', userSchema);

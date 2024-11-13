@@ -6,12 +6,14 @@ import { ROLES } from '../../utils/permissions';
 
 const UserEditForm = ({ user, onClose }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     role: '',
     status: '',
     phoneNumber: '',
   });
+  const [profilePicture, setProfilePicture] = useState(null);
 
   const dispatch = useDispatch();
   const { showToast } = useToast();
@@ -19,7 +21,8 @@ const UserEditForm = ({ user, onClose }) => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name:user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         role: user.role,
         status: user.status,
@@ -28,6 +31,15 @@ const UserEditForm = ({ user, onClose }) => {
     }
   }, [user]);
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setProfilePicture(file);
+    } else {
+      showToast('Please select a valid image file', 'error');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -35,6 +47,10 @@ const UserEditForm = ({ user, onClose }) => {
       Object.keys(formData).forEach(key => {
         formDataToSend.append(key, formData[key]);
       });
+      
+      if (profilePicture) {
+        formDataToSend.append('profilePicture', profilePicture);
+      }
 
       await dispatch(updateUser({ 
         id: user._id, 
@@ -109,6 +125,17 @@ const UserEditForm = ({ user, onClose }) => {
             <option value="PENDING">Pending</option>
           </select>
         </div>
+      </div>
+      <div className="col-span-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Profile Picture
+        </label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="mt-1 block w-full"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">

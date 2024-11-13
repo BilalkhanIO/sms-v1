@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const AppError = require('../utils/appError');
 
-const auth = async (req, res, next) => {
+// Protect middleware
+const protect = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
@@ -28,4 +30,17 @@ const auth = async (req, res, next) => {
   }
 };
 
-module.exports = auth; 
+// Authorize middleware
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: `User role ${req.user.role} is not authorized to access this route` 
+      });
+    }
+    next();
+  };
+};
+
+// Export both middleware functions
+module.exports = { protect, authorize }; 
