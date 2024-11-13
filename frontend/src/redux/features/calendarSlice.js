@@ -1,6 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../utils/api';
 
+// Mock data for initial state
+const initialEvents = [
+  {
+    id: 1,
+    title: 'Parent-Teacher Meeting',
+    start: new Date(2024, 2, 15, 10, 0),
+    end: new Date(2024, 2, 15, 12, 0),
+    description: 'Annual parent-teacher meeting',
+    type: 'meeting',
+    color: 'indigo'
+  }
+];
+
 export const fetchEvents = createAsyncThunk(
   'calendar/fetchEvents',
   async (_, { rejectWithValue }) => {

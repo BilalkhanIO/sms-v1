@@ -8,7 +8,14 @@ const calendarRoutes = require('./routes/calendar.routes');
 
 const app = express();
 
-app.use(cors());
+// CORS configuration
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://effective-cod-9jx56r7jjvjcprx-6000.app.github.dev'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // Routes

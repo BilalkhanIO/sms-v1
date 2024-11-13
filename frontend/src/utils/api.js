@@ -1,16 +1,16 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:6000/api',
+  baseURL: 'https://effective-cod-9jx56r7jjvjcprx-6000.app.github.dev/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true
 });
 
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config);
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -29,6 +29,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/auth/login';
+    }
     console.error('API Error:', error.response || error);
     return Promise.reject(error);
   }
