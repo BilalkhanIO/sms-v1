@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { register } from '../../redux/features/authSlice';
 import { useToast } from '../../contexts/ToastContext';
 import PasswordInput from './PasswordInput';
@@ -15,6 +16,7 @@ const RegisterForm = () => {
   const [loading, setLoading] = useState(false);
   
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { addToast } = useToast();
 
   const handleSubmit = async (e) => {
@@ -29,6 +31,7 @@ const RegisterForm = () => {
     try {
       await dispatch(register(formData)).unwrap();
       addToast('Registration successful', 'success');
+      navigate('/dashboard');
     } catch (error) {
       addToast(error.message || 'Registration failed', 'error');
     } finally {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { login } from '../../redux/features/authSlice';
 import { useToast } from '../../contexts/ToastContext';
 import PasswordInput from './PasswordInput';
@@ -12,6 +13,7 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { addToast } = useToast();
 
   const handleSubmit = async (e) => {
@@ -20,6 +22,7 @@ const LoginForm = () => {
     try {
       await dispatch(login(formData)).unwrap();
       addToast('Login successful', 'success');
+      navigate('/dashboard');
     } catch (error) {
       addToast(error.message || 'Login failed', 'error');
     } finally {
