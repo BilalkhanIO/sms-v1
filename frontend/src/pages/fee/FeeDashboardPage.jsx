@@ -17,17 +17,35 @@ import {
   Cell,
 } from 'recharts';
 import {
-  CashIcon,
+  ChartBarIcon,
   UserGroupIcon,
-  ExclamationIcon,
-  TrendingUpIcon,
+  ClipboardDocumentIcon,
+  Cog6ToothIcon,
+  BuildingLibraryIcon,
+  DocumentTextIcon,
+  ArrowPathIcon,
+  BanknotesIcon,
+  CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+// Initial state for stats
+const initialStats = {
+  totalCollection: 0,
+  totalOutstanding: 0,
+  defaulterCount: 0,
+  collectionRate: 0,
+  collectionTrend: [],
+  feeTypeDistribution: [],
+  classWiseCollection: [],
+  paymentMethodDistribution: []
+};
+
 const FeeDashboardPage = () => {
   const dispatch = useDispatch();
-  const { stats, loading } = useSelector((state) => state.fee);
+  const feeState = useSelector((state) => state.fee) || { stats: initialStats, loading: false, error: null };
+  const { stats, loading, error } = feeState;
 
   useEffect(() => {
     dispatch(fetchFeeStats());
@@ -40,21 +58,39 @@ const FeeDashboardPage = () => {
     }).format(amount);
   };
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-red-600">
+          Error loading fee data: {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <h1 className="text-2xl font-semibold text-gray-900">Fee Dashboard</h1>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <CashIcon className="h-8 w-8 text-green-500" />
+            <ChartBarIcon className="h-8 w-8 text-green-500" />
             <div className="ml-4">
               <h3 className="text-lg font-medium text-gray-900">
                 Total Collection
               </h3>
               <p className="text-2xl font-semibold text-green-600">
-                {formatCurrency(stats.totalCollection)}
+                {formatCurrency(stats.totalCollection || 0)}
               </p>
             </div>
           </div>
@@ -62,11 +98,11 @@ const FeeDashboardPage = () => {
 
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <ExclamationIcon className="h-8 w-8 text-red-500" />
+            <ClipboardDocumentIcon className="h-8 w-8 text-red-500" />
             <div className="ml-4">
               <h3 className="text-lg font-medium text-gray-900">Outstanding</h3>
               <p className="text-2xl font-semibold text-red-600">
-                {formatCurrency(stats.totalOutstanding)}
+                {formatCurrency(stats.totalOutstanding || 0)}
               </p>
             </div>
           </div>
@@ -78,7 +114,7 @@ const FeeDashboardPage = () => {
             <div className="ml-4">
               <h3 className="text-lg font-medium text-gray-900">Defaulters</h3>
               <p className="text-2xl font-semibold text-yellow-600">
-                {stats.defaulterCount}
+                {stats.defaulterCount || 0}
               </p>
             </div>
           </div>
@@ -86,13 +122,13 @@ const FeeDashboardPage = () => {
 
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
-            <TrendingUpIcon className="h-8 w-8 text-blue-500" />
+            <ArrowPathIcon className="h-8 w-8 text-blue-500" />
             <div className="ml-4">
               <h3 className="text-lg font-medium text-gray-900">
                 Collection Rate
               </h3>
               <p className="text-2xl font-semibold text-blue-600">
-                {stats.collectionRate}%
+                {stats.collectionRate || 0}%
               </p>
             </div>
           </div>
@@ -108,7 +144,7 @@ const FeeDashboardPage = () => {
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.collectionTrend}>
+              <LineChart data={stats.collectionTrend || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -140,7 +176,7 @@ const FeeDashboardPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={stats.feeTypeDistribution}
+                  data={stats.feeTypeDistribution || []}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -148,7 +184,7 @@ const FeeDashboardPage = () => {
                   outerRadius={100}
                   label
                 >
-                  {stats.feeTypeDistribution?.map((entry, index) => (
+                  {(stats.feeTypeDistribution || []).map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -169,7 +205,7 @@ const FeeDashboardPage = () => {
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.classWiseCollection}>
+              <BarChart data={stats.classWiseCollection || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="class" />
                 <YAxis />
@@ -191,7 +227,7 @@ const FeeDashboardPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={stats.paymentMethodDistribution}
+                  data={stats.paymentMethodDistribution || []}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -199,7 +235,7 @@ const FeeDashboardPage = () => {
                   outerRadius={100}
                   label
                 >
-                  {stats.paymentMethodDistribution?.map((entry, index) => (
+                  {(stats.paymentMethodDistribution || []).map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
