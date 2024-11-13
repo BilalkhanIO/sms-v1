@@ -19,7 +19,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
   const { addToast } = useToast();
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showModal,setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleRoleChange = async (user, newRole) => {
     try {
@@ -160,7 +160,7 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
                   </button>
                   <button
                     onClick={() => {
-                      setShowModal(true);
+                      setShowEditModal(true);
                     }}
                     className="text-red-600 hover:text-blue-900 ml-4"
                   >
@@ -173,17 +173,28 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
         </table>
       </div>
 
+      <Modal 
+        isOpen={showEditModal} 
+        onClose={() => setShowEditModal(false)}
+        title="Edit User"
+      >
+        <UserEditForm
+          user={selectedUser}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => {
+            setShowEditModal(false);
+            onEdit?.();
+          }}
+        />
+      </Modal>
+
       <ConfirmDialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={handleDelete}
         title="Delete User"
-        message={`Are you sure you want to delete ${selectedUser?.name}? This action cannot be undone.`}
+        message={`Are you sure you want to delete ${selectedUser?.name}?`}
       />
-
-      <Modal onOpen = {showModal} onClose={()=>{setShowModal(false)}}>
-        <UserEditForm/>
-      </Modal>
     </>
   );
 };

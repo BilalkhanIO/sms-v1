@@ -5,7 +5,7 @@ export const fetchFeeStats = createAsyncThunk(
   'fee/fetchStats',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/fees/stats');
+      const response = await api.get('/fees/stats');
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch fee stats');
