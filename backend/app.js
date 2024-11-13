@@ -9,23 +9,24 @@ const calendarRoutes = require('./routes/calendar.routes');
 const app = express();
 
 // CORS configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev',
-  'https://effective-cod-9jx56r7jjvjcprx-6000.app.github.dev'
-];
-
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Device-Id',
-    'User-Agent'
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev'
   ],
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 

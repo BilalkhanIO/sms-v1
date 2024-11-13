@@ -7,10 +7,14 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        return response.data;
+      }
+      return rejectWithValue('Invalid response format');
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      const message = error.response?.data?.message || 'Login failed';
+      return rejectWithValue(message);
     }
   }
 );
