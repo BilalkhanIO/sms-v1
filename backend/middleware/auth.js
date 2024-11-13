@@ -2,45 +2,34 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AppError = require('../utils/appError');
 
-// Protect middleware
 const protect = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-
-    if (user.status !== 'ACTIVE') {
-      return res.status(403).json({ message: 'Account is not active' });
-    }
-
-    req.user = user;
-    req.token = token;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
   }
+
+  if (!token) {
+    return next(new AppError('You are not logged in! Please log in to get access.', 401));
+  }
+
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const currentUser = await User.findById(decoded.userId);
+
+  if (!currentUser) {
+    return next(new AppError('The user belonging to this token does no longer exist.', 401));
+  }
+
+  req.user = currentUser;
+  next();
 };
 
-// Authorize middleware
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: `User role ${req.user.role} is not authorized to access this route` 
-      });
+      return next(new AppError('You do not have permission to perform this action', 403));
     }
     next();
   };
 };
 
-// Export both middleware functions
 module.exports = { protect, authorize }; 

@@ -40,22 +40,11 @@ exports.getFeeStats = catchAsync(async (req, res) => {
 });
 
 // Get fee structure
-exports.getFeeStructure = catchAsync(async (req, res) => {
-  const feeStructure = {
-    academicYear: '2023-24',
-    classes: [
-      {
-        class: 'X',
-        sections: ['A', 'B'],
-        fees: [
-          { type: 'Tuition', amount: 50000, frequency: 'MONTHLY' },
-          { type: 'Transport', amount: 5000, frequency: 'MONTHLY' },
-          { type: 'Library', amount: 2000, frequency: 'YEARLY' }
-        ]
-      }
-    ]
-  };
-
+exports.getFeeStructure = catchAsync(async (req, res, next) => {
+  const feeStructure = await FeeStructure.find();
+  if (!feeStructure) {
+    return next(new AppError('Fee structure not found', 404));
+  }
   res.status(200).json(feeStructure);
 });
 

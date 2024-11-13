@@ -9,16 +9,9 @@ const { sendEmail } = require('../utils/email');
 
 const generateToken = (userId) => {
   return jwt.sign(
-    { 
-      userId,
-      issuedAt: Date.now(),
-      jti: crypto.randomBytes(16).toString('hex')
-    },
+    { userId },
     process.env.JWT_SECRET,
-    {
-      expiresIn: process.env.JWT_EXPIRE || '1d',
-      algorithm: 'HS256'
-    }
+    { expiresIn: process.env.JWT_EXPIRE || '1d' }
   );
 };
 
@@ -76,7 +69,6 @@ exports.register = catchAsync(async (req, res) => {
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Validate email and password
   if (!email || !password) {
     return next(new AppError('Please provide email and password', 400));
   }
@@ -86,8 +78,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401));
   }
 
-  // Generate JWT token and send response
-  const token = user.generateAuthToken(); // Assuming you have a method to generate token
+  const token = generateToken(user._id);
   res.status(200).json({ token, user });
 });
 
