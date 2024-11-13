@@ -11,8 +11,7 @@ export default defineConfig({
         target: 'https://effective-cod-9jx56r7jjvjcprx-6000.app.github.dev',
         changeOrigin: true,
         secure: false,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        ws: true
       }
     }
   }

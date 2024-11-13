@@ -14,7 +14,6 @@ api.interceptors.request.use(config => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  config.headers['Access-Control-Allow-Origin'] = 'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev';
   return config;
 }, error => {
   return Promise.reject(error);

@@ -1,4 +1,4 @@
-import api from '../utils/axios';
+import api from '../config/api';
 
 // Authentication functions
 export const login = async (credentials) => {
