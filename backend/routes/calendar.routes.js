@@ -5,13 +5,16 @@ const { protect } = require('../middleware/auth');
 
 router.use(protect); // Protect all calendar routes
 
-router.route('/')
-  .get(calendarController.getEvents)
-  .post(calendarController.createEvent);
+// GET /api/calendar/events - Get all events
+router.get('/events', calendarController.getEvents);
 
-router.route('/:id')
-  .get(calendarController.getEventById)
-  .put(calendarController.updateEvent)
-  .delete(calendarController.deleteEvent);
+// POST /api/calendar/events - Create new event
+router.post('/events', calendarController.createEvent);
+
+// PUT /api/calendar/events/:id - Update event
+router.put('/events/:id', calendarController.updateEvent);
+
+// DELETE /api/calendar/events/:id - Delete event
+router.delete('/events/:id', calendarController.deleteEvent);
 
 module.exports = router; 

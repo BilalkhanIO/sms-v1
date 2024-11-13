@@ -41,6 +41,7 @@ const Sidebar = () => {
       { name: 'Attendance', to: '/teacher/attendance', icon: ClipboardDocumentListIcon },
       { name: 'Grades', to: '/teacher/grades', icon: ChartBarIcon },
       { name: 'Classes', to: '/teacher/classes', icon: BookOpenIcon },
+      { name: 'My Calendar', to: '/teacher/calendar', icon: CalendarIcon },
     ];
 
     const studentItems = [
@@ -48,6 +49,7 @@ const Sidebar = () => {
       { name: 'Attendance', to: '/student/attendance', icon: ClipboardDocumentListIcon },
       { name: 'Courses', to: '/student/courses', icon: BookOpenIcon },
       { name: 'Fee Status', to: '/student/fees', icon: CurrencyDollarIcon },
+      { name: 'My Calendar', to: '/student/calendar', icon: CalendarIcon },
     ];
 
     switch (user?.role) {

@@ -4,6 +4,7 @@ import MainLayout from '../components/layout/MainLayout';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import FeeDashboardPage from '../pages/fee/FeeDashboardPage';
+import CalendarPage from '../pages/calendar/CalendarPage';
 import ProfilePage from '../pages/ProfilePage';
 import TeacherStudentsPage from '../pages/teacher/TeacherStudentsPage';
 import StudentGradesPage from '../pages/student/StudentGradesPage';
@@ -38,6 +39,9 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        
+        {/* Calendar Routes */}
+        <Route path="calendar" element={<CalendarPage />} />
 
         {/* Admin Routes */}
         <Route path="admin">
@@ -57,6 +61,15 @@ const AppRoutes = () => {
               </ProtectedRoute>
             } 
           />
+          {/* Add admin calendar route */}
+          <Route 
+            path="calendar" 
+            element={
+              <ProtectedRoute roles={['SUPER_ADMIN', 'SCHOOL_ADMIN']}>
+                <CalendarPage />
+              </ProtectedRoute>
+            } 
+          />
         </Route>
 
         {/* Teacher Routes */}
@@ -69,6 +82,15 @@ const AppRoutes = () => {
               </ProtectedRoute>
             } 
           />
+          {/* Add teacher calendar route */}
+          <Route 
+            path="calendar" 
+            element={
+              <ProtectedRoute roles={['TEACHER']}>
+                <CalendarPage />
+              </ProtectedRoute>
+            } 
+          />
         </Route>
 
         {/* Student Routes */}
@@ -78,6 +100,15 @@ const AppRoutes = () => {
             element={
               <ProtectedRoute roles={['STUDENT']}>
                 <StudentGradesPage />
+              </ProtectedRoute>
+            } 
+          />
+          {/* Add student calendar route */}
+          <Route 
+            path="calendar" 
+            element={
+              <ProtectedRoute roles={['STUDENT']}>
+                <CalendarPage />
               </ProtectedRoute>
             } 
           />

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
+import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { fetchEvents, setSelectedEvent } from '../../redux/features/calendarSlice';
 import EventModal from './EventModal';
@@ -12,7 +13,7 @@ import { useToast } from '../../contexts/ToastContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const locales = {
-  'en-US': require('date-fns/locale/en-US'),
+  'en-US': enUS,
 };
 
 const localizer = dateFnsLocalizer({
@@ -25,7 +26,7 @@ const localizer = dateFnsLocalizer({
 
 const CalendarPage = () => {
   const dispatch = useDispatch();
-  const { events, loading } = useSelector((state) => state.calendar);
+  const { events = [], loading } = useSelector((state) => state.calendar || { events: [], loading: false });
   const [showEventModal, setShowEventModal] = useState(false);
   const { addToast } = useToast();
 
@@ -61,7 +62,7 @@ const CalendarPage = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <Calendar
+        <BigCalendar
           localizer={localizer}
           events={events}
           startAccessor="start"
@@ -72,6 +73,20 @@ const CalendarPage = () => {
           selectable
           popup
           views={['month', 'week', 'day', 'agenda']}
+          defaultView="month"
+          eventPropGetter={(event) => ({
+            className: `bg-${event.color || 'indigo'}-600 text-white`,
+          })}
+          components={{
+            event: ({ event }) => (
+              <div className="p-1">
+                <div className="font-medium">{event.title}</div>
+                {event.description && (
+                  <div className="text-xs">{event.description}</div>
+                )}
+              </div>
+            ),
+          }}
         />
       </div>
 

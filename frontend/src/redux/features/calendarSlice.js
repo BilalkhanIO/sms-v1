@@ -69,7 +69,6 @@ const calendarSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch events
       .addCase(fetchEvents.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -83,18 +82,15 @@ const calendarSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Create event
       .addCase(createEvent.fulfilled, (state, action) => {
         state.events.push(action.payload);
       })
-      // Update event
       .addCase(updateEvent.fulfilled, (state, action) => {
         const index = state.events.findIndex(event => event.id === action.payload.id);
         if (index !== -1) {
           state.events[index] = action.payload;
         }
       })
-      // Delete event
       .addCase(deleteEvent.fulfilled, (state, action) => {
         state.events = state.events.filter(event => event.id !== action.payload);
       });
