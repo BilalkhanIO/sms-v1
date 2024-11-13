@@ -1,19 +1,22 @@
-import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { store } from './redux/store';
-import AppRoutes from './routes/AppRoutes';
+import { BrowserRouter } from 'react-router-dom';
+import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import AppRoutes from './routes/AppRoutes';
+import store from './redux/store';
 
-function App() {
+const App = () => {
   return (
     <Provider store={store}>
       <ErrorBoundary>
         <BrowserRouter>
-          <AppRoutes />
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
         </BrowserRouter>
       </ErrorBoundary>
     </Provider>
   );
-}
+};
 
 export default App; 

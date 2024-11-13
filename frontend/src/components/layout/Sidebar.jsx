@@ -1,67 +1,121 @@
+import { useSelector } from 'react-redux';
 import { NavLink } from 'react-router-dom';
-import { usePermissions } from '../../hooks/usePermissions';
 import {
   HomeIcon,
-  UsersIcon,
+  UserGroupIcon,
   AcademicCapIcon,
-  BookOpenIcon,
-  ClipboardDocumentListIcon,
   CalendarIcon,
-  ChartBarIcon,
+  BookOpenIcon,
   CurrencyDollarIcon,
-  ChatBubbleLeftRightIcon
+  ClipboardDocumentListIcon,
+  Cog6ToothIcon,
+  ChartBarIcon,
+  BellIcon,
+  BuildingLibraryIcon
 } from '@heroicons/react/24/outline';
 
 const Sidebar = () => {
-  const { hasPermission } = usePermissions();
-  const isActive = true;
+  const user = useSelector(state => state.auth.user);
 
-  const navigation = [
-    { name: 'Dashboard', path: '/dashboard', icon: HomeIcon, permission: null },
-    { name: 'Users', path: '/admin/users', icon: UsersIcon, permission: 'manage_users' },
-    { name: 'Students', path: '/students', icon: UsersIcon, permission: 'view_students' },
-    { name: 'Teachers', path: '/teachers', icon: AcademicCapIcon, permission: 'view_teachers' },
-    { name: 'Classes', path: '/classes', icon: BookOpenIcon, permission: 'view_classes' },
-    { name: 'Exams', path: '/exams', icon: ClipboardDocumentListIcon, permission: 'view_exams' },
-    { name: 'Attendance', path: '/attendance', icon: CalendarIcon, permission: 'view_attendance' },
-    { name: 'Reports', path: '/reports', icon: ChartBarIcon, permission: 'view_reports' },
-    { name: 'Finance', path: '/finance', icon: CurrencyDollarIcon, permission: 'view_finance' },
-    { name: 'Messages', path: '/messages', icon: ChatBubbleLeftRightIcon, permission: 'view_messages' }
-  ];
+  // Define navigation items based on user role
+  const getNavigationItems = () => {
+    const commonItems = [
+      { name: 'Dashboard', to: '/dashboard', icon: HomeIcon },
+      { name: 'Calendar', to: '/calendar', icon: CalendarIcon },
+      { name: 'Notifications', to: '/notifications', icon: BellIcon },
+    ];
+
+    const adminItems = [
+      { name: 'User Management', to: '/admin/users', icon: UserGroupIcon },
+      { name: 'Students', to: '/admin/students', icon: AcademicCapIcon },
+      { name: 'Teachers', to: '/admin/teachers', icon: UserGroupIcon },
+      { name: 'Classes', to: '/admin/classes', icon: BookOpenIcon },
+      { name: 'Fee Management', to: '/admin/fees', icon: CurrencyDollarIcon },
+      { name: 'Attendance', to: '/admin/attendance', icon: ClipboardDocumentListIcon },
+      { name: 'Reports', to: '/admin/reports', icon: ChartBarIcon },
+      { name: 'Settings', to: '/admin/settings', icon: Cog6ToothIcon },
+    ];
+
+    const teacherItems = [
+      { name: 'My Students', to: '/teacher/students', icon: UserGroupIcon },
+      { name: 'Attendance', to: '/teacher/attendance', icon: ClipboardDocumentListIcon },
+      { name: 'Grades', to: '/teacher/grades', icon: ChartBarIcon },
+      { name: 'Classes', to: '/teacher/classes', icon: BookOpenIcon },
+    ];
+
+    const studentItems = [
+      { name: 'My Grades', to: '/student/grades', icon: ChartBarIcon },
+      { name: 'Attendance', to: '/student/attendance', icon: ClipboardDocumentListIcon },
+      { name: 'Courses', to: '/student/courses', icon: BookOpenIcon },
+      { name: 'Fee Status', to: '/student/fees', icon: CurrencyDollarIcon },
+    ];
+
+    switch (user?.role) {
+      case 'SUPER_ADMIN':
+      case 'SCHOOL_ADMIN':
+        return [...commonItems, ...adminItems];
+      case 'TEACHER':
+        return [...commonItems, ...teacherItems];
+      case 'STUDENT':
+        return [...commonItems, ...studentItems];
+      default:
+        return commonItems;
+    }
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
-    <aside className="hidden md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-64">
-        <div className="flex flex-col h-0 flex-1 bg-white border-r border-gray-200">
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <nav className="mt-5 flex-1 px-2 space-y-1">
-              {navigation.map((item) => (
-                (!item.permission || hasPermission(item.permission)) && (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                        isActive
-                          ? 'bg-indigo-100 text-indigo-700'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`
-                    }
-                  >
-                    <item.icon
-                      className={`mr-3 flex-shrink-0 h-6 w-6 ${
-                        isActive ? 'text-indigo-700' : 'text-gray-400 group-hover:text-gray-500'
-                      }`}
-                    />
-                    {item.name}
-                  </NavLink>
-                )
-              ))}
-            </nav>
-          </div>
-        </div>
+    <div className="h-full bg-gray-800">
+      <div className="flex h-16 items-center justify-center">
+        <BuildingLibraryIcon className="h-8 w-8 text-white" />
+        <span className="ml-2 text-xl font-bold text-white">School MS</span>
       </div>
-    </aside>
+      
+      <nav className="mt-5 px-2">
+        <div className="space-y-1">
+          {navigationItems.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.to}
+              className={({ isActive }) =>
+                `group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                  isActive
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`
+              }
+            >
+              <item.icon
+                className="mr-3 h-6 w-6 flex-shrink-0"
+                aria-hidden="true"
+              />
+              {item.name}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+
+      {/* User Profile Section */}
+      <div className="mt-auto p-4 border-t border-gray-700">
+        <NavLink
+          to="/profile"
+          className="flex items-center text-gray-300 hover:text-white"
+        >
+          <div className="flex-shrink-0">
+            <img
+              className="h-8 w-8 rounded-full"
+              src={user?.profilePicture || '/default-avatar.png'}
+              alt={user?.name}
+            />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium">{user?.name}</p>
+            <p className="text-xs text-gray-500">{user?.role}</p>
+          </div>
+        </NavLink>
+      </div>
+    </div>
   );
 };
 
