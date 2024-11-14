@@ -1,31 +1,44 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const AppError = require('../utils/appError');
 
-const auth = async (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+    let token;
+    if (req.headers.authorization?.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
     if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return next(new AppError('Authentication required', 401));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
 
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      return next(new AppError('User no longer exists', 401));
     }
 
     if (user.status !== 'ACTIVE') {
-      return res.status(403).json({ message: 'Account is not active' });
+      return next(new AppError('Account is not active', 403));
     }
 
     req.user = user;
     req.token = token;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    return next(new AppError('Invalid token', 401));
   }
 };
 
-module.exports = auth;
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(new AppError('Insufficient permissions', 403));
+    }
+    next();
+  };
+};
+
+module.exports = { protect, authorize };

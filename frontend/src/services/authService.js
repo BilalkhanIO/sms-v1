@@ -1,18 +1,63 @@
 import api from '../config/api';
+import jwtDecode from 'jwt-decode';
 
-// Authentication functions
+const TOKEN_KEY = 'token';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+const setTokens = (token, refreshToken) => {
+  localStorage.setItem(TOKEN_KEY, token);
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+};
+
+const clearTokens = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
 export const login = async (credentials) => {
   try {
     const response = await api.post('/auth/login', credentials);
-    if (response.data.requires2FA) {
-      return response.data; // Return early if 2FA is required
+    const { token, refreshToken, user, requires2FA } = response.data;
+
+    if (requires2FA) {
+      return { requires2FA: true, userId: user._id };
     }
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+
+    if (token) {
+      setTokens(token, refreshToken);
     }
-    return response.data;
+
+    return { user, token };
   } catch (error) {
     throw error.response?.data?.message || 'Login failed';
+  }
+};
+
+export const logout = async () => {
+  try {
+    await api.post('/auth/logout');
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    clearTokens();
+  }
+};
+
+export const refreshAccessToken = async () => {
+  try {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshToken) throw new Error('No refresh token');
+
+    const response = await api.post('/auth/refresh-token', { refreshToken });
+    const { token } = response.data;
+    
+    localStorage.setItem(TOKEN_KEY, token);
+    return token;
+  } catch (error) {
+    clearTokens();
+    throw error;
   }
 };
 
@@ -114,10 +159,6 @@ export const getProfile = async () => {
 };
 
 // Token management functions
-export const logout = () => {
-  localStorage.removeItem('token');
-};
-
 export const getToken = () => {
   return localStorage.getItem('token');
 };
@@ -141,7 +182,8 @@ const authService = {
   getProfile,
   logout,
   getToken,
-  isAuthenticated
+  isAuthenticated,
+  refreshAccessToken
 };
 
 export default authService;

@@ -73,13 +73,36 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide email and password', 400));
   }
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email })
+    .select('+password')
+    .select('+twoFactorSecret');
+
   if (!user || !(await user.matchPassword(password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
 
+  if (user.status !== 'ACTIVE') {
+    return next(new AppError('Account is not active', 403));
+  }
+
+  // Handle 2FA if enabled
+  if (user.twoFactorEnabled) {
+    return res.status(200).json({
+      requires2FA: true,
+      userId: user._id
+    });
+  }
+
   const token = generateToken(user._id);
-  res.status(200).json({ token, user });
+  const userResponse = user.toJSON();
+  delete userResponse.password;
+  delete userResponse.twoFactorSecret;
+
+  res.status(200).json({
+    success: true,
+    token,
+    user: userResponse
+  });
 });
 
 exports.forgotPassword = catchAsync(async (req, res) => {
