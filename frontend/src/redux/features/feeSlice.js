@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../utils/api';
 
 export const fetchFeeStats = createAsyncThunk(
   'fee/fetchStats',

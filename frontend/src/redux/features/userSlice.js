@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../config/api';
 
 // Thunk actions
 export const fetchUsers = createAsyncThunk(
