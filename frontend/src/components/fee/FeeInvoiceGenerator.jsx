@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { generateFeeInvoices } from '../../redux/features/feeSlice';
-import { CalendarIcon } from '@heroicons/react/outline';
+import { CalendarIcon } from '@heroicons/react/24/solid';
 
 const FeeInvoiceGenerator = () => {
   const [selectedClass, setSelectedClass] = useState('');

@@ -1,18 +1,28 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@utils': path.resolve(__dirname, './src/utils'),
+      '@services': path.resolve(__dirname, './src/services'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+    },
+  },
   server: {
-    port: 5173,
+    port: 3000,
     proxy: {
       '/api': {
-        target: 'https://effective-cod-9jx56r7jjvjcprx-6000.app.github.dev',
+        target: process.env.VITE_API_URL,
         changeOrigin: true,
-        secure: false,
-        ws: true
-      }
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     }
   }
 })

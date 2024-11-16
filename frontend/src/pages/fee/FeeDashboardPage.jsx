@@ -1,256 +1,166 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchFeeStats } from '../../redux/features/feeSlice';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
-import {
+import { 
   ChartBarIcon,
   UserGroupIcon,
-  ClipboardDocumentIcon,
+  ClipboardDocumentIcon, 
   Cog6ToothIcon,
   BuildingLibraryIcon,
   DocumentTextIcon,
   ArrowPathIcon,
-  BanknotesIcon,
-  CurrencyDollarIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-// Initial state for stats
-const initialStats = {
-  totalCollection: 0,
-  totalOutstanding: 0,
-  defaulterCount: 0,
-  collectionRate: 0,
-  collectionTrend: [],
-  feeTypeDistribution: [],
-  classWiseCollection: [],
-  paymentMethodDistribution: []
-};
+import { useState } from 'react';
+import FeeStructureForm from '../../components/fee/FeeStructureForm';
+import FeePaymentForm from '../../components/fee/FeePaymentForm';
+import FeeInvoiceGenerator from '../../components/fee/FeeInvoiceGenerator';
+import ReminderAnalytics from '../../components/fee/ReminderAnalytics';
+import Modal from '../../components/common/Modal';
 
 const FeeDashboardPage = () => {
-  const dispatch = useDispatch();
-  const feeState = useSelector((state) => state.fee) || { stats: initialStats, loading: false, error: null };
-  const { stats, loading, error } = feeState;
+  const [stats] = useState({
+    totalCollected: "₹1,235,000",
+    pendingFees: "₹235,000",
+    totalStudents: "450",
+    defaulters: "45"
+  });
 
-  useEffect(() => {
-    dispatch(fetchFeeStats());
-  }, [dispatch]);
+  const [activeModal, setActiveModal] = useState(null);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-600">
-          Error loading fee data: {error}
+  const StatCard = ({ title, value, Icon, color }) => (
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="flex items-center">
+        <div className={`p-3 rounded-full ${color} bg-opacity-10`}>
+          <Icon className={`h-6 w-6 ${color}`} />
+        </div>
+        <div className="ml-4">
+          <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+          <p className="text-lg font-semibold text-gray-900">{value}</p>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-500"></div>
+  const QuickActionCard = ({ title, description, Icon, onClick }) => (
+    <button
+      onClick={onClick}
+      className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200 text-left w-full"
+    >
+      <div className="flex items-center">
+        <div className="flex-shrink-0">
+          <Icon className="h-6 w-6 text-indigo-600" />
+        </div>
+        <div className="ml-4">
+          <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+          <p className="mt-1 text-sm text-gray-500">{description}</p>
+        </div>
       </div>
-    );
-  }
+    </button>
+  );
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Fee Dashboard</h1>
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="px-4 py-6 sm:px-0">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900">Fee Management</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Overview of fee collection and management
+          </p>
+        </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <ChartBarIcon className="h-8 w-8 text-green-500" />
-            <div className="ml-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Total Collection
-              </h3>
-              <p className="text-2xl font-semibold text-green-600">
-                {formatCurrency(stats.totalCollection || 0)}
-              </p>
-            </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            title="Total Collected"
+            value={stats.totalCollected}
+            Icon={ChartBarIcon}
+            color="text-green-600"
+          />
+          <StatCard
+            title="Pending Fees"
+            value={stats.pendingFees}
+            Icon={DocumentTextIcon}
+            color="text-yellow-600"
+          />
+          <StatCard
+            title="Total Students"
+            value={stats.totalStudents}
+            Icon={UserGroupIcon}
+            color="text-blue-600"
+          />
+          <StatCard
+            title="Defaulters"
+            value={stats.defaulters}
+            Icon={ClipboardDocumentIcon}
+            color="text-red-600"
+          />
+        </div>
+
+        {/* Analytics Section */}
+        <div className="mb-8">
+          <ReminderAnalytics />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <QuickActionCard
+              title="Record Payment"
+              description="Record new fee payment"
+              Icon={BuildingLibraryIcon}
+              onClick={() => setActiveModal('payment')}
+            />
+            <QuickActionCard
+              title="Generate Invoices"
+              description="Generate fee invoices"
+              Icon={DocumentTextIcon}
+              onClick={() => setActiveModal('invoice')}
+            />
+            <QuickActionCard
+              title="Fee Structure"
+              description="View and modify fee structure"
+              Icon={Cog6ToothIcon}
+              onClick={() => setActiveModal('structure')}
+            />
+            <QuickActionCard
+              title="Payment Reminders"
+              description="Manage payment reminders"
+              Icon={BellIcon}
+              onClick={() => setActiveModal('reminders')}
+            />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <ClipboardDocumentIcon className="h-8 w-8 text-red-500" />
-            <div className="ml-4">
-              <h3 className="text-lg font-medium text-gray-900">Outstanding</h3>
-              <p className="text-2xl font-semibold text-red-600">
-                {formatCurrency(stats.totalOutstanding || 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Modals */}
+        {activeModal === 'payment' && (
+          <Modal onClose={() => setActiveModal(null)} title="Record Fee Payment">
+            <FeePaymentForm onClose={() => setActiveModal(null)} />
+          </Modal>
+        )}
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <UserGroupIcon className="h-8 w-8 text-yellow-500" />
-            <div className="ml-4">
-              <h3 className="text-lg font-medium text-gray-900">Defaulters</h3>
-              <p className="text-2xl font-semibold text-yellow-600">
-                {stats.defaulterCount || 0}
-              </p>
-            </div>
-          </div>
-        </div>
+        {activeModal === 'structure' && (
+          <Modal onClose={() => setActiveModal(null)} title="Fee Structure">
+            <FeeStructureForm onClose={() => setActiveModal(null)} />
+          </Modal>
+        )}
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center">
-            <ArrowPathIcon className="h-8 w-8 text-blue-500" />
-            <div className="ml-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Collection Rate
-              </h3>
-              <p className="text-2xl font-semibold text-blue-600">
-                {stats.collectionRate || 0}%
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+        {activeModal === 'invoice' && (
+          <Modal onClose={() => setActiveModal(null)} title="Generate Invoices">
+            <FeeInvoiceGenerator />
+          </Modal>
+        )}
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Collection Trend */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Collection Trend
-          </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.collectionTrend || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="#0088FE"
-                  name="Collection"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="target"
-                  stroke="#00C49F"
-                  name="Target"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Fee Type Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Fee Type Distribution
-          </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.feeTypeDistribution || []}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {(stats.feeTypeDistribution || []).map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Class-wise Collection */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Class-wise Collection
-          </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.classWiseCollection || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="class" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="collected" fill="#0088FE" name="Collected" />
-                <Bar dataKey="pending" fill="#FF8042" name="Pending" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Payment Method Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Payment Methods
-          </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.paymentMethodDistribution || []}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {(stats.paymentMethodDistribution || []).map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Fee Invoice Generator */}
+        <div className="mb-8">
+          <FeeInvoiceGenerator />
         </div>
       </div>
     </div>
   );
 };
 
-export default FeeDashboardPage; 
+export default FeeDashboardPage;
+
+
+
+

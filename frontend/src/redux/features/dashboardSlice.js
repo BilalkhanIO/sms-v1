@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../utils/axios';
+import api from '../../services/api';
 
 // Async thunks
 export const fetchDashboardStats = createAsyncThunk(
@@ -36,49 +36,60 @@ export const fetchAttendanceData = createAsyncThunk(
   }
 );
 
+const initialState = {
+  stats: {
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalClasses: 0,
+    attendanceRate: 0,
+    studentTrend: 0,
+    teacherTrend: 0,
+    classTrend: 0,
+    attendanceTrend: 0,
+    totalRevenue: 0,
+    revenueTrend: 0,
+    averagePerformance: 0,
+    performanceTrend: 0,
+  },
+  teacherStats: {
+    totalClasses: 0,
+    totalStudents: 0,
+    attendanceRate: 0,
+    pendingTasks: 0,
+    classTrend: 0,
+    studentTrend: 0,
+    attendanceTrend: 0,
+  },
+  studentStats: {
+    attendance: 0,
+    performance: 0,
+    assignments: {
+      completed: 0,
+      total: 0,
+    },
+    upcomingTests: 0,
+    overallGrade: 'N/A',
+    gradeTrend: 0,
+  },
+  upcomingClasses: [],
+  attendanceData: [],
+  recentActivities: [],
+  performanceData: [],
+  loading: {
+    stats: false,
+    activities: false,
+    classes: false,
+    attendance: false,
+  },
+  error: null,
+};
+
 const dashboardSlice = createSlice({
   name: 'dashboard',
-  initialState: {
-    stats: {
-      totalStudents: 0,
-      totalTeachers: 0,
-      totalClasses: 0,
-      attendanceRate: 0,
-      studentTrend: 0,
-      teacherTrend: 0,
-      classTrend: 0,
-      attendanceTrend: 0,
-    },
-    teacherStats: {
-      totalClasses: 0,
-      totalStudents: 0,
-      attendanceRate: 0,
-      pendingAssignments: 0,
-      classTrend: 0,
-      studentTrend: 0,
-      attendanceTrend: 0,
-    },
-    studentStats: {
-      attendance: 0,
-      performance: 0,
-      assignments: 0,
-      upcomingExams: 0,
-    },
-    upcomingClasses: [],
-    attendanceData: [],
-    recentActivities: [],
-    performanceData: [],
-    loading: {
-      stats: false,
-      activities: false,
-      classes: false,
-      attendance: false,
-    },
-    error: null,
-  },
+  initialState,
   reducers: {
     clearDashboard: (state) => {
-      state = { ...state.initialState };
+      return initialState;
     },
   },
   extraReducers: (builder) => {
@@ -86,6 +97,7 @@ const dashboardSlice = createSlice({
       // Stats
       .addCase(fetchDashboardStats.pending, (state) => {
         state.loading.stats = true;
+        state.error = null;
       })
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
         state.loading.stats = false;

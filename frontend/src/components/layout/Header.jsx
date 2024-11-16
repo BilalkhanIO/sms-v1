@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { logout } from '../../redux/features/authSlice';
 import { usePermissions } from '../../hooks/usePermissions';
 import { Menu, Transition } from '@headlessui/react';
-import { UserCircleIcon, BellIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
+import NotificationDropdown from '../notifications/NotificationDropdown';
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -29,9 +30,7 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {/* Notifications */}
             {hasPermission('view_notifications') && (
-              <button className="p-1 rounded-full hover:bg-gray-100">
-                <BellIcon className="h-6 w-6 text-gray-500" />
-              </button>
+              <NotificationDropdown />
             )}
 
             {/* User Menu */}

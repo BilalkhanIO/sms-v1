@@ -17,7 +17,6 @@ import {
 const Sidebar = () => {
   const user = useSelector(state => state.auth.user);
 
-  // Define navigation items based on user role
   const getNavigationItems = () => {
     const commonItems = [
       { name: 'Dashboard', to: '/dashboard', icon: HomeIcon },
@@ -41,7 +40,6 @@ const Sidebar = () => {
       { name: 'Attendance', to: '/teacher/attendance', icon: ClipboardDocumentListIcon },
       { name: 'Grades', to: '/teacher/grades', icon: ChartBarIcon },
       { name: 'Classes', to: '/teacher/classes', icon: BookOpenIcon },
-      { name: 'My Calendar', to: '/teacher/calendar', icon: CalendarIcon },
     ];
 
     const studentItems = [
@@ -49,7 +47,6 @@ const Sidebar = () => {
       { name: 'Attendance', to: '/student/attendance', icon: ClipboardDocumentListIcon },
       { name: 'Courses', to: '/student/courses', icon: BookOpenIcon },
       { name: 'Fee Status', to: '/student/fees', icon: CurrencyDollarIcon },
-      { name: 'My Calendar', to: '/student/calendar', icon: CalendarIcon },
     ];
 
     switch (user?.role) {
@@ -68,7 +65,7 @@ const Sidebar = () => {
   const navigationItems = getNavigationItems();
 
   return (
-    <div className="h-full bg-gray-800">
+    <div className="h-screen bg-gray-800 w-64 fixed">
       <div className="flex h-16 items-center justify-center">
         <BuildingLibraryIcon className="h-8 w-8 text-white" />
         <span className="ml-2 text-xl font-bold text-white">School MS</span>

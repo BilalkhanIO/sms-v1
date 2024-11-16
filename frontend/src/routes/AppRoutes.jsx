@@ -5,21 +5,20 @@ import DashboardPage from '../pages/dashboard/DashboardPage';
 import UserManagementPage from '../pages/admin/UserManagementPage';
 import FeeDashboardPage from '../pages/fee/FeeDashboardPage';
 import CalendarPage from '../pages/calendar/CalendarPage';
-import ProfilePage from '../pages/ProfilePage';
+import UserProfilePage from '../pages/profile/UserProfilePage';
 import TeacherStudentsPage from '../pages/teacher/TeacherStudentsPage';
 import StudentGradesPage from '../pages/student/StudentGradesPage';
+import ExamManagementPage from '../pages/exam/ExamManagementPage';
+import LeaveManagementPage from '../pages/leave/LeaveManagementPage';
+import AttendanceManagementPage from '../pages/attendance/AttendanceManagementPage';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import { ROLES } from '../utils/constants';
 
 const AppRoutes = () => {
   return (
-    <Routes
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true
-      }}
-    >
+    <Routes>
       {/* Public Routes */}
       <Route path="auth">
         <Route path="login" element={<LoginPage />} />
@@ -38,9 +37,7 @@ const AppRoutes = () => {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        
-        {/* Calendar Routes */}
+        <Route path="profile" element={<UserProfilePage />} />
         <Route path="calendar" element={<CalendarPage />} />
 
         {/* Admin Routes */}
@@ -48,7 +45,7 @@ const AppRoutes = () => {
           <Route 
             path="users" 
             element={
-              <ProtectedRoute roles={['SUPER_ADMIN', 'SCHOOL_ADMIN']}>
+              <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN]}>
                 <UserManagementPage />
               </ProtectedRoute>
             } 
@@ -56,17 +53,32 @@ const AppRoutes = () => {
           <Route 
             path="fees" 
             element={
-              <ProtectedRoute roles={['SUPER_ADMIN', 'SCHOOL_ADMIN']}>
+              <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN]}>
                 <FeeDashboardPage />
               </ProtectedRoute>
             } 
           />
-          {/* Add admin calendar route */}
           <Route 
-            path="calendar" 
+            path="exams" 
             element={
-              <ProtectedRoute roles={['SUPER_ADMIN', 'SCHOOL_ADMIN']}>
-                <CalendarPage />
+              <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN]}>
+                <ExamManagementPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="attendance" 
+            element={
+              <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN]}>
+                <AttendanceManagementPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="leave" 
+            element={
+              <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN]}>
+                <LeaveManagementPage />
               </ProtectedRoute>
             } 
           />
@@ -77,17 +89,16 @@ const AppRoutes = () => {
           <Route 
             path="students" 
             element={
-              <ProtectedRoute roles={['TEACHER']}>
+              <ProtectedRoute roles={[ROLES.TEACHER]}>
                 <TeacherStudentsPage />
               </ProtectedRoute>
             } 
           />
-          {/* Add teacher calendar route */}
           <Route 
-            path="calendar" 
+            path="attendance" 
             element={
-              <ProtectedRoute roles={['TEACHER']}>
-                <CalendarPage />
+              <ProtectedRoute roles={[ROLES.TEACHER]}>
+                <AttendanceManagementPage />
               </ProtectedRoute>
             } 
           />
@@ -98,28 +109,23 @@ const AppRoutes = () => {
           <Route 
             path="grades" 
             element={
-              <ProtectedRoute roles={['STUDENT']}>
+              <ProtectedRoute roles={[ROLES.STUDENT]}>
                 <StudentGradesPage />
               </ProtectedRoute>
             } 
           />
-          {/* Add student calendar route */}
           <Route 
-            path="calendar" 
+            path="attendance" 
             element={
-              <ProtectedRoute roles={['STUDENT']}>
-                <CalendarPage />
+              <ProtectedRoute roles={[ROLES.STUDENT]}>
+                <AttendanceManagementPage />
               </ProtectedRoute>
             } 
           />
         </Route>
       </Route>
 
-      {/* Redirect login to auth/login */}
-      <Route path="login" element={<Navigate to="/auth/login" replace />} />
-      <Route path="register" element={<Navigate to="/auth/register" replace />} />
-      
-      {/* 404 Route */}
+      {/* Fallback Routes */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

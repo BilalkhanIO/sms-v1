@@ -1,54 +1,59 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import examService from '../../services/examService';
 
 export const fetchExams = createAsyncThunk(
   'exam/fetchExams',
-  async () => {
-    const response = await fetch('/api/exams');
-    return response.json();
+  async (params) => {
+    const response = await examService.getExams(params);
+    return response.data;
+  }
+);
+
+export const fetchExamById = createAsyncThunk(
+  'exam/fetchExamById',
+  async (id) => {
+    const response = await examService.getExamById(id);
+    return response.data;
   }
 );
 
 export const createExam = createAsyncThunk(
   'exam/createExam',
   async (examData) => {
-    const response = await fetch('/api/exams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(examData),
-    });
-    return response.json();
-  }
-);
-
-export const scheduleExam = createAsyncThunk(
-  'exam/scheduleExam',
-  async (scheduleData) => {
-    const response = await fetch('/api/exams/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(scheduleData),
-    });
-    return response.json();
+    const response = await examService.createExam(examData);
+    return response.data;
   }
 );
 
 export const updateExam = createAsyncThunk(
   'exam/updateExam',
-  async ({ id, examData }) => {
-    const response = await fetch(`/api/exams/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(examData),
-    });
-    return response.json();
+  async ({ id, data }) => {
+    const response = await examService.updateExam(id, data);
+    return response.data;
   }
 );
 
 export const deleteExam = createAsyncThunk(
   'exam/deleteExam',
   async (id) => {
-    await fetch(`/api/exams/${id}`, { method: 'DELETE' });
+    await examService.deleteExam(id);
     return id;
+  }
+);
+
+export const scheduleExam = createAsyncThunk(
+  'exam/scheduleExam',
+  async ({ examId, scheduleData }) => {
+    const response = await examService.scheduleExam(examId, scheduleData);
+    return response.data;
+  }
+);
+
+export const submitResults = createAsyncThunk(
+  'exam/submitResults',
+  async ({ examId, resultsData }) => {
+    const response = await examService.submitResults(examId, resultsData);
+    return response.data;
   }
 );
 
@@ -56,71 +61,92 @@ const examSlice = createSlice({
   name: 'exam',
   initialState: {
     exams: [],
-    schedules: [],
+    selectedExam: null,
+    results: [],
     loading: false,
     error: null,
   },
   reducers: {
-    clearExamError: (state) => {
-      state.error = null;
+    clearSelectedExam: (state) => {
+      state.selectedExam = null;
+    },
+    clearExamResults: (state) => {
+      state.results = [];
     },
   },
   extraReducers: (builder) => {
     builder
-      // Handle fetchExams
+      // Fetch Exams
       .addCase(fetchExams.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchExams.fulfilled, (state, action) => {
-        state.exams = action.payload;
         state.loading = false;
+        state.exams = action.payload;
       })
       .addCase(fetchExams.rejected, (state, action) => {
-        state.error = action.error.message;
         state.loading = false;
+        state.error = action.error.message;
       })
-      // Handle createExam
-      .addCase(createExam.pending, (state) => {
+
+      // Fetch Exam By ID
+      .addCase(fetchExamById.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
+      .addCase(fetchExamById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedExam = action.payload;
+      })
+      .addCase(fetchExamById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+
+      // Create Exam
       .addCase(createExam.fulfilled, (state, action) => {
-        state.exams.push(action.payload);
-        state.loading = false;
+        state.exams.unshift(action.payload);
       })
-      .addCase(createExam.rejected, (state, action) => {
-        state.error = action.error.message;
-        state.loading = false;
-      })
-      // Handle scheduleExam
-      .addCase(scheduleExam.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(scheduleExam.fulfilled, (state, action) => {
-        const examIndex = state.exams.findIndex(
-          (exam) => exam.id === action.payload.examId
-        );
-        if (examIndex !== -1) {
-          state.exams[examIndex].schedules = action.payload.schedules;
-        }
-        state.loading = false;
-      })
-      .addCase(scheduleExam.rejected, (state, action) => {
-        state.error = action.error.message;
-        state.loading = false;
-      })
-      // Handle updateExam
+
+      // Update Exam
       .addCase(updateExam.fulfilled, (state, action) => {
-        const index = state.exams.findIndex((exam) => exam.id === action.payload.id);
+        const index = state.exams.findIndex(e => e.id === action.payload.id);
         if (index !== -1) {
           state.exams[index] = action.payload;
         }
+        if (state.selectedExam?.id === action.payload.id) {
+          state.selectedExam = action.payload;
+        }
       })
-      // Handle deleteExam
+
+      // Delete Exam
       .addCase(deleteExam.fulfilled, (state, action) => {
-        state.exams = state.exams.filter((exam) => exam.id !== action.payload);
+        state.exams = state.exams.filter(e => e.id !== action.payload);
+        if (state.selectedExam?.id === action.payload) {
+          state.selectedExam = null;
+        }
+      })
+
+      // Schedule Exam
+      .addCase(scheduleExam.fulfilled, (state, action) => {
+        const index = state.exams.findIndex(e => e.id === action.payload.id);
+        if (index !== -1) {
+          state.exams[index] = action.payload;
+        }
+        if (state.selectedExam?.id === action.payload.id) {
+          state.selectedExam = action.payload;
+        }
+      })
+
+      // Submit Results
+      .addCase(submitResults.fulfilled, (state, action) => {
+        if (state.selectedExam?.id === action.payload.examId) {
+          state.results = action.payload.results;
+        }
       });
   },
 });
 
-export const { clearExamError } = examSlice.actions;
+export const { clearSelectedExam, clearExamResults } = examSlice.actions;
 export default examSlice.reducer; 

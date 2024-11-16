@@ -1,86 +1,89 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchFeeStats } from '../../redux/features/feeSlice';
+import { useEffect, useState } from 'react';
+import { useApi } from '../../hooks/useApi';
+import dashboardService from '../../services/dashboardService';
+import StatsCard from '../../components/dashboard/StatsCard';
+import PerformanceChart from '../../components/dashboard/PerformanceChart';
+import RecentActivities from '../../components/dashboard/RecentActivities';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ErrorMessage from '../../components/common/ErrorMessage';
 import {
-  ChartBarIcon,
   UserGroupIcon,
-  DocumentTextIcon,
-  CurrencyDollarIcon
+  AcademicCapIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 const AdminDashboard = () => {
-  const dispatch = useDispatch();
-  // Provide default values to prevent undefined errors
-  const { stats = {}, loading } = useSelector((state) => state.fee || { stats: {}, loading: false });
+  const [dashboardData, setDashboardData] = useState(null);
+  const { loading, error, execute: fetchDashboardData } = useApi(
+    dashboardService.getStats
+  );
 
   useEffect(() => {
-    dispatch(fetchFeeStats());
-  }, [dispatch]);
+    const loadDashboardData = async () => {
+      try {
+        const data = await fetchDashboardData('admin');
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      }
+    };
+
+    loadDashboardData();
+  }, [fetchDashboardData]);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error.message} />;
+  if (!dashboardData) return null;
 
   const statsCards = [
     {
       title: 'Total Students',
-      value: stats.totalStudents || 0,
+      value: dashboardData.totalStudents || 0,
       icon: UserGroupIcon,
-      color: 'text-blue-600'
+      trend: dashboardData.studentTrend,
+      color: 'blue'
     },
     {
       title: 'Total Revenue',
-      value: stats.totalCollection || 0,
+      value: dashboardData.totalRevenue ? `$${dashboardData.totalRevenue}` : '$0',
       icon: CurrencyDollarIcon,
-      color: 'text-green-600'
+      trend: dashboardData.revenueTrend,
+      color: 'green'
     },
     {
-      title: 'Pending Fees',
-      value: stats.totalOutstanding || 0,
-      icon: DocumentTextIcon,
-      color: 'text-yellow-600'
-    },
-    {
-      title: 'Collection Rate',
-      value: `${stats.collectionRate || 0}%`,
+      title: 'Attendance Rate',
+      value: `${dashboardData.attendanceRate || 0}%`,
       icon: ChartBarIcon,
-      color: 'text-purple-600'
+      trend: dashboardData.attendanceTrend,
+      color: 'indigo'
+    },
+    {
+      title: 'Performance',
+      value: `${dashboardData.averagePerformance || 0}%`,
+      icon: AcademicCapIcon,
+      trend: dashboardData.performanceTrend,
+      color: 'purple'
     }
   ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statsCards.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className={`p-3 rounded-full ${stat.color} bg-opacity-10`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {typeof stat.value === 'number' && stat.title.includes('Revenue') 
-                    ? new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD'
-                      }).format(stat.value)
-                    : stat.value}
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatsCard key={index} {...stat} />
         ))}
       </div>
 
-      {/* Additional dashboard content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Add your charts or other dashboard widgets here */}
+      {/* Charts and Activities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PerformanceChart 
+          data={dashboardData.performanceData}
+          dataKeys={['students', 'attendance', 'performance']}
+          colors={['#60A5FA', '#34D399', '#818CF8']}
+        />
+        <RecentActivities data={dashboardData.recentActivities} />
       </div>
     </div>
   );

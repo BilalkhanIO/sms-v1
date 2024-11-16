@@ -15,8 +15,8 @@ import {
 } from '../../redux/features/userSlice';
 import UserTable from '../../components/admin/UserTable';
 import UserFilters from '../../components/admin/UserFilters';
-import UserCreateForm from '../../components/user/UserCreateForm';
-import UserEditForm from '../../components/user/UserEditForm';
+// import UserCreateForm from '../../components/user/UserCreateForm';
+// import UserEditForm from '../../components/user/UserEditForm';
 import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
@@ -137,7 +137,7 @@ const UserManagementPage = () => {
           onClose={handleCloseCreateModal}
           title="Create New User"
         >
-          <UserCreateForm onClose={handleCloseCreateModal} onSuccess={handleCreateSuccess} />
+          {/* <UserCreateForm onClose={handleCloseCreateModal} onSuccess={handleCreateSuccess} /> */}
         </Modal>
 
         <Modal
@@ -145,11 +145,11 @@ const UserManagementPage = () => {
           onClose={handleCloseEditModal}
           title="Edit User"
         >
-          <UserEditForm
+          {/* <UserEditForm
             user={selectedUser}
             onClose={handleCloseEditModal}
             onSuccess={handleEditSuccess}
-          />
+          /> */}
         </Modal>
       </div>
     </div>

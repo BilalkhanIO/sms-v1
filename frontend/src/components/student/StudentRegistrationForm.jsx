@@ -1,24 +1,17 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { createStudent } from '../../redux/features/studentSlice';
-import LoadingSpinner from '../common/LoadingSpinner';
-import { validateStudentForm } from '../../utils/validation/studentValidation';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { registerStudent } from '../../redux/features/studentSlice';
+import { validateStudentForm } from '../../utils/validation/studentValidation';
+import FileUpload from '../common/FileUpload';
+import { useToast } from '../../contexts/ToastContext';
 
 const StudentRegistrationForm = () => {
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.student);
   const [formData, setFormData] = useState({
-    // Basic Information
     firstName: '',
     lastName: '',
-    rollNumber: '',
     dateOfBirth: '',
     gender: '',
-    bloodGroup: '',
-
-    // Contact Information
     email: '',
     phone: '',
     address: {
@@ -28,50 +21,74 @@ const StudentRegistrationForm = () => {
       postalCode: '',
       country: '',
     },
-
-    // Academic Information
-    admissionDate: new Date().toISOString().split('T')[0],
-    currentClass: '',
-    section: '',
-    academicYear: '',
-    previousSchool: {
+    guardianInfo: {
       name: '',
-      address: '',
-      leavingDate: '',
+      relationship: '',
+      phone: '',
+      email: '',
+      occupation: '',
     },
-
-    // Parent/Guardian Information
-    parentInfo: {
-      father: {
-        name: '',
-        occupation: '',
-        phone: '',
-        email: '',
-      },
-      mother: {
-        name: '',
-        occupation: '',
-        phone: '',
-        email: '',
-      },
-      guardian: {
-        name: '',
-        relationship: '',
-        phone: '',
-        email: '',
-      },
+    academicInfo: {
+      admissionDate: new Date().toISOString().split('T')[0],
+      class: '',
+      section: '',
+      rollNumber: '',
+      previousSchool: '',
     },
+    documents: {
+      photo: null,
+      birthCertificate: null,
+      previousSchoolCertificate: null,
+    }
   });
 
-  const handleChange = (e) => {
+  const [errors, setErrors] = useState({});
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { addToast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validateStudentForm(formData);
+    
+    if (Object.keys(validationErrors).length === 0) {
+      try {
+        const formDataToSend = new FormData();
+        
+        // Append all text data
+        Object.keys(formData).forEach(key => {
+          if (key !== 'documents') {
+            formDataToSend.append(key, JSON.stringify(formData[key]));
+          }
+        });
+        
+        // Append files
+        Object.keys(formData.documents).forEach(key => {
+          if (formData.documents[key]) {
+            formDataToSend.append(key, formData.documents[key]);
+          }
+        });
+
+        await dispatch(registerStudent(formDataToSend)).unwrap();
+        addToast('Student registered successfully', 'success');
+        navigate('/students');
+      } catch (error) {
+        addToast(error.message || 'Failed to register student', 'error');
+      }
+    } else {
+      setErrors(validationErrors);
+    }
+  };
+
+  const handleInputChange = (e, section = null) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
+    
+    if (section) {
       setFormData(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
+        [section]: {
+          ...prev[section],
+          [name]: value
         }
       }));
     } else {
@@ -82,379 +99,87 @@ const StudentRegistrationForm = () => {
     }
   };
 
-  const handleParentInfoChange = (parent, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      parentInfo: {
-        ...prev.parentInfo,
-        [parent]: {
-          ...prev.parentInfo[parent],
-          [field]: value
-        }
-      }
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errors = validateStudentForm(formData);
-    
-    if (Object.keys(errors).length === 0) {
-      try {
-        await dispatch(createStudent(formData)).unwrap();
-        toast.success('Student registered successfully');
-        navigate('/students');
-      } catch (error) {
-        toast.error(error.message || 'Failed to register student');
-      }
-    } else {
-      setErrors(errors);
-    }
-  };
-
-  if (loading) return <LoadingSpinner />;
-
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {error && (
-        <div className="bg-red-50 p-4 rounded-md">
-          <p className="text-red-600">{error}</p>
-        </div>
-      )}
-
-      {/* Basic Information */}
+      {/* Personal Information */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="text"
-            name="firstName"
-            placeholder="First Name"
-            value={formData.firstName}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <input
-            type="text"
-            name="lastName"
-            placeholder="Last Name"
-            value={formData.lastName}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <input
-            type="text"
-            name="rollNumber"
-            placeholder="Roll Number"
-            value={formData.rollNumber}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <input
-            type="date"
-            name="dateOfBirth"
-            value={formData.dateOfBirth}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className="input-field"
-            required
-          >
-            <option value="">Select Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-          <select
-            name="bloodGroup"
-            value={formData.bloodGroup}
-            onChange={handleChange}
-            className="input-field"
-            required
-          >
-            <option value="">Select Blood Group</option>
-            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(group => (
-              <option key={group} value={group}>{group}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          Personal Information
+        </h3>
+        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          <div className="sm:col-span-3">
+            <label className="block text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+            )}
+          </div>
 
-      {/* Contact Information */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">Contact Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <input
-            type="tel"
-            name="phone"
-            placeholder="Phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <input
-            type="text"
-            name="address.street"
-            placeholder="Street Address"
-            value={formData.address.street}
-            onChange={handleChange}
-            className="input-field md:col-span-2"
-          />
-          <input
-            type="text"
-            name="address.city"
-            placeholder="City"
-            value={formData.address.city}
-            onChange={handleChange}
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="address.state"
-            placeholder="State"
-            value={formData.address.state}
-            onChange={handleChange}
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="address.postalCode"
-            placeholder="Postal Code"
-            value={formData.address.postalCode}
-            onChange={handleChange}
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="address.country"
-            placeholder="Country"
-            value={formData.address.country}
-            onChange={handleChange}
-            className="input-field"
-          />
+          {/* Add other personal information fields */}
         </div>
       </div>
 
       {/* Academic Information */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">Academic Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="date"
-            name="admissionDate"
-            value={formData.admissionDate}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <select
-            name="currentClass"
-            value={formData.currentClass}
-            onChange={handleChange}
-            className="input-field"
-            required
-          >
-            <option value="">Select Class</option>
-            {/* Add class options dynamically from your class data */}
-          </select>
-          <input
-            type="text"
-            name="section"
-            placeholder="Section"
-            value={formData.section}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          <input
-            type="text"
-            name="academicYear"
-            placeholder="Academic Year"
-            value={formData.academicYear}
-            onChange={handleChange}
-            className="input-field"
-            required
-          />
-          
-          {/* Previous School Information */}
-          <div className="col-span-2">
-            <h4 className="text-md font-medium mb-3">Previous School Information (Optional)</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="previousSchool.name"
-                placeholder="Previous School Name"
-                value={formData.previousSchool.name}
-                onChange={handleChange}
-                className="input-field"
-              />
-              <input
-                type="text"
-                name="previousSchool.address"
-                placeholder="Previous School Address"
-                value={formData.previousSchool.address}
-                onChange={handleChange}
-                className="input-field"
-              />
-              <input
-                type="date"
-                name="previousSchool.leavingDate"
-                value={formData.previousSchool.leavingDate}
-                onChange={handleChange}
-                className="input-field"
-              />
-            </div>
-          </div>
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          Academic Information
+        </h3>
+        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          {/* Add academic information fields */}
         </div>
       </div>
 
-      {/* Parent Information */}
+      {/* Guardian Information */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">Parent/Guardian Information</h3>
-        
-        {/* Father's Information */}
-        <div className="mb-6">
-          <h4 className="text-md font-medium mb-3">Father's Information</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Father's Name"
-              value={formData.parentInfo.father.name}
-              onChange={(e) => handleParentInfoChange('father', 'name', e.target.value)}
-              className="input-field"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Father's Occupation"
-              value={formData.parentInfo.father.occupation}
-              onChange={(e) => handleParentInfoChange('father', 'occupation', e.target.value)}
-              className="input-field"
-            />
-            <input
-              type="tel"
-              placeholder="Father's Phone"
-              value={formData.parentInfo.father.phone}
-              onChange={(e) => handleParentInfoChange('father', 'phone', e.target.value)}
-              className="input-field"
-              required
-            />
-            <input
-              type="email"
-              placeholder="Father's Email"
-              value={formData.parentInfo.father.email}
-              onChange={(e) => handleParentInfoChange('father', 'email', e.target.value)}
-              className="input-field"
-            />
-          </div>
-        </div>
-
-        {/* Mother's Information */}
-        <div className="mb-6">
-          <h4 className="text-md font-medium mb-3">Mother's Information</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Mother's Name"
-              value={formData.parentInfo.mother.name}
-              onChange={(e) => handleParentInfoChange('mother', 'name', e.target.value)}
-              className="input-field"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Mother's Occupation"
-              value={formData.parentInfo.mother.occupation}
-              onChange={(e) => handleParentInfoChange('mother', 'occupation', e.target.value)}
-              className="input-field"
-            />
-            <input
-              type="tel"
-              placeholder="Mother's Phone"
-              value={formData.parentInfo.mother.phone}
-              onChange={(e) => handleParentInfoChange('mother', 'phone', e.target.value)}
-              className="input-field"
-              required
-            />
-            <input
-              type="email"
-              placeholder="Mother's Email"
-              value={formData.parentInfo.mother.email}
-              onChange={(e) => handleParentInfoChange('mother', 'email', e.target.value)}
-              className="input-field"
-            />
-          </div>
-        </div>
-
-        {/* Guardian's Information */}
-        <div>
-          <h4 className="text-md font-medium mb-3">Guardian's Information (Optional)</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Guardian's Name"
-              value={formData.parentInfo.guardian.name}
-              onChange={(e) => handleParentInfoChange('guardian', 'name', e.target.value)}
-              className="input-field"
-            />
-            <input
-              type="text"
-              placeholder="Relationship with Student"
-              value={formData.parentInfo.guardian.relationship}
-              onChange={(e) => handleParentInfoChange('guardian', 'relationship', e.target.value)}
-              className="input-field"
-            />
-            <input
-              type="tel"
-              placeholder="Guardian's Phone"
-              value={formData.parentInfo.guardian.phone}
-              onChange={(e) => handleParentInfoChange('guardian', 'phone', e.target.value)}
-              className="input-field"
-            />
-            <input
-              type="email"
-              placeholder="Guardian's Email"
-              value={formData.parentInfo.guardian.email}
-              onChange={(e) => handleParentInfoChange('guardian', 'email', e.target.value)}
-              className="input-field"
-            />
-          </div>
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          Guardian Information
+        </h3>
+        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          {/* Add guardian information fields */}
         </div>
       </div>
 
-      {/* Form Submission */}
-      <div className="flex justify-end space-x-4">
+      {/* Documents */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+          Documents
+        </h3>
+        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3">
+          <FileUpload
+            label="Student Photo"
+            accept="image/*"
+            onChange={(file) => setFormData(prev => ({
+              ...prev,
+              documents: { ...prev.documents, photo: file }
+            }))}
+            error={errors.photo}
+          />
+          {/* Add other document upload fields */}
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <div className="flex justify-end space-x-3">
         <button
           type="button"
-          onClick={() => setFormData(initialFormData)}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          onClick={() => navigate('/students')}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          Reset Form
+          Cancel
         </button>
         <button
           type="submit"
-          disabled={loading}
-          className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
         >
-          {loading ? 'Registering...' : 'Register Student'}
+          Register Student
         </button>
       </div>
     </form>

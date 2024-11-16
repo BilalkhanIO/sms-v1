@@ -1,50 +1,72 @@
-import { useSelector } from 'react-redux';
+import { useDashboard } from '../../hooks/useDashboard';
 import StatsCard from '../../components/dashboard/StatsCard';
-import UpcomingClasses from '../../components/dashboard/UpcomingClasses';
 import StudentAttendance from '../../components/dashboard/StudentAttendance';
+import UpcomingClasses from '../../components/dashboard/UpcomingClasses';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ErrorMessage from '../../components/common/ErrorMessage';
+import {
+  UserGroupIcon,
+  BookOpenIcon,
+  ChartBarIcon,
+  ClipboardDocumentListIcon
+} from '@heroicons/react/24/outline';
 
 const TeacherDashboard = () => {
-  const teacherStats = useSelector((state) => state.dashboard.teacherStats);
+  const { dashboardData, loading, error } = useDashboard('TEACHER');
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error} />;
+  if (!dashboardData) return null;
+
+  const statsCards = [
+    {
+      title: 'My Students',
+      value: dashboardData.totalStudents || 0,
+      icon: UserGroupIcon,
+      trend: dashboardData.studentTrend,
+      color: 'blue'
+    },
+    {
+      title: 'Classes Today',
+      value: dashboardData.todayClasses || 0,
+      icon: BookOpenIcon,
+      color: 'green'
+    },
+    {
+      title: 'Attendance Rate',
+      value: `${dashboardData.attendanceRate || 0}%`,
+      icon: ChartBarIcon,
+      trend: dashboardData.attendanceTrend,
+      color: 'indigo'
+    },
+    {
+      title: 'Pending Tasks',
+      value: dashboardData.pendingTasks || 0,
+      icon: ClipboardDocumentListIcon,
+      color: 'yellow'
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatsCard
-          title="Total Classes"
-          value={teacherStats?.totalClasses || 0}
-          trend={teacherStats?.classTrend || 0}
-          icon="book-open"
-        />
-        <StatsCard
-          title="Total Students"
-          value={teacherStats?.totalStudents || 0}
-          trend={teacherStats?.studentTrend || 0}
-          icon="users"
-        />
-        <StatsCard
-          title="Attendance Rate"
-          value={`${teacherStats?.attendanceRate || 0}%`}
-          trend={teacherStats?.attendanceTrend || 0}
-          icon="chart-bar"
-        />
-        <StatsCard
-          title="Assignments"
-          value={teacherStats?.pendingAssignments || 0}
-          trend={0}
-          icon="clipboard-list"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statsCards.map((stat, index) => (
+          <StatsCard key={index} {...stat} />
+        ))}
       </div>
 
-      {/* Schedule and Attendance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Upcoming Classes</h3>
-          <UpcomingClasses />
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Class Attendance
+          </h3>
+          <StudentAttendance data={dashboardData.attendanceData} />
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Student Attendance</h3>
-          <StudentAttendance />
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Upcoming Classes
+          </h3>
+          <UpcomingClasses data={dashboardData.upcomingClasses} />
         </div>
       </div>
     </div>

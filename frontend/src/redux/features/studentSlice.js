@@ -1,68 +1,56 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import studentService from '../../services/studentService';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-// Add createStudent action
-export const createStudent = createAsyncThunk(
-  'student/create',
-  async (data) => {
-    const response = await axios.post(`${API_URL}/students`, data);
-    return response.data;
-  }
-);
-
-// Add updateStudent action
-export const updateStudent = createAsyncThunk(
-  'student/update',
-  async ({ id, data }) => {
-    const response = await axios.put(`${API_URL}/students/${id}`, data);
-    return response.data;
-  }
-);
-
-// Add fetchStudents action
+// Async thunks
 export const fetchStudents = createAsyncThunk(
-  'student/fetchAll',
-  async (filters = {}) => {
-    const response = await axios.get(`${API_URL}/students`, { params: filters });
+  'student/fetchStudents',
+  async (params) => {
+    const response = await studentService.getStudents(params);
+    return response;
+  }
+);
+
+export const fetchStudentById = createAsyncThunk(
+  'student/fetchStudentById',
+  async (id) => {
+    const response = await studentService.getStudentById(id);
+    return response;
+  }
+);
+
+export const registerStudent = createAsyncThunk(
+  'student/registerStudent',
+  async (studentData) => {
+    const response = await studentService.registerStudent(studentData);
+    return response;
+  }
+);
+
+export const updateStudent = createAsyncThunk(
+  'student/updateStudent',
+  async ({ id, data }) => {
+    const response = await studentService.updateStudent(id, data);
     return response.data;
   }
 );
 
-// Previous actions
 export const deleteStudent = createAsyncThunk(
-  'student/delete',
+  'student/deleteStudent',
   async (id) => {
-    await axios.delete(`${API_URL}/students/${id}`);
+    await studentService.deleteStudent(id);
     return id;
   }
 );
 
-export const markAttendance = createAsyncThunk(
-  'student/markAttendance',
-  async ({ studentId, data }) => {
-    const response = await axios.post(`${API_URL}/students/${studentId}/attendance`, data);
-    return response.data;
-  }
-);
-
-export const getAttendanceReport = createAsyncThunk(
-  'student/getAttendanceReport',
-  async ({ studentId, startDate, endDate }) => {
-    const response = await axios.get(
-      `${API_URL}/students/${studentId}/attendance-report`,
-      { params: { startDate, endDate } }
-    );
-    return response.data;
-  }
-);
-
-export const getStudentById = createAsyncThunk(
-  'student/getById',
-  async (id) => {
-    const response = await axios.get(`${API_URL}/students/${id}`);
-    return response.data;
+export const fetchPerformanceStats = createAsyncThunk(
+  'student/fetchPerformanceStats',
+  async ({ studentId, subject }, { rejectWithValue }) => {
+    try {
+      const response = await studentService.getPerformanceStats(studentId, subject);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch performance stats');
+    }
   }
 );
 
@@ -71,113 +59,134 @@ const studentSlice = createSlice({
   initialState: {
     students: [],
     selectedStudent: null,
-    attendance: {},
     loading: false,
     error: null,
     total: 0,
     page: 1,
-    limit: 10
+    limit: 10,
+    performanceStats: {
+      overallGrade: null,
+      rank: null,
+      percentile: null,
+      subjects: [],
+      gradeTrend: [],
+      subjectPerformance: [],
+      assessments: []
+    },
+    loadingPerformance: false,
+    performanceError: null,
   },
   reducers: {
-    clearError: (state) => {
-      state.error = null;
-    }
+    clearSelectedStudent: (state) => {
+      state.selectedStudent = null;
+    },
+    setPage: (state, action) => {
+      state.page = action.payload;
+    },
+    setLimit: (state, action) => {
+      state.limit = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Create Student
-      .addCase(createStudent.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(createStudent.fulfilled, (state, action) => {
-        state.loading = false;
-        state.students.unshift(action.payload.data.student);
-        state.total += 1;
-      })
-      .addCase(createStudent.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // Update Student
-      .addCase(updateStudent.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(updateStudent.fulfilled, (state, action) => {
-        state.loading = false;
-        const index = state.students.findIndex(s => s._id === action.payload.data.student._id);
-        if (index !== -1) {
-          state.students[index] = action.payload.data.student;
-        }
-        state.selectedStudent = action.payload.data.student;
-      })
-      .addCase(updateStudent.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
       // Fetch Students
       .addCase(fetchStudents.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchStudents.fulfilled, (state, action) => {
         state.loading = false;
-        state.students = action.payload.data.students;
-        state.total = action.payload.data.total;
-        state.page = action.payload.data.page;
+        state.students = action.payload.students;
+        state.total = action.payload.total;
       })
       .addCase(fetchStudents.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })
+
+      // Fetch Student By ID
+      .addCase(fetchStudentById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStudentById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedStudent = action.payload;
+      })
+      .addCase(fetchStudentById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+
+      // Register Student
+      .addCase(registerStudent.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(registerStudent.fulfilled, (state, action) => {
+        state.loading = false;
+        state.students.unshift(action.payload);
+        state.total += 1;
+      })
+      .addCase(registerStudent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+
+      // Update Student
+      .addCase(updateStudent.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateStudent.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.students.findIndex(s => s._id === action.payload._id);
+        if (index !== -1) {
+          state.students[index] = action.payload;
+        }
+        if (state.selectedStudent?._id === action.payload._id) {
+          state.selectedStudent = action.payload;
+        }
+      })
+      .addCase(updateStudent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+
       // Delete Student
       .addCase(deleteStudent.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(deleteStudent.fulfilled, (state, action) => {
         state.loading = false;
-        state.students = state.students.filter(student => student._id !== action.payload);
+        state.students = state.students.filter(s => s._id !== action.payload);
+        state.total -= 1;
+        if (state.selectedStudent?._id === action.payload) {
+          state.selectedStudent = null;
+        }
       })
       .addCase(deleteStudent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })
-      // Mark Attendance
-      .addCase(markAttendance.pending, (state) => {
-        state.loading = true;
+
+      // Performance Stats cases
+      .addCase(fetchPerformanceStats.pending, (state) => {
+        state.loadingPerformance = true;
+        state.performanceError = null;
       })
-      .addCase(markAttendance.fulfilled, (state, action) => {
-        state.loading = false;
-        state.attendance = action.payload.data;
+      .addCase(fetchPerformanceStats.fulfilled, (state, action) => {
+        state.loadingPerformance = false;
+        state.performanceStats = action.payload;
+        state.performanceError = null;
       })
-      .addCase(markAttendance.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // Get Attendance Report
-      .addCase(getAttendanceReport.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getAttendanceReport.fulfilled, (state, action) => {
-        state.loading = false;
-        state.attendance = action.payload.data;
-      })
-      .addCase(getAttendanceReport.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // Get Student By ID
-      .addCase(getStudentById.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getStudentById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.selectedStudent = action.payload.data;
-      })
-      .addCase(getStudentById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+      .addCase(fetchPerformanceStats.rejected, (state, action) => {
+        state.loadingPerformance = false;
+        state.performanceError = action.payload;
       });
-  }
+  },
 });
 
-export const { clearError } = studentSlice.actions;
+export const { clearSelectedStudent, setPage, setLimit } = studentSlice.actions;
 export default studentSlice.reducer; 

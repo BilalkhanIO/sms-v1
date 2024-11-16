@@ -1,129 +1,103 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import userService from '../../services/userService';
 
-// Thunk actions
+export const selectUsers = (state) => state.user.users;
+export const selectLoading = (state) => state.user.loading;
+export const selectError = (state) => state.user.error;
+export const selectSuccess = (state) => state.user.success;
+export const selectSelectedUser = (state) => state.user.selectedUser;
+export const selectTotal = (state) => state.user.total;
+export const selectPage = (state) => state.user.page;
+export const selectLimit = (state) => state.user.limit;
+
 export const fetchUsers = createAsyncThunk(
   'user/fetchUsers',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await api.get('/users');
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch users');
-    }
+  async (params) => {
+    const response = await userService.getUsers(params);
+    return response.data;
   }
 );
 
-export const updateUser = createAsyncThunk(
-  'user/updateUser',
-  async ({ id, userData }, { rejectWithValue }) => {
-    try {
-      if (!id) throw new Error('User ID is required');
-      const response = await api.put(`/users/${id}`, userData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update user');
-    }
-  }
-);
-
-export const updateProfile = createAsyncThunk(
-  'user/updateProfile',
-  async (profileData, { rejectWithValue }) => {
-    try {
-      const response = await api.put('/users/profile', profileData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
-    }
-  }
-);
-
-export const uploadProfilePicture = createAsyncThunk(
-  'user/uploadProfilePicture',
-  async (file, { rejectWithValue }) => {
-    try {
-      const formData = new FormData();
-      formData.append('profilePicture', file);
-      const response = await api.post('/users/profile/picture', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to upload picture');
-    }
+export const fetchUserById = createAsyncThunk(
+  'user/fetchUserById',
+  async (id) => {
+    const response = await userService.getUserById(id);
+    return response.data;
   }
 );
 
 export const createUser = createAsyncThunk(
   'user/createUser',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const formattedData = {
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        email: userData.email,
-        password: userData.password,
-        role: userData.role,
-        status: userData.status,
-      };
+  async (userData) => {
+    const response = await userService.createUser(userData);
+    return response.data;
+  }
+);
 
-      const response = await api.post('/users', formattedData);
-      return response.data;
-    } catch (error) {
-      console.error('Create user error:', error);
-      return rejectWithValue(
-        error.response?.data?.message || 
-        error.message || 
-        'Failed to create user'
-      );
-    }
+export const updateUser = createAsyncThunk(
+  'user/updateUser',
+  async ({ id, userData }) => {
+    const response = await userService.updateUser(id, userData);
+    return response.data;
   }
 );
 
 export const deleteUser = createAsyncThunk(
   'user/deleteUser',
-  async (userId, { rejectWithValue }) => {
-    try {
-      if (!userId) throw new Error('User ID is required');
-      await api.delete(`/users/${userId}`);
-      return userId;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete user');
-    }
+  async (id) => {
+    await userService.deleteUser(id);
+    return id;
   }
 );
 
-// Initial state
-const initialState = {
-  users: [],
-  selectedUser: null,
-  loading: false,
-  error: null,
-  success: false,
-  profileUpdateSuccess: false,
-  profilePictureUpdateSuccess: false,
-};
+export const updateUserProfile = createAsyncThunk(
+  'user/updateProfile',
+  async ({ id, profileData }) => {
+    const response = await userService.updateProfile(id, profileData);
+    return response.data;
+  }
+);
+
+export const uploadProfilePicture = createAsyncThunk(
+  'user/uploadProfilePicture',
+  async ({ id, file }) => {
+    const response = await userService.uploadProfilePicture(id, file);
+    return response.data;
+  }
+);
 
 const userSlice = createSlice({
   name: 'user',
-  initialState,
+  initialState: {
+    users: [],
+    selectedUser: null,
+    currentUserProfile: null,
+    loading: false,
+    error: null,
+    success: false,
+    total: 0,
+    page: 1,
+    limit: 10,
+  },
   reducers: {
+    clearSelectedUser: (state) => {
+      state.selectedUser = null;
+    },
+    setPage: (state, action) => {
+      state.page = action.payload;
+    },
+    setLimit: (state, action) => {
+      state.limit = action.payload;
+    },
     clearError: (state) => {
       state.error = null;
     },
     clearSuccess: (state) => {
       state.success = false;
-      state.profileUpdateSuccess = false;
-      state.profilePictureUpdateSuccess = false;
     },
     setSelectedUser: (state, action) => {
       state.selectedUser = action.payload;
-    },
-    clearSelectedUser: (state) => {
-      state.selectedUser = null;
-    },
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -134,115 +108,87 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload.data || action.payload;
-        state.error = null;
+        state.users = action.payload.users;
+        state.total = action.payload.total;
+        state.success = true;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.error.message;
+      })
+
+      // Fetch User By ID
+      .addCase(fetchUserById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedUser = action.payload;
+      })
+      .addCase(fetchUserById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       })
 
       // Create User
-      .addCase(createUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = false;
-      })
-      .addCase(createUser.fulfilled, (state) => {
-        state.loading = false;
+      .addCase(createUser.fulfilled, (state, action) => {
+        state.users.unshift(action.payload);
+        state.total += 1;
         state.success = true;
-        state.error = null;
-      })
-      .addCase(createUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.success = false;
       })
 
       // Update User
-      .addCase(updateUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = false;
-      })
-      .addCase(updateUser.fulfilled, (state) => {
-        state.loading = false;
+      .addCase(updateUser.fulfilled, (state, action) => {
+        const index = state.users.findIndex(u => u.id === action.payload.id);
+        if (index !== -1) {
+          state.users[index] = action.payload;
+        }
+        if (state.selectedUser?.id === action.payload.id) {
+          state.selectedUser = action.payload;
+        }
         state.success = true;
-        state.error = null;
-      })
-      .addCase(updateUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.success = false;
-      })
-
-      // Update Profile
-      .addCase(updateProfile.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.profileUpdateSuccess = false;
-      })
-      .addCase(updateProfile.fulfilled, (state) => {
-        state.loading = false;
-        state.profileUpdateSuccess = true;
-        state.error = null;
-      })
-      .addCase(updateProfile.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.profileUpdateSuccess = false;
-      })
-
-      // Upload Profile Picture
-      .addCase(uploadProfilePicture.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.profilePictureUpdateSuccess = false;
-      })
-      .addCase(uploadProfilePicture.fulfilled, (state) => {
-        state.loading = false;
-        state.profilePictureUpdateSuccess = true;
-        state.error = null;
-      })
-      .addCase(uploadProfilePicture.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.profilePictureUpdateSuccess = false;
       })
 
       // Delete User
-      .addCase(deleteUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.users = state.users.filter(user => user.id !== action.payload);
-        state.error = null;
+        state.users = state.users.filter(u => u.id !== action.payload);
+        state.total -= 1;
+        if (state.selectedUser?.id === action.payload) {
+          state.selectedUser = null;
+        }
+        state.success = true;
       })
-      .addCase(deleteUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+
+      // Update Profile
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        if (state.selectedUser?.id === action.payload.id) {
+          state.selectedUser = action.payload;
+        }
+        if (state.currentUserProfile?.id === action.payload.id) {
+          state.currentUserProfile = action.payload;
+        }
+      })
+
+      // Upload Profile Picture
+      .addCase(uploadProfilePicture.fulfilled, (state, action) => {
+        if (state.selectedUser?.id === action.payload.id) {
+          state.selectedUser.profilePicture = action.payload.profilePicture;
+        }
+        if (state.currentUserProfile?.id === action.payload.id) {
+          state.currentUserProfile.profilePicture = action.payload.profilePicture;
+        }
       });
   },
 });
 
-// Export actions
 export const {
+  clearSelectedUser,
+  setPage,
+  setLimit,
   clearError,
   clearSuccess,
-  setSelectedUser,
-  clearSelectedUser,
+  setSelectedUser
 } = userSlice.actions;
 
-// Export reducer
 export default userSlice.reducer;
-
-// Selectors
-export const selectUsers = (state) => state.user.users;
-export const selectLoading = (state) => state.user.loading;
-export const selectError = (state) => state.user.error;
-export const selectSuccess = (state) => state.user.success;
-export const selectSelectedUser = (state) => state.user.selectedUser;
-export const selectProfileUpdateSuccess = (state) => state.user.profileUpdateSuccess;
-export const selectProfilePictureUpdateSuccess = (state) => state.user.profilePictureUpdateSuccess;

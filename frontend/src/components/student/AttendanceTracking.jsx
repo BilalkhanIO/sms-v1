@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { markAttendance, getAttendanceReport } from '../../redux/features/studentSlice';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
+import { STUDENT_STATUS } from '../../constants/student';
 
 const AttendanceTracking = () => {
   const dispatch = useDispatch();

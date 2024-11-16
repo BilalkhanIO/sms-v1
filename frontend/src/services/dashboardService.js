@@ -1,39 +1,48 @@
-import api from '../utils/axios';
+import apiService from './apiService';
 
 class DashboardService {
   async getStats(role) {
     try {
-      const response = await api.get(`/api/dashboard/stats/${role}`);
-      return response.data;
+      const response = await apiService.getDashboardStats(role);
+      return response;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw apiService.handleError(error);
     }
   }
 
   async getRecentActivities() {
     try {
-      const response = await api.get('/api/dashboard/activities');
-      return response.data;
+      const response = await apiService.getRecentActivities();
+      return response;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw apiService.handleError(error);
     }
   }
 
   async getUpcomingClasses() {
     try {
-      const response = await api.get('/api/dashboard/upcoming-classes');
-      return response.data;
+      const response = await apiService.getUpcomingClasses();
+      return response;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw apiService.handleError(error);
     }
   }
 
-  async getAttendanceData(params) {
+  async getPerformanceData(params) {
     try {
-      const response = await api.get('/api/dashboard/attendance', { params });
+      const response = await apiService.api.get('/dashboard/performance', { params });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      throw apiService.handleError(error);
+    }
+  }
+
+  async getAttendanceStats(params) {
+    try {
+      const response = await apiService.api.get('/dashboard/attendance-stats', { params });
+      return response.data;
+    } catch (error) {
+      throw apiService.handleError(error);
     }
   }
 }

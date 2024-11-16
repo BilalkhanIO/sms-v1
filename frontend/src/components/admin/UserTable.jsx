@@ -10,7 +10,7 @@ import {
 import ConfirmDialog from '../common/ConfirmDialog';
 import LoadingSpinner from '../common/LoadingSpinner';
 import Modal from '../common/Modal';
-import UserEditForm from '../user/UserEditForm';
+// import UserEditForm from '../user/UserEditForm';
 import { ROLES } from '../../utils/constants';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -178,14 +178,14 @@ const UserTable = ({ users = [], loading, onEdit, onDelete }) => {
         onClose={() => setShowEditModal(false)}
         title="Edit User"
       >
-        <UserEditForm
+        {/* <UserEditForm
           user={selectedUser}
           onClose={() => setShowEditModal(false)}
           onSuccess={() => {
             setShowEditModal(false);
             onEdit?.();
           }}
-        />
+        /> */}
       </Modal>
 
       <ConfirmDialog

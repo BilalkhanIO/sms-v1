@@ -1,13 +1,13 @@
 import { Fragment, useEffect } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { BellIcon } from '@heroicons/react/outline';
+import { BellIcon } from '@heroicons/react/24/outline';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchNotifications, markNotificationAsRead } from '../../redux/features/notificationSlice';
-import { classNames } from '../../utils/helpers';
+import { formatDistanceToNow } from 'date-fns';
 
 const NotificationDropdown = () => {
   const dispatch = useDispatch();
-  const { items: notifications, unreadCount, loading } = useSelector(
+  const { items: notifications, unreadCount } = useSelector(
     (state) => state.notifications
   );
 
@@ -17,19 +17,6 @@ const NotificationDropdown = () => {
 
   const handleNotificationClick = async (notificationId) => {
     await dispatch(markNotificationAsRead(notificationId));
-  };
-
-  const formatTimeAgo = (date) => {
-    const now = new Date();
-    const diff = now - new Date(date);
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (minutes > 0) return `${minutes}m ago`;
-    return 'Just now';
   };
 
   return (
@@ -58,9 +45,7 @@ const NotificationDropdown = () => {
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {loading ? (
-              <div className="p-4 text-center text-gray-500">Loading...</div>
-            ) : notifications.length === 0 ? (
+            {notifications.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 No notifications
               </div>
@@ -70,30 +55,25 @@ const NotificationDropdown = () => {
                   {({ active }) => (
                     <button
                       onClick={() => handleNotificationClick(notification.id)}
-                      className={classNames(
-                        active ? 'bg-gray-50' : '',
-                        notification.read ? 'bg-white' : 'bg-blue-50',
-                        'w-full text-left px-4 py-3 border-b border-gray-200'
-                      )}
+                      className={`${
+                        active ? 'bg-gray-50' : ''
+                      } ${
+                        notification.read ? 'bg-white' : 'bg-blue-50'
+                      } w-full text-left px-4 py-3 border-b border-gray-200`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p
-                            className={classNames(
-                              'text-sm',
-                              notification.read
-                                ? 'text-gray-600'
-                                : 'text-gray-900 font-medium'
-                            )}
-                          >
+                      <div className="flex justify-between">
+                        <div>
+                          <p className={`text-sm ${
+                            notification.read ? 'text-gray-600' : 'text-gray-900 font-medium'
+                          }`}>
                             {notification.title}
                           </p>
                           <p className="text-sm text-gray-500 mt-1">
                             {notification.message}
                           </p>
                         </div>
-                        <span className="text-xs text-gray-400 ml-2">
-                          {formatTimeAgo(notification.createdAt)}
+                        <span className="text-xs text-gray-400">
+                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </span>
                       </div>
                     </button>
@@ -102,17 +82,6 @@ const NotificationDropdown = () => {
               ))
             )}
           </div>
-
-          {notifications.length > 0 && (
-            <div className="px-4 py-3 text-center border-t border-gray-200">
-              <button
-                className="text-sm text-indigo-600 hover:text-indigo-900"
-                onClick={() => {/* Implement view all notifications */}}
-              >
-                View All Notifications
-              </button>
-            </div>
-          )}
         </Menu.Items>
       </Transition>
     </Menu>

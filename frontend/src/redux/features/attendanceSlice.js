@@ -1,48 +1,26 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../utils/api';
+import attendanceService from '../../services/attendanceService';
 
-// Fetch attendance records for a class on a specific date
-export const fetchAttendance = createAsyncThunk(
-  'attendance/fetchAttendance',
-  async ({ classId, date }) => {
-    const response = await api.get(`/attendance/${classId}`, {
-      params: { date },
-    });
+export const fetchAttendanceStats = createAsyncThunk(
+  'attendance/fetchStats',
+  async (params) => {
+    const response = await attendanceService.getAttendanceStats(params);
     return response.data;
   }
 );
 
-// Mark attendance for multiple students
 export const markAttendance = createAsyncThunk(
-  'attendance/markAttendance',
-  async ({ classId, date, attendance }) => {
-    const response = await api.post('/attendance', {
-      classId,
-      date,
-      attendance,
-    });
+  'attendance/mark',
+  async ({ classId, date, attendanceData }) => {
+    const response = await attendanceService.markAttendance(classId, date, attendanceData);
     return response.data;
   }
 );
 
-// Fetch attendance report for a student
-export const fetchStudentAttendanceReport = createAsyncThunk(
-  'attendance/fetchStudentReport',
-  async ({ studentId, startDate, endDate }) => {
-    const response = await api.get(`/attendance/student/${studentId}/report`, {
-      params: { startDate, endDate },
-    });
-    return response.data;
-  }
-);
-
-// Fetch attendance report for a class
-export const fetchClassAttendanceReport = createAsyncThunk(
-  'attendance/fetchClassReport',
-  async ({ classId, startDate, endDate }) => {
-    const response = await api.get(`/attendance/class/${classId}/report`, {
-      params: { startDate, endDate },
-    });
+export const fetchAttendanceReport = createAsyncThunk(
+  'attendance/fetchReport',
+  async (params) => {
+    const response = await attendanceService.getAttendanceReport(params);
     return response.data;
   }
 );
@@ -50,38 +28,43 @@ export const fetchClassAttendanceReport = createAsyncThunk(
 const attendanceSlice = createSlice({
   name: 'attendance',
   initialState: {
-    attendance: {},
-    studentReport: null,
-    classReport: null,
+    stats: {
+      presentCount: 0,
+      absentCount: 0,
+      lateCount: 0,
+      attendanceRate: 0,
+    },
+    reports: [],
     loading: false,
     error: null,
   },
   reducers: {
-    clearAttendanceError: (state) => {
-      state.error = null;
-    },
     clearAttendanceData: (state) => {
-      state.attendance = {};
-      state.studentReport = null;
-      state.classReport = null;
+      state.stats = {
+        presentCount: 0,
+        absentCount: 0,
+        lateCount: 0,
+        attendanceRate: 0,
+      };
+      state.reports = [];
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Attendance
-      .addCase(fetchAttendance.pending, (state) => {
+      // Fetch Stats
+      .addCase(fetchAttendanceStats.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchAttendance.fulfilled, (state, action) => {
+      .addCase(fetchAttendanceStats.fulfilled, (state, action) => {
         state.loading = false;
-        state.attendance = action.payload;
+        state.stats = action.payload;
       })
-      .addCase(fetchAttendance.rejected, (state, action) => {
+      .addCase(fetchAttendanceStats.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })
-      
+
       // Mark Attendance
       .addCase(markAttendance.pending, (state) => {
         state.loading = true;
@@ -89,45 +72,32 @@ const attendanceSlice = createSlice({
       })
       .addCase(markAttendance.fulfilled, (state, action) => {
         state.loading = false;
-        state.attendance = {
-          ...state.attendance,
-          ...action.payload,
+        // Update stats after marking attendance
+        state.stats = {
+          ...state.stats,
+          ...action.payload.stats,
         };
       })
       .addCase(markAttendance.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })
-      
-      // Student Report
-      .addCase(fetchStudentAttendanceReport.pending, (state) => {
+
+      // Fetch Report
+      .addCase(fetchAttendanceReport.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchStudentAttendanceReport.fulfilled, (state, action) => {
+      .addCase(fetchAttendanceReport.fulfilled, (state, action) => {
         state.loading = false;
-        state.studentReport = action.payload;
+        state.reports = action.payload;
       })
-      .addCase(fetchStudentAttendanceReport.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      
-      // Class Report
-      .addCase(fetchClassAttendanceReport.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchClassAttendanceReport.fulfilled, (state, action) => {
-        state.loading = false;
-        state.classReport = action.payload;
-      })
-      .addCase(fetchClassAttendanceReport.rejected, (state, action) => {
+      .addCase(fetchAttendanceReport.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       });
   },
 });
 
-export const { clearAttendanceError, clearAttendanceData } = attendanceSlice.actions;
+export const { clearAttendanceData } = attendanceSlice.actions;
 export default attendanceSlice.reducer; 

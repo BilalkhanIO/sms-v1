@@ -1,6 +1,4 @@
 import { createContext, useContext, useState } from 'react';
-import PropTypes from 'prop-types';
-import Toast from '../components/common/Toast';
 
 const ToastContext = createContext(null);
 
@@ -10,6 +8,7 @@ export const ToastProvider = ({ children }) => {
   const addToast = (message, type = 'success', duration = 3000) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type, duration }]);
+    setTimeout(() => removeToast(id), duration);
   };
 
   const removeToast = (id) => {
@@ -21,21 +20,20 @@ export const ToastProvider = ({ children }) => {
       {children}
       <div className="fixed bottom-4 right-4 space-y-2 z-50">
         {toasts.map(toast => (
-          <Toast
+          <div
             key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            duration={toast.duration}
-            onClose={() => removeToast(toast.id)}
-          />
+            className={`px-4 py-3 rounded-lg shadow-lg text-white ${
+              toast.type === 'error' ? 'bg-red-500' :
+              toast.type === 'success' ? 'bg-green-500' :
+              'bg-blue-500'
+            }`}
+          >
+            {toast.message}
+          </div>
         ))}
       </div>
     </ToastContext.Provider>
   );
-};
-
-ToastProvider.propTypes = {
-  children: PropTypes.node.isRequired
 };
 
 export const useToast = () => {

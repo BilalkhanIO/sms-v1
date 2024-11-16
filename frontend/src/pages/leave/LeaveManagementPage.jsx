@@ -7,8 +7,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  DocumentAddIcon,
-} from '@heroicons/react/outline';
+  DocumentPlusIcon,
+} from '@heroicons/react/24/outline';
 
 const LEAVE_STATUS = {
   PENDING: 'PENDING',
@@ -60,7 +60,7 @@ const LeaveManagementPage = () => {
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
         >
-          <DocumentAddIcon className="h-5 w-5 mr-2" />
+          <DocumentPlusIcon className="h-5 w-5 mr-2" />
           New Leave Request
         </button>
       </div>

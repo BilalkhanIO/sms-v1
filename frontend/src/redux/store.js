@@ -1,20 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './features/authSlice';
-import userReducer from './features/userSlice';
-import feeReducer from './features/feeSlice';
-import calendarReducer from './features/calendarSlice';
+import { apiErrorMiddleware } from './middleware/apiMiddleware';
+import rootReducer from './reducers';
 
-export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    user: userReducer,
-    fee: feeReducer,
-    calendar: calendarReducer,
-  },
+const store = configureStore({
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false,
-    }),
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST'],
+      },
+    }).concat(apiErrorMiddleware),
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
 export default store; 

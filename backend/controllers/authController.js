@@ -1,221 +1,137 @@
 // authController.js
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const speakeasy = require('speakeasy');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const { sendEmail } = require('../utils/email');
 
-const generateToken = (userId) => {
-  return jwt.sign(
-    { userId },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE || '1d' }
-  );
-};
+exports.login = catchAsync(async (req, res, next) => {
+  const { email, password } = req.body;
 
-// Auth Controller
-exports.register = catchAsync(async (req, res) => {
-  const { name, email, password, role } = req.body;
-
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    throw new AppError('Email already registered', 400);
+  // Check if email and password exist
+  if (!email || !password) {
+    return next(new AppError('Please provide email and password', 400));
   }
 
+  // Find user by email and include password field
+  const user = await User.findOne({ email }).select('+password');
+
+  if (!user || !(await user.matchPassword(password))) {
+    return next(new AppError('Invalid credentials', 401));
+  }
+
+  // Generate JWT token
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE }
+  );
+
+  // Remove password from output
+  user.password = undefined;
+
+  res.status(200).json({
+    success: true,
+    token,
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      profilePicture: user.profilePicture
+    },
+    isAuthenticated: true
+  });
+});
+
+exports.register = catchAsync(async (req, res, next) => {
+  const { firstName, lastName, email, password, role } = req.body;
+
+  // Check if user already exists
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return next(new AppError('Email already registered', 400));
+  }
+
+  // Create user
   const user = await User.create({
-    name,
+    firstName,
+    lastName,
     email,
     password,
     role: role || 'STUDENT'
   });
 
-  const verificationToken = user.generateEmailVerificationToken();
-  await user.save();
-
-  // Send verification email
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-  try {
-    await sendEmail({
-      email: user.email,
-      subject: 'Verify Your Email',
-      html: `
-        <h1>Welcome to ${process.env.APP_NAME}!</h1>
-        <p>Please verify your email by clicking the link below:</p>
-        <a href="${verificationUrl}">${verificationUrl}</a>
-        <p>This link will expire in 24 hours.</p>
-      `
-    });
-  } catch (error) {
-    // If email fails, still create user but log error
-    console.error('Verification email failed:', error);
-  }
-
-  const token = generateToken(user._id);
+  // Generate token
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE }
+  );
 
   res.status(201).json({
     success: true,
     token,
     user: {
       id: user._id,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
-      role: user.role
-    }
+      role: user.role,
+      status: user.status
+    },
+    isAuthenticated: true
   });
 });
 
-exports.login = catchAsync(async (req, res, next) => {
-  const { email, password } = req.body;
+exports.getMe = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
 
-  if (!email || !password) {
-    return next(new AppError('Please provide email and password', 400));
+  res.status(200).json({
+    success: true,
+    data: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      profilePicture: user.profilePicture
+    },
+    isAuthenticated: true
+  });
+});
+
+exports.logout = catchAsync(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully',
+    isAuthenticated: false
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select('+password');
+
+  // Check current password
+  if (!(await user.matchPassword(req.body.currentPassword))) {
+    return next(new AppError('Current password is incorrect', 401));
   }
 
-  const user = await User.findOne({ email })
-    .select('+password')
-    .select('+twoFactorSecret');
+  user.password = req.body.newPassword;
+  await user.save();
 
-  if (!user || !(await user.matchPassword(password))) {
-    return next(new AppError('Incorrect email or password', 401));
-  }
-
-  if (user.status !== 'ACTIVE') {
-    return next(new AppError('Account is not active', 403));
-  }
-
-  // Handle 2FA if enabled
-  if (user.twoFactorEnabled) {
-    return res.status(200).json({
-      requires2FA: true,
-      userId: user._id
-    });
-  }
-
-  const token = generateToken(user._id);
-  const userResponse = user.toJSON();
-  delete userResponse.password;
-  delete userResponse.twoFactorSecret;
+  // Generate new token
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE }
+  );
 
   res.status(200).json({
     success: true,
     token,
-    user: userResponse
+    message: 'Password updated successfully'
   });
 });
-
-exports.forgotPassword = catchAsync(async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
-  
-  if (!user) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    throw new AppError('Password reset link sent if email exists', 200);
-  }
-
-  const resetToken = user.generatePasswordResetToken();
-  await user.save({ validateBeforeSave: false });
-
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-  
-  try {
-    await sendEmail({
-      email: user.email,
-      subject: 'Password Reset Request',
-      html: `
-        <h1>Password Reset Request</h1>
-        <p>Please click the link below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-        <p>IP Address of requester: ${req.ip}</p>
-        <p>Time of request: ${new Date().toISOString()}</p>
-      `
-    });
-
-    res.json({
-      success: true,
-      message: 'Password reset link sent if email exists'
-    });
-  } catch (error) {
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-    throw new AppError('Error sending email. Please try again later.', 500);
-  }
-});
-
-exports.resetPassword = catchAsync(async (req, res) => {
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.token)
-    .digest('hex');
-
-  const user = await User.findOne({
-    resetPasswordToken: hashedToken,
-    resetPasswordExpire: { $gt: Date.now() }
-  });
-
-  if (!user) {
-    throw new AppError('Invalid or expired token', 400);
-  }
-
-  if (!isPasswordComplex(req.body.password)) {
-    throw new AppError(
-      'Password must contain at least 8 characters, including uppercase, lowercase, numbers, and special characters',
-      400
-    );
-  }
-
-  user.password = req.body.password;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
-  await user.save();
-
-  res.json({
-    success: true,
-    message: 'Password reset successful'
-  });
-});
-
-exports.verifyEmail = catchAsync(async (req, res) => {
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.token)
-    .digest('hex');
-
-  const user = await User.findOne({
-    emailVerificationToken: hashedToken,
-    emailVerificationExpire: { $gt: Date.now() }
-  });
-
-  if (!user) {
-    throw new AppError('Invalid or expired verification token', 400);
-  }
-
-  user.emailVerified = true;
-  user.status = 'ACTIVE';
-  user.emailVerificationToken = undefined;
-  user.emailVerificationExpire = undefined;
-  await user.save();
-
-  res.json({
-    success: true,
-    message: 'Email verified successfully'
-  });
-});
-
-// Helper function for password complexity
-function isPasswordComplex(password) {
-  const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-  
-  return password.length >= minLength && 
-         hasUpperCase && 
-         hasLowerCase && 
-         hasNumbers && 
-         hasSpecialChar;
-}
