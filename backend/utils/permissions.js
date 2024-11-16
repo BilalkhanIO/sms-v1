@@ -35,4 +35,13 @@ const PERMISSIONS = {
   VIEW_FEES: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN, ROLES.PARENT],
 };
 
-module.exports = { ROLES, PERMISSIONS }; 
+const hasPermission = (userRole, permission) => {
+  if (!userRole || !permission) return false;
+  return PERMISSIONS[permission]?.includes(userRole) || false;
+};
+
+module.exports = {
+  ROLES,
+  PERMISSIONS,
+  hasPermission
+}; 

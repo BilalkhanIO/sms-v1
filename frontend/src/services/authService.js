@@ -1,5 +1,4 @@
 import api from '../config/api';
-import jwtDecode from 'jwt-decode';
 
 const TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
