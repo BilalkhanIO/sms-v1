@@ -11,7 +11,7 @@ const app = express();
 // CORS configuration
 const corsOptions = {
   origin: [
-    'http://localhost:5173',
+    'http://localhost:3000',
     'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

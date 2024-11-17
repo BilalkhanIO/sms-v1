@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 const {
   getStats,
   getRecentActivities,
   getUpcomingClasses
 } = require('../controllers/dashboardController');
 
-// Only include routes that have corresponding controller functions
+router.use(protect);
+
 router.get('/stats/:role', getStats);
 router.get('/activities', getRecentActivities);
 router.get('/upcoming-classes', getUpcomingClasses);

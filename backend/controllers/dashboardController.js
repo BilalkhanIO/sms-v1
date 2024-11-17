@@ -12,6 +12,12 @@ const Exam = require('../models/Exam');
 // @access  Private
 const getStats = catchAsync(async (req, res, next) => {
   const { role } = req.params;
+  
+  // Check if user exists in request
+  if (!req.user) {
+    return next(new errorHandler('User not authenticated', 401));
+  }
+
   let stats;
 
   switch (role.toUpperCase()) {
