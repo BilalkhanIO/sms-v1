@@ -1,17 +1,16 @@
-const asyncHandler = require('../middleware/async');
-const ErrorResponse = require('../utils/errorResponse');
+const catchAsync = require('../utils/catchAsync');
+const errorHandler = require('../utils/errorHandler');
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const Class = require('../models/Class');
 const Attendance = require('../models/Attendance');
 const Activity = require('../models/Activity');
-const Fee = require('../models/Fee');
 const Exam = require('../models/Exam');
 
 // @desc    Get dashboard stats based on role
 // @route   GET /api/dashboard/stats/:role
 // @access  Private
-exports.getStats = asyncHandler(async (req, res, next) => {
+const getStats = catchAsync(async (req, res, next) => {
   const { role } = req.params;
   let stats;
 
@@ -27,7 +26,7 @@ exports.getStats = asyncHandler(async (req, res, next) => {
       stats = await getAdminStats();
       break;
     default:
-      return next(new ErrorResponse('Invalid role specified', 400));
+      return next(new errorHandler('Invalid role specified', 400));
   }
 
   res.status(200).json({
@@ -39,7 +38,7 @@ exports.getStats = asyncHandler(async (req, res, next) => {
 // @desc    Get recent activities
 // @route   GET /api/dashboard/activities
 // @access  Private
-exports.getRecentActivities = asyncHandler(async (req, res) => {
+const getRecentActivities = catchAsync(async (req, res) => {
   const activities = await Activity.find()
     .sort('-createdAt')
     .limit(10)
@@ -54,7 +53,7 @@ exports.getRecentActivities = asyncHandler(async (req, res) => {
 // @desc    Get upcoming classes
 // @route   GET /api/dashboard/upcoming-classes
 // @access  Private
-exports.getUpcomingClasses = asyncHandler(async (req, res) => {
+const getUpcomingClasses = catchAsync(async (req, res) => {
   const classes = await Class.find({
     date: { $gte: new Date() }
   })
@@ -182,5 +181,6 @@ async function getUpcomingExams(classId) {
 module.exports = {
   getStats,
   getRecentActivities,
-  getUpcomingClasses
+  getUpcomingClasses,
+ 
 }; 

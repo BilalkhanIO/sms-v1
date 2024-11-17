@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const classSchema = new mongoose.Schema({
   name: {
@@ -72,14 +72,4 @@ const classSchema = new mongoose.Schema({
 // Indexes
 classSchema.index({ name: 1, section: 1, academicYear: 1 }, { unique: true });
 
-// Methods
-classSchema.methods.getStudentCount = function() {
-  return this.students.length;
-};
-
-classSchema.methods.getSubjectCount = function() {
-  return this.subjects.length;
-};
-
-const Class = mongoose.model('Class', classSchema);
-export default Class; 
+module.exports = mongoose.model('Class', classSchema); 
