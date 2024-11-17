@@ -5,6 +5,8 @@ const Teacher = require('../models/Teacher');
 const Class = require('../models/Class');
 const Attendance = require('../models/Attendance');
 const Activity = require('../models/Activity');
+const Fee = require('../models/Fee');
+const Exam = require('../models/Exam');
 
 // @desc    Get dashboard stats based on role
 // @route   GET /api/dashboard/stats/:role
@@ -13,15 +15,16 @@ exports.getStats = asyncHandler(async (req, res, next) => {
   const { role } = req.params;
   let stats;
 
-  switch (role) {
-    case 'admin':
-      stats = await getAdminStats();
+  switch (role.toUpperCase()) {
+    case 'STUDENT':
+      stats = await getStudentStats(req.user.id);
       break;
-    case 'teacher':
+    case 'TEACHER':
       stats = await getTeacherStats(req.user.id);
       break;
-    case 'student':
-      stats = await getStudentStats(req.user.id);
+    case 'SUPER_ADMIN':
+    case 'SCHOOL_ADMIN':
+      stats = await getAdminStats();
       break;
     default:
       return next(new ErrorResponse('Invalid role specified', 400));
@@ -29,7 +32,6 @@ exports.getStats = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    role,
     data: stats
   });
 });
@@ -37,7 +39,7 @@ exports.getStats = asyncHandler(async (req, res, next) => {
 // @desc    Get recent activities
 // @route   GET /api/dashboard/activities
 // @access  Private
-exports.getRecentActivities = asyncHandler(async (req, res, next) => {
+exports.getRecentActivities = asyncHandler(async (req, res) => {
   const activities = await Activity.find()
     .sort('-createdAt')
     .limit(10)
@@ -52,7 +54,7 @@ exports.getRecentActivities = asyncHandler(async (req, res, next) => {
 // @desc    Get upcoming classes
 // @route   GET /api/dashboard/upcoming-classes
 // @access  Private
-exports.getUpcomingClasses = asyncHandler(async (req, res, next) => {
+exports.getUpcomingClasses = asyncHandler(async (req, res) => {
   const classes = await Class.find({
     date: { $gte: new Date() }
   })
@@ -67,57 +69,118 @@ exports.getUpcomingClasses = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Get attendance data
-// @route   GET /api/dashboard/attendance
-// @access  Private
-exports.getAttendanceData = asyncHandler(async (req, res, next) => {
-  const { startDate, endDate, classId } = req.query;
-  
-  const attendance = await Attendance.find({
-    date: {
-      $gte: startDate,
-      $lte: endDate
+// Helper functions for getting role-specific stats
+async function getStudentStats(userId) {
+  const student = await Student.findOne({ user: userId })
+    .populate('class')
+    .populate('academicRecords.subjects.subject');
+
+  const attendance = await Attendance.find({ student: student._id })
+    .sort('-date')
+    .limit(30);
+
+  const attendanceRate = calculateAttendanceRate(attendance);
+  const academicPerformance = calculateAcademicPerformance(student.academicRecords);
+  const upcomingExams = await getUpcomingExams(student.class);
+
+  return {
+    attendance: {
+      rate: attendanceRate,
+      present: attendance.filter(a => a.status === 'PRESENT').length,
+      absent: attendance.filter(a => a.status === 'ABSENT').length,
+      late: attendance.filter(a => a.status === 'LATE').length
     },
-    ...(classId && { class: classId })
-  }).populate('student', 'name');
+    academics: {
+      overallGrade: academicPerformance.overallGrade,
+      gradePercentage: academicPerformance.percentage,
+      subjectWisePerformance: academicPerformance.subjectWise
+    },
+    upcomingExams: upcomingExams,
+    assignments: await getAssignmentStats(student._id),
+    recentActivities: await getStudentActivities(student._id)
+  };
+}
 
-  res.status(200).json({
-    success: true,
-    data: attendance
+async function getTeacherStats(userId) {
+  const teacher = await Teacher.findOne({ user: userId });
+  const totalStudents = await Student.countDocuments({ 
+    currentClass: { $in: teacher.assignedClasses } 
   });
-});
+  const todayClasses = await Class.countDocuments({ 
+    teacher: teacher._id,
+    date: { 
+      $gte: new Date().setHours(0,0,0,0),
+      $lt: new Date().setHours(23,59,59,999)
+    }
+  });
 
-// Helper functions
+  return {
+    totalStudents,
+    todayClasses,
+    attendanceRate: await calculateClassAttendanceRate(teacher.assignedClasses),
+    pendingTasks: await getPendingTasks(teacher._id),
+    recentSubmissions: await getRecentSubmissions(teacher.assignedClasses),
+    upcomingClasses: await getUpcomingClasses(teacher._id),
+    classPerformance: await getClassPerformance(teacher.assignedClasses)
+  };
+}
+
 async function getAdminStats() {
   const totalStudents = await Student.countDocuments();
   const totalTeachers = await Teacher.countDocuments();
   const totalClasses = await Class.countDocuments();
-  // Add more admin stats calculations
+  const feeCollection = await calculateFeeCollection();
+  const attendanceOverview = await getAttendanceOverview();
 
   return {
-    totalStudents,
-    totalTeachers,
-    totalClasses,
-    // Add more stats
+    overview: {
+      totalStudents,
+      totalTeachers,
+      totalClasses,
+      activeStudents: await Student.countDocuments({ status: 'ACTIVE' })
+    },
+    attendance: attendanceOverview,
+    feeCollection: {
+      total: feeCollection.total,
+      pending: feeCollection.pending,
+      thisMonth: feeCollection.thisMonth,
+      collectionRate: feeCollection.rate
+    },
+    performance: await getOverallPerformance(),
+    recentActivities: await getAdminActivities()
   };
 }
 
-async function getTeacherStats(teacherId) {
-  const teacher = await Teacher.findById(teacherId);
-  // Add teacher specific stats calculations
+// Helper utility functions
+function calculateAttendanceRate(attendance) {
+  if (!attendance.length) return 0;
+  const present = attendance.filter(a => a.status === 'PRESENT').length;
+  return (present / attendance.length) * 100;
+}
 
+function calculateAcademicPerformance(records) {
+  // Implement grade calculation logic
   return {
-    totalClasses: teacher.classes.length,
-    // Add more stats
+    overallGrade: 'A',
+    percentage: 85,
+    subjectWise: []
   };
 }
 
-async function getStudentStats(studentId) {
-  const student = await Student.findById(studentId);
-  // Add student specific stats calculations
+async function getUpcomingExams(classId) {
+  return await Exam.find({
+    class: classId,
+    date: { $gte: new Date() }
+  })
+    .sort('date')
+    .limit(5)
+    .populate('subject', 'name');
+}
 
-  return {
-    attendance: 95, // Calculate actual attendance
-    // Add more stats
-  };
-} 
+// Add more helper functions as needed
+
+module.exports = {
+  getStats,
+  getRecentActivities,
+  getUpcomingClasses
+}; 

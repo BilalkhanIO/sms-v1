@@ -14,28 +14,67 @@ const RegisterForm = () => {
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { addToast } = useToast();
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.password) newErrors.password = 'Password is required';
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    return newErrors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      addToast('Passwords do not match', 'error');
+    // Validate form
+    const formErrors = validateForm();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
     setLoading(true);
     try {
-      await dispatch(register(formData)).unwrap();
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password
+      };
+
+      const response = await dispatch(register(userData)).unwrap();
       addToast('Registration successful', 'success');
       navigate('/dashboard');
     } catch (error) {
-      addToast(error.message || 'Registration failed', 'error');
+      console.error('Registration error:', error);
+      addToast(error.message || 'Registration failed. Please try again.', 'error');
+      setErrors(error.errors || {});
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when field is modified
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
     }
   };
 
@@ -48,11 +87,16 @@ const RegisterForm = () => {
           </label>
           <input
             type="text"
-            required
+            name="firstName"
             value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+              errors.firstName ? 'border-red-500' : ''
+            }`}
           />
+          {errors.firstName && (
+            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+          )}
         </div>
 
         <div>
@@ -61,11 +105,16 @@ const RegisterForm = () => {
           </label>
           <input
             type="text"
-            required
+            name="lastName"
             value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+              errors.lastName ? 'border-red-500' : ''
+            }`}
           />
+          {errors.lastName && (
+            <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+          )}
         </div>
       </div>
 
@@ -75,11 +124,16 @@ const RegisterForm = () => {
         </label>
         <input
           type="email"
-          required
+          name="email"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          onChange={handleChange}
+          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+            errors.email ? 'border-red-500' : ''
+          }`}
         />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+        )}
       </div>
 
       <div>
@@ -87,9 +141,10 @@ const RegisterForm = () => {
           Password
         </label>
         <PasswordInput
+          name="password"
           value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          required
+          onChange={handleChange}
+          error={errors.password}
         />
       </div>
 
@@ -98,17 +153,17 @@ const RegisterForm = () => {
           Confirm Password
         </label>
         <PasswordInput
+          name="confirmPassword"
           value={formData.confirmPassword}
-          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-          placeholder="Confirm Password"
-          required
+          onChange={handleChange}
+          error={errors.confirmPassword}
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
       >
         {loading ? 'Creating account...' : 'Create account'}
       </button>

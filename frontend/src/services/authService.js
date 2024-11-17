@@ -1,4 +1,4 @@
-import api from '../config/api';
+import api from './api';
 
 const TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -68,7 +68,10 @@ export const register = async (userData) => {
     }
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Registration failed';
+    if (error.response?.data) {
+      throw error.response.data;
+    }
+    throw new Error('Registration failed. Please try again.');
   }
 };
 
@@ -159,7 +162,7 @@ export const getProfile = async () => {
 
 // Token management functions
 export const getToken = () => {
-  return localStorage.getItem('token');
+  return localStorage.getItem(TOKEN_KEY);
 };
 
 export const isAuthenticated = () => {

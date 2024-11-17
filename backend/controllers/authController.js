@@ -50,7 +50,8 @@ const login = catchAsync(async (req, res, next) => {
 // @route   POST /api/auth/register
 // @access  Public
 const register = catchAsync(async (req, res, next) => {
-  const { firstName, lastName, email, password, role } = req.body;
+  
+  const { firstName, lastName, email, password } = req.body;
 
   // Check if user exists
   const existingUser = await User.findOne({ email });

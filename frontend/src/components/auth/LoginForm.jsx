@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../redux/features/authSlice';
 import { useToast } from '../../contexts/ToastContext';
@@ -10,23 +10,25 @@ const LoginForm = () => {
     email: '',
     password: ''
   });
-  const [loading, setLoading] = useState(false);
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { loading, error } = useSelector(state => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
-      await dispatch(login(formData)).unwrap();
-      addToast('Login successful', 'success');
-      navigate('/dashboard');
+      const result = await dispatch(login(formData)).unwrap();
+      if (result.user) {
+        addToast('Login successful', 'success');
+        navigate('/dashboard');
+      }
     } catch (error) {
-      addToast(error.message || 'Login failed', 'error');
-    } finally {
-      setLoading(false);
+      addToast(
+        error || 'Login failed. Please check your credentials.',
+        'error'
+      );
     }
   };
 

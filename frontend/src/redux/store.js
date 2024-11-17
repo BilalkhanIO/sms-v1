@@ -1,16 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { apiErrorMiddleware } from './middleware/apiMiddleware';
-import rootReducer from './reducers';
+import authReducer from './features/authSlice';
+import userReducer from './features/userSlice';
+import profileReducer from './features/profileSlice';
 
 const store = configureStore({
-  reducer: rootReducer,
+  reducer: {
+    auth: authReducer,
+    user: userReducer,
+    profile: profileReducer
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['persist/PERSIST'],
-      },
-    }).concat(apiErrorMiddleware),
-  devTools: process.env.NODE_ENV !== 'production',
+      serializableCheck: false
+    })
 });
 
 export default store; 

@@ -5,7 +5,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const feeRoutes = require('./routes/fee.routes');
 const calendarRoutes = require('./routes/calendar.routes');
-
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const app = express();
 
 // CORS configuration
@@ -40,6 +40,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
