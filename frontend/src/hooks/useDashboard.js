@@ -4,38 +4,29 @@ import dashboardService from '../services/dashboardService';
 
 export const useDashboard = (role) => {
   const [dashboardData, setDashboardData] = useState(null);
-  const { loading, error, execute: fetchDashboardData } = useApi(
-    dashboardService.getStats
-  );
-
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const data = await fetchDashboardData(role);
-        setDashboardData(data);
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-      }
-    };
-
-    if (role) {
-      loadDashboardData();
-    }
-  }, [role, fetchDashboardData]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const refreshDashboard = async () => {
     try {
-      const data = await fetchDashboardData(role);
-      setDashboardData(data);
-    } catch (error) {
-      console.error('Failed to refresh dashboard data:', error);
+      setLoading(true);
+      setError(null);
+      const response = await dashboardService.getStats(role);
+      setDashboardData(response.data);
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to load dashboard data';
+      setError(errorMessage);
+      console.error('Dashboard error:', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return {
-    dashboardData,
-    loading,
-    error,
-    refreshDashboard,
-  };
+  useEffect(() => {
+    if (role) {
+      refreshDashboard();
+    }
+  }, [role]);
+
+  return { dashboardData, loading, error, refreshDashboard };
 };

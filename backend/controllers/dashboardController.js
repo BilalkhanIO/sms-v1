@@ -6,39 +6,50 @@ const Class = require('../models/Class');
 const Attendance = require('../models/Attendance');
 const Activity = require('../models/Activity');
 const Exam = require('../models/Exam');
+const AppError = require('../utils/appError');
 
 // @desc    Get dashboard stats based on role
 // @route   GET /api/dashboard/stats/:role
 // @access  Private
 const getStats = catchAsync(async (req, res, next) => {
+  if (!req.user || !req.user.id) {
+    return next(new AppError('User not authenticated', 401));
+  }
+
   const { role } = req.params;
   
-  // Check if user exists in request
-  if (!req.user) {
-    return next(new errorHandler('User not authenticated', 401));
+  if (role.toUpperCase() !== req.user.role) {
+    return next(new AppError('Unauthorized access: Role mismatch', 403));
   }
 
   let stats;
+  try {
+    switch (role.toUpperCase()) {
+      case 'STUDENT':
+        const student = await Student.findOne({ user: req.user.id });
+        if (!student) {
+          return next(new AppError('Student profile not found', 404));
+        }
+        stats = await getStudentStats(req.user.id);
+        break;
+      case 'TEACHER':
+        stats = await getTeacherStats(req.user.id);
+        break;
+      case 'SUPER_ADMIN':
+      case 'SCHOOL_ADMIN':
+        stats = await getAdminStats();
+        break;
+      default:
+        return next(new AppError('Invalid role specified', 400));
+    }
 
-  switch (role.toUpperCase()) {
-    case 'STUDENT':
-      stats = await getStudentStats(req.user.id);
-      break;
-    case 'TEACHER':
-      stats = await getTeacherStats(req.user.id);
-      break;
-    case 'SUPER_ADMIN':
-    case 'SCHOOL_ADMIN':
-      stats = await getAdminStats();
-      break;
-    default:
-      return next(new errorHandler('Invalid role specified', 400));
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    return next(error);
   }
-
-  res.status(200).json({
-    success: true,
-    data: stats
-  });
 });
 
 // @desc    Get recent activities
@@ -75,10 +86,14 @@ const getUpcomingClasses = catchAsync(async (req, res) => {
 });
 
 // Helper functions for getting role-specific stats
-async function getStudentStats(userId) {
+const getStudentStats = catchAsync(async (userId) => {
   const student = await Student.findOne({ user: userId })
     .populate('class')
     .populate('academicRecords.subjects.subject');
+
+  if (!student) {
+    throw new AppError('Student record not found', 404);
+  }
 
   const attendance = await Attendance.find({ student: student._id })
     .sort('-date')
@@ -104,7 +119,7 @@ async function getStudentStats(userId) {
     assignments: await getAssignmentStats(student._id),
     recentActivities: await getStudentActivities(student._id)
   };
-}
+});
 
 async function getTeacherStats(userId) {
   const teacher = await Teacher.findOne({ user: userId });
