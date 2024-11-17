@@ -1,46 +1,52 @@
+const StatsCalculator = require('../utils/statsCalculator');
+const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
-const errorHandler = require('../utils/errorHandler');
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const Class = require('../models/Class');
 const Attendance = require('../models/Attendance');
 const Activity = require('../models/Activity');
 const Exam = require('../models/Exam');
-const AppError = require('../utils/appError');
+const Fee = require('../models/Fee');
 
 // @desc    Get dashboard stats based on role
 // @route   GET /api/dashboard/stats/:role
 // @access  Private
 const getStats = catchAsync(async (req, res, next) => {
-  if (!req.user || !req.user.id) {
-    return next(new AppError('User not authenticated', 401));
+  if (!req.user?.id) {
+    return next(new AppError('Not authenticated', 401));
   }
 
-  const { role } = req.params;
-  
-  if (role.toUpperCase() !== req.user.role) {
-    return next(new AppError('Unauthorized access: Role mismatch', 403));
+  const requestedRole = req.params.role.toUpperCase();
+  const userRole = req.user.role.toUpperCase();
+
+  // Role validation
+  const allowedRoles = {
+    'SUPER_ADMIN': ['SUPER_ADMIN'],
+    'SCHOOL_ADMIN': ['SUPER_ADMIN', 'SCHOOL_ADMIN'],
+    'TEACHER': ['TEACHER'],
+    'STUDENT': ['STUDENT']
+  };
+
+  if (!allowedRoles[requestedRole]?.includes(userRole)) {
+    return next(new AppError('Unauthorized access', 403));
   }
 
   let stats;
   try {
-    switch (role.toUpperCase()) {
-      case 'STUDENT':
-        const student = await Student.findOne({ user: req.user.id });
-        if (!student) {
-          return next(new AppError('Student profile not found', 404));
-        }
-        stats = await getStudentStats(req.user.id);
-        break;
-      case 'TEACHER':
-        stats = await getTeacherStats(req.user.id);
-        break;
+    switch (requestedRole) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
         stats = await getAdminStats();
         break;
+      case 'TEACHER':
+        stats = await getTeacherStats(req.user.id);
+        break;
+      case 'STUDENT':
+        stats = await getStudentStats(req.user.id);
+        break;
       default:
-        return next(new AppError('Invalid role specified', 400));
+        return next(new AppError('Invalid role', 400));
     }
 
     res.status(200).json({
@@ -48,7 +54,7 @@ const getStats = catchAsync(async (req, res, next) => {
       data: stats
     });
   } catch (error) {
-    return next(error);
+    next(error);
   }
 });
 
@@ -146,11 +152,23 @@ async function getTeacherStats(userId) {
 }
 
 async function getAdminStats() {
-  const totalStudents = await Student.countDocuments();
-  const totalTeachers = await Teacher.countDocuments();
-  const totalClasses = await Class.countDocuments();
-  const feeCollection = await calculateFeeCollection();
-  const attendanceOverview = await getAttendanceOverview();
+  const [
+    feeStats,
+    attendanceStats,
+    performanceStats,
+    recentActivities
+  ] = await Promise.all([
+    StatsCalculator.calculateFeeStats(),
+    StatsCalculator.calculateAttendanceStats(),
+    StatsCalculator.calculatePerformanceStats(),
+    StatsCalculator.getRecentActivities()
+  ]);
+
+  const [totalStudents, totalTeachers, totalClasses] = await Promise.all([
+    Student.countDocuments(),
+    Teacher.countDocuments(),
+    Class.countDocuments()
+  ]);
 
   return {
     overview: {
@@ -159,15 +177,10 @@ async function getAdminStats() {
       totalClasses,
       activeStudents: await Student.countDocuments({ status: 'ACTIVE' })
     },
-    attendance: attendanceOverview,
-    feeCollection: {
-      total: feeCollection.total,
-      pending: feeCollection.pending,
-      thisMonth: feeCollection.thisMonth,
-      collectionRate: feeCollection.rate
-    },
-    performance: await getOverallPerformance(),
-    recentActivities: await getAdminActivities()
+    feeCollection: feeStats,
+    attendance: attendanceStats,
+    performance: performanceStats,
+    recentActivities
   };
 }
 
@@ -198,6 +211,132 @@ async function getUpcomingExams(classId) {
 }
 
 // Add more helper functions as needed
+
+const calculateFeeCollection = async () => {
+  try {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    // Get all fee records
+    const feeRecords = await Fee.find({
+      createdAt: {
+        $gte: new Date(currentYear, 0, 1), // Start of current year
+        $lte: currentDate
+      }
+    });
+
+    // Calculate total collection
+    const total = feeRecords.reduce((acc, fee) => acc + (fee.paidAmount || 0), 0);
+
+    // Calculate pending amount
+    const pending = feeRecords.reduce((acc, fee) => {
+      const pendingAmount = fee.amount - (fee.paidAmount || 0);
+      return acc + (pendingAmount > 0 ? pendingAmount : 0);
+    }, 0);
+
+    // Calculate this month's collection
+    const thisMonth = feeRecords
+      .filter(fee => {
+        const feeMonth = new Date(fee.paidDate).getMonth() + 1;
+        const feeYear = new Date(fee.paidDate).getFullYear();
+        return feeMonth === currentMonth && feeYear === currentYear;
+      })
+      .reduce((acc, fee) => acc + (fee.paidAmount || 0), 0);
+
+    // Calculate collection rate
+    const rate = total > 0 ? ((total / (total + pending)) * 100).toFixed(2) : 0;
+
+    return {
+      total,
+      pending,
+      thisMonth,
+      rate: parseFloat(rate)
+    };
+  } catch (error) {
+    console.error('Error calculating fee collection:', error);
+    return {
+      total: 0,
+      pending: 0,
+      thisMonth: 0,
+      rate: 0
+    };
+  }
+};
+
+const getAttendanceOverview = async () => {
+  try {
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+    const attendance = await Attendance.find({
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    const total = attendance.length;
+    const present = attendance.filter(a => a.status === 'PRESENT').length;
+    const absent = attendance.filter(a => a.status === 'ABSENT').length;
+    const late = attendance.filter(a => a.status === 'LATE').length;
+
+    return {
+      total,
+      present,
+      absent,
+      late,
+      rate: total > 0 ? ((present / total) * 100).toFixed(2) : 0
+    };
+  } catch (error) {
+    console.error('Error calculating attendance overview:', error);
+    return {
+      total: 0,
+      present: 0,
+      absent: 0,
+      late: 0,
+      rate: 0
+    };
+  }
+};
+
+const getOverallPerformance = async () => {
+  try {
+    // Get all exam results
+    const examResults = await Exam.find({
+      status: 'COMPLETED'
+    }).populate('results');
+
+    // Calculate average performance
+    let totalScore = 0;
+    let totalStudents = 0;
+
+    examResults.forEach(exam => {
+      exam.results.forEach(result => {
+        totalScore += (result.obtainedMarks / exam.totalMarks) * 100;
+        totalStudents++;
+      });
+    });
+
+    const averagePerformance = totalStudents > 0 
+      ? (totalScore / totalStudents).toFixed(2)
+      : 0;
+
+    return {
+      averagePerformance: parseFloat(averagePerformance),
+      totalExams: examResults.length,
+      totalParticipants: totalStudents
+    };
+  } catch (error) {
+    console.error('Error calculating overall performance:', error);
+    return {
+      averagePerformance: 0,
+      totalExams: 0,
+      totalParticipants: 0
+    };
+  }
+};
 
 module.exports = {
   getStats,
