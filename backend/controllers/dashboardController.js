@@ -93,7 +93,8 @@ const getUpcomingClasses = catchAsync(async (req, res) => {
 
 // Helper functions for getting role-specific stats
 const getStudentStats = catchAsync(async (userId) => {
-  const student = await Student.findOne({ user: userId })
+  const student = await User.findOne({ user: userId });
+if(student.student)
     .populate('class')
     .populate('academicRecords.subjects.subject');
 
