@@ -3,11 +3,7 @@ const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
-const Class = require('../models/Class');
-const Attendance = require('../models/Attendance');
-const Activity = require('../models/Activity');
-const Exam = require('../models/Exam');
-const Fee = require('../models/Fee');
+const User = require('../models/User');
 
 // @desc    Get dashboard stats based on role
 // @route   GET /api/dashboard/stats/:role
@@ -49,9 +45,17 @@ const getStats = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid role', 400));
     }
 
+    // Count students and teachers
+    const totalStudents = await User.countDocuments({ role: 'STUDENT' });
+    const totalTeachers = await User.countDocuments({ role: 'TEACHER' });
+
     res.status(200).json({
       success: true,
-      data: stats
+      data: {
+        ...stats,
+        totalStudents,
+        totalTeachers
+      }
     });
   } catch (error) {
     next(error);

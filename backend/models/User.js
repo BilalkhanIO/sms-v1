@@ -42,6 +42,14 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: null
+  },
+  teacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher'
+  },
+  student: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student'
   }
 }, {
   timestamps: true

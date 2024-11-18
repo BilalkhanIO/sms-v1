@@ -1,7 +1,5 @@
 // Create a new utility file for statistics calculations
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-const Class = require('../models/Class');
+
 const Attendance = require('../models/Attendance');
 const Fee = require('../models/Fee');
 const Exam = require('../models/Exam');
