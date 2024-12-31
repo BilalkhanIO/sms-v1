@@ -22,7 +22,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const data = await fetchDashboardData('admin');
+        const data = await fetchDashboardData('admin'); // Use 'admin' instead of role
         setDashboardData(data);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -89,4 +89,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;

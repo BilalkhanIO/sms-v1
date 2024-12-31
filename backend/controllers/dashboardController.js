@@ -4,6 +4,10 @@ const catchAsync = require('../utils/catchAsync');
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const User = require('../models/User');
+const Class = require('../models/Class'); // Add Class model import
+const Activity = require('../models/Activity'); // Add this if needed
+const Fee = require('../models/Fee'); // Add this if needed
+const Exam = require('../models/Exam'); // Add this if needed
 
 // @desc    Get dashboard stats based on role
 // @route   GET /api/dashboard/stats/:role
@@ -16,23 +20,25 @@ const getStats = catchAsync(async (req, res, next) => {
   const requestedRole = req.params.role.toUpperCase();
   const userRole = req.user.role.toUpperCase();
 
-  // Role validation
+  // Updated role validation
   const allowedRoles = {
+    'ADMIN': ['SUPER_ADMIN', 'SCHOOL_ADMIN'],
     'SUPER_ADMIN': ['SUPER_ADMIN'],
     'SCHOOL_ADMIN': ['SUPER_ADMIN', 'SCHOOL_ADMIN'],
-    'TEACHER': ['TEACHER'],
-    'STUDENT': ['STUDENT']
+    'TEACHER': ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER'],
+    'STUDENT': ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STUDENT']
   };
 
-  if (!allowedRoles[requestedRole]?.includes(userRole)) {
+  if (!allowedRoles[requestedRole] || !allowedRoles[requestedRole].includes(userRole)) {
     return next(new AppError('Unauthorized access', 403));
   }
 
-  let stats;
   try {
+    let stats;
     switch (requestedRole) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
+      case 'ADMIN':
         stats = await getAdminStats();
         break;
       case 'TEACHER':
@@ -45,20 +51,12 @@ const getStats = catchAsync(async (req, res, next) => {
         return next(new AppError('Invalid role', 400));
     }
 
-    // Count students and teachers
-    const totalStudents = await User.countDocuments({ role: 'STUDENT' });
-    const totalTeachers = await User.countDocuments({ role: 'TEACHER' });
-
     res.status(200).json({
       success: true,
-      data: {
-        ...stats,
-        totalStudents,
-        totalTeachers
-      }
+      data: stats
     });
   } catch (error) {
-    next(error);
+    next(new AppError(error.message, 500));
   }
 });
 
@@ -97,8 +95,7 @@ const getUpcomingClasses = catchAsync(async (req, res) => {
 
 // Helper functions for getting role-specific stats
 const getStudentStats = catchAsync(async (userId) => {
-  const student = await User.findOne({ user: userId });
-if(student.student)
+  const student = await User.findOne({ user: userId })
     .populate('class')
     .populate('academicRecords.subjects.subject');
 
@@ -172,7 +169,7 @@ async function getAdminStats() {
   const [totalStudents, totalTeachers, totalClasses] = await Promise.all([
     Student.countDocuments(),
     Teacher.countDocuments(),
-    Class.countDocuments()
+    Class.countDocuments() // Now Class is defined
   ]);
 
   return {
@@ -343,9 +340,54 @@ const getOverallPerformance = async () => {
   }
 };
 
+const getPerformanceStats = catchAsync(async (req, res, next) => {
+  if (!req.user?.id) {
+    return next(new AppError('Not authenticated', 401));
+  }
+
+  const userRole = req.user.role.toUpperCase();
+
+  // Define allowed roles and their stats functions
+  const allowedRoles = {
+    'SUPER_ADMIN': async () => await StatsCalculator.calculatePerformanceStats(),
+    'SCHOOL_ADMIN': async () => await StatsCalculator.calculatePerformanceStats(),
+    'TEACHER': async () => {
+      const teacher = await Teacher.findOne({ user: req.user.id });
+      if (!teacher) {
+        throw new AppError('Teacher not found', 404);
+      }
+      return await StatsCalculator.calculateTeacherPerformanceStats(teacher._id);
+    },
+    'STUDENT': async () => {
+      const student = await Student.findOne({ user: req.user.id });
+      if (!student) {
+        throw new AppError('Student not found', 404);
+      }
+      return await StatsCalculator.calculateStudentPerformanceStats(student._id);
+    }
+  };
+
+  try {
+    if (!allowedRoles[userRole]) {
+      return next(new AppError('Unauthorized access', 403));
+    }
+
+    const stats = await allowedRoles[userRole]();
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Performance stats error:', error);
+    return next(new AppError(error.message || 'Error fetching performance stats', 500));
+  }
+});
+
 module.exports = {
   getStats,
   getRecentActivities,
   getUpcomingClasses,
+  getPerformanceStats,
  
-}; 
+};

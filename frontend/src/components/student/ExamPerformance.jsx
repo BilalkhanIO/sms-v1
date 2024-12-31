@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -90,12 +90,14 @@ const ExamPerformance = ({ exams, subjects }) => {
     </div>
   );
 
-  const renderRadarView = () => {
-    const radarData = subjects.map((subject) => ({
+  const radarData = useMemo(() => {
+    return subjects.map((subject) => ({
       subject: subject.name,
       score: exams.reduce((acc, exam) => acc + exam.scores[subject.id], 0) / exams.length,
     }));
+  }, [subjects, exams]);
 
+  const renderRadarView = () => {
     return (
       <div className="h-96">
         <ResponsiveContainer width="100%" height="100%">
@@ -164,4 +166,4 @@ const ExamPerformance = ({ exams, subjects }) => {
   );
 };
 
-export default ExamPerformance; 
+export default ExamPerformance;

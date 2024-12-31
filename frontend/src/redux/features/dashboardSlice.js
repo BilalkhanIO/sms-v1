@@ -4,18 +4,20 @@ import api from '../../services/api';
 // Async thunks
 export const fetchDashboardStats = createAsyncThunk(
   'dashboard/fetchStats',
-  async (_, { getState }) => {
-    const { auth } = getState();
-    const role = auth.user?.role.toLowerCase();
-    const response = await api.get(`/api/dashboard/stats/${role}`);
-    return response.data;
+  async (role, { rejectWithValue }) => {
+    try {
+      const response = await dashboardService.getStats(role);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
 export const fetchRecentActivities = createAsyncThunk(
   'dashboard/fetchActivities',
   async () => {
-    const response = await api.get('/api/dashboard/activities');
+    const response = await api.get('/dashboard/activities');
     return response.data;
   }
 );
@@ -23,7 +25,7 @@ export const fetchRecentActivities = createAsyncThunk(
 export const fetchUpcomingClasses = createAsyncThunk(
   'dashboard/fetchClasses',
   async () => {
-    const response = await api.get('/api/dashboard/upcoming-classes');
+    const response = await api.get('/dashboard/upcoming-classes');
     return response.data;
   }
 );
@@ -31,7 +33,7 @@ export const fetchUpcomingClasses = createAsyncThunk(
 export const fetchAttendanceData = createAsyncThunk(
   'dashboard/fetchAttendance',
   async (params) => {
-    const response = await api.get('/api/dashboard/attendance', { params });
+    const response = await api.get('/dashboard/attendance', { params });
     return response.data;
   }
 );
@@ -102,13 +104,18 @@ const dashboardSlice = createSlice({
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
         state.loading.stats = false;
         const { role, data } = action.payload;
-        if (role === 'teacher') {
-          state.teacherStats = data;
-        } else if (role === 'student') {
-          state.studentStats = data;
-        } else {
-          state.stats = data;
+        
+        switch (role) {
+          case 'teacher':
+            state.teacherStats = data;
+            break;
+          case 'student':
+            state.studentStats = data;
+            break;
+          default:
+            state.stats = data;
         }
+        state.error = null;
       })
       .addCase(fetchDashboardStats.rejected, (state, action) => {
         state.loading.stats = false;
@@ -157,4 +164,4 @@ const dashboardSlice = createSlice({
 });
 
 export const { clearDashboard } = dashboardSlice.actions;
-export default dashboardSlice.reducer; 
+export default dashboardSlice.reducer;

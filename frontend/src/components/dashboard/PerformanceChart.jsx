@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useApi } from '../../hooks/useApi';
-import dashboardService from '../../services/dashboardService';
+import { useApi } from '@/hooks/useApi';
+import dashboardService from '@/services/dashboardService';
 import {
   LineChart,
   Line,
@@ -15,26 +15,29 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
 const PerformanceChart = ({ dataKeys, colors }) => {
-  const [performanceData, setPerformanceData] = useState([]);
-  const { loading, error, execute: fetchPerformanceData } = useApi(
-    dashboardService.getPerformanceData
-  );
+  const [performanceData, setPerformanceData] = useState(null);
+  const { loading, error, execute } = useApi(() => dashboardService.getPerformanceStats());
 
   useEffect(() => {
     const loadPerformanceData = async () => {
       try {
-        const data = await fetchPerformanceData();
-        setPerformanceData(data);
+        const response = await execute();
+        if (response?.success) {
+          setPerformanceData(response.data);
+        } else {
+          throw new Error(response?.message || 'Failed to load performance data');
+        }
       } catch (error) {
         console.error('Failed to load performance data:', error);
       }
     };
 
     loadPerformanceData();
-  }, [fetchPerformanceData]);
+  }, [execute]);
 
   if (loading) return <LoadingSpinner size="small" />;
-  if (error) return <ErrorMessage message={error.message} />;
+  if (error) return <ErrorMessage message={error} />;
+  if (!performanceData) return null;
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -65,4 +68,4 @@ const PerformanceChart = ({ dataKeys, colors }) => {
   );
 };
 
-export default PerformanceChart; 
+export default PerformanceChart;

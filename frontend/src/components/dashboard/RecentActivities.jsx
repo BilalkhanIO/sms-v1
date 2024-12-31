@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useApi } from '../../hooks/useApi';
-import dashboardService from '../../services/dashboardService';
+import { useApi } from '@/hooks/useApi';
+import dashboardService from '@/services/dashboardService';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -8,31 +8,29 @@ import ErrorMessage from '../common/ErrorMessage';
 
 const RecentActivities = () => {
   const [activities, setActivities] = useState([]);
-  const { loading, error, execute: fetchActivities } = useApi(
-    dashboardService.getRecentActivities
-  );
+  const { loading, error, execute } = useApi(dashboardService.getRecentActivities);
 
   useEffect(() => {
     const loadActivities = async () => {
       try {
-        const data = await fetchActivities();
-        setActivities(data);
+        const data = await execute();
+        setActivities(data?.data || []);
       } catch (error) {
         console.error('Failed to load activities:', error);
       }
     };
 
     loadActivities();
-  }, [fetchActivities]);
+  }, [execute]);
 
   if (loading) return <LoadingSpinner size="small" />;
-  if (error) return <ErrorMessage message={error.message} />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activities</h2>
       <div className="space-y-4">
-        {activities.map((activity) => (
+        {Array.isArray(activities) && activities.map((activity) => (
           <div
             key={activity.id}
             className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
@@ -51,7 +49,7 @@ const RecentActivities = () => {
             </div>
           </div>
         ))}
-        {activities.length === 0 && (
+        {(!activities || activities.length === 0) && (
           <p className="text-center text-gray-500">No recent activities</p>
         )}
       </div>
@@ -59,4 +57,4 @@ const RecentActivities = () => {
   );
 };
 
-export default RecentActivities; 
+export default RecentActivities;

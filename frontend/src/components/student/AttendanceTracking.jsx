@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { markAttendance, getAttendanceReport } from '../../redux/features/studentSlice';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -28,7 +28,7 @@ const AttendanceTracking = () => {
     }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     try {
       await dispatch(markAttendance({
         classId: selectedClass._id,
@@ -41,7 +41,7 @@ const AttendanceTracking = () => {
     } catch (error) {
       console.error('Failed to mark attendance:', error);
     }
-  };
+  }, [dispatch, selectedClass, date, attendanceData]);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -192,4 +192,4 @@ const AttendanceTracking = () => {
   );
 };
 
-export default AttendanceTracking; 
+export default AttendanceTracking;

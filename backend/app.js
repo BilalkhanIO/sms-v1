@@ -1,19 +1,30 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const feeRoutes = require('./routes/fee.routes');
 const calendarRoutes = require('./routes/calendar.routes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+require('dotenv').config();
+
 const app = express();
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev',
+  'https://supreme-garbanzo-64p5vq944qq35r95-3000.app.github.dev',
+  'https://supreme-garbanzo-64p5vq944qq35r95-6000.app.github.dev'
+];
+
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'https://effective-cod-9jx56r7jjvjcprx-5173.app.github.dev'
-  ],
+  origin: function (origin, callback) {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type', 
@@ -27,7 +38,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(express.json());
 
 // Health check route
@@ -51,4 +61,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-module.exports = app; 
+module.exports = app;

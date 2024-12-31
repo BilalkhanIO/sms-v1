@@ -179,4 +179,4 @@ export const generateReportCard = async (student, academicData, schoolInfo) => {
     console.error('Error generating report card:', error);
     throw error;
   }
-}; 
+};

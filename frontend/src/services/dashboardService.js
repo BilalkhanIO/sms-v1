@@ -1,50 +1,42 @@
-import apiService from './apiService';
+import api from './api';
 
 class DashboardService {
   async getStats(role) {
     try {
-      const response = await apiService.getDashboardStats(role);
-      return response;
+      const response = await api.get(`/api/dashboard/stats/${role}`);
+      return response.data;
     } catch (error) {
-      throw apiService.handleError(error);
+      throw error.response?.data?.message || 'Failed to fetch dashboard stats';
     }
   }
 
   async getRecentActivities() {
     try {
-      const response = await apiService.getRecentActivities();
-      return response;
+      const response = await api.get('/api/dashboard/activities');
+      return response.data;
     } catch (error) {
-      throw apiService.handleError(error);
+      throw error.response?.data?.message || 'Failed to fetch recent activities';
     }
   }
 
   async getUpcomingClasses() {
     try {
-      const response = await apiService.getUpcomingClasses();
-      return response;
+      const response = await api.get('/api/dashboard/upcoming-classes');
+      return response.data;
     } catch (error) {
-      throw apiService.handleError(error);
+      throw error.response?.data?.message || 'Failed to fetch upcoming classes';
     }
   }
 
-  async getPerformanceData(params) {
+  async getPerformanceStats() {
     try {
-      const response = await apiService.api.get('/dashboard/performance', { params });
+      const response = await api.get('/api/dashboard/stats/performance');
       return response.data;
     } catch (error) {
-      throw apiService.handleError(error);
+      throw error.response?.data?.message || 'Failed to fetch performance stats';
     }
   }
-
-  async getAttendanceStats(params) {
-    try {
-      const response = await apiService.api.get('/dashboard/attendance-stats', { params });
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  }
+  // ... other methods
 }
 
-export default new DashboardService(); 
+export default new DashboardService();

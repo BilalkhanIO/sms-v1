@@ -1,31 +1,33 @@
 import { useState, useEffect } from 'react';
-import dashboardService from '../services/dashboardService';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchDashboardStats } from '../redux/features/dashboardSlice';
 
 export const useDashboard = (role) => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { stats, teacherStats, studentStats, loading, error } = useSelector(
+    (state) => state.dashboard 
+  );
 
-  const refreshDashboard = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await dashboardService.getStats(role);
-      setDashboardData(response.data);
-    } catch (err) {
-      const errorMessage = err.message || 'Failed to load dashboard data';
-      setError(errorMessage);
-      console.error('Dashboard error:', errorMessage);
-    } finally {
-      setLoading(false);
+  const getDashboardData = () => {
+    switch (role?.toLowerCase()) {
+      case 'teacher':
+        return teacherStats;
+      case 'student':
+        return studentStats;
+      default:
+        return stats;
     }
   };
 
   useEffect(() => {
     if (role) {
-      refreshDashboard();
+      dispatch(fetchDashboardStats(role));
     }
-  }, [role]);
+  }, [role, dispatch]);
 
-  return { dashboardData, loading, error, refreshDashboard };
+  return {
+    dashboardData: getDashboardData(),
+    loading: loading.stats,
+    error,
+  };
 };

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import subjectService from '../../services/subjectService';
+import produce from 'immer';
 
 export const fetchSubjects = createAsyncThunk(
   'subject/fetchSubjects',

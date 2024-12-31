@@ -4,8 +4,6 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 6000;
 
-
-
 // Create server
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
@@ -20,7 +18,6 @@ mongoose.connect(process.env.MONGODB_URI)
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err);
-    // Gracefully shutdown server on MongoDB connection error
     server.close(() => {
       console.log('Server closed due to MongoDB connection error');
       process.exit(1);
@@ -30,7 +27,6 @@ mongoose.connect(process.env.MONGODB_URI)
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
-  // Gracefully shutdown server
   server.close(() => {
     console.log('Server closed due to unhandled rejection');
     process.exit(1);
@@ -40,7 +36,6 @@ process.on('unhandledRejection', (err) => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  // Gracefully shutdown server
   server.close(() => {
     console.log('Server closed due to uncaught exception');
     process.exit(1);

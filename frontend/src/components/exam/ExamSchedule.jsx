@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { scheduleExam } from '../../redux/features/examSlice';
 import { Dialog } from '@headlessui/react';
@@ -29,7 +29,7 @@ const ExamSchedule = ({ examId }) => {
     }
   }, [selectedExam]);
 
-  const handleScheduleSubmit = async (e) => {
+  const handleScheduleSubmit = useCallback(async (e) => {
     e.preventDefault();
     try {
       await dispatch(scheduleExam({ examId, scheduleData })).unwrap();
@@ -37,7 +37,7 @@ const ExamSchedule = ({ examId }) => {
     } catch (error) {
       console.error('Failed to schedule exam:', error);
     }
-  };
+  }, [dispatch, examId, scheduleData]);
 
   const updateSubjectSchedule = (index, field, value) => {
     const updatedSubjects = [...scheduleData.subjects];

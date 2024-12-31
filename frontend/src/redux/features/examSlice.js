@@ -149,4 +149,4 @@ const examSlice = createSlice({
 });
 
 export const { clearSelectedExam, clearExamResults } = examSlice.actions;
-export default examSlice.reducer; 
+export default examSlice.reducer;
