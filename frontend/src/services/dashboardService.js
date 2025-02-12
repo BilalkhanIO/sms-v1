@@ -3,7 +3,7 @@ import api from './api';
 class DashboardService {
   async getStats(role) {
     try {
-      const response = await api.get(`/api/dashboard/stats/${role}`);
+      const response = await api.get(`/api/dashboard/stats/${role.toLowerCase()}`);
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || 'Failed to fetch dashboard stats';

@@ -1,75 +1,111 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
+import { type } from "os";
 
-const classSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  section: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  academicYear: {
-    type: String,
-    required: true
-  },
-  classTeacher: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teacher',
-    required: true
-  },
-  subjects: [{
-    subject: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Subject',
-      required: true
-    },
-    teacher: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Teacher',
-      required: true
-    }
-  }],
-  students: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student'
-  }],
-  schedule: [{
-    day: {
+const { Schema, model } = mongoose;
+
+const classSchema = new Schema(
+  {
+    name: {
       type: String,
-      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      required: true
+      required: true,
+      trim: true,
     },
-    periods: [{
-      subject: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Subject',
-        required: true
-      },
-      teacher: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Teacher',
-        required: true
-      },
-      startTime: String,
-      endTime: String
-    }]
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
-});
 
-// Indexes
+    section: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    academicYear: {
+      type: String,
+      required: true,
+    },
+
+    classTeacher: {
+      type: Schema.Types.ObjectId,
+      ref: "Teacher",
+      required: true,
+    },
+
+    section: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    subjects: [
+      {
+        subject: {
+          type: Schema.Types.ObjectId,
+          ref: "Subject",
+          required: true,
+        },
+        teacher: {
+          type: Schema.Types.ObjectId,
+          ref: "Teacher",
+          required: true,
+        },
+      },
+    ],
+
+    students: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Student",
+      },
+    ],
+
+    attendance: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Atendance",
+      },
+    ],
+
+    schedule: [
+      {
+        day: {
+          type: String,
+          enum: [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+          ],
+          required: true,
+        },
+
+        periods: [
+          {
+            subject: {
+              type: Schema.Types.ObjectId,
+              ref: "Subject",
+              required: true,
+            },
+
+            teacher: {
+              type: Schema.Types.ObjectId,
+              ref: "Teacher",
+              required: true,
+            },
+            startTime: String,
+            endTime: String,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Unique compound index to ensure class uniqueness per academic year
 classSchema.index({ name: 1, section: 1, academicYear: 1 }, { unique: true });
 
-module.exports = mongoose.model('Class', classSchema); 
+const ClassModel = model("Class", classSchema);
+
+export default ClassModel;

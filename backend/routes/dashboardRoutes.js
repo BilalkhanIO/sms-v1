@@ -1,19 +1,9 @@
-const express = require('express');
+// routes/dashboardRoutes.js
+import express from "express";
+import { getDashboardStats } from "../controllers/dashboardController.js";
+import { protect } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const {
-  getStats,
-  getRecentActivities,
-  getUpcomingClasses,
-  getPerformanceStats
-} = require('../controllers/dashboardController');
+router.route("/").get(protect, getDashboardStats);
 
-// Protect all dashboard routes
-router.use(protect);
-
-router.get('/stats/:role', getStats);
-router.get('/activities', getRecentActivities);
-router.get('/upcoming-classes', getUpcomingClasses);
-router.get('/performance', protect, getPerformanceStats);
-
-module.exports = router;
+export default router;

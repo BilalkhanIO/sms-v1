@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import LoginForm from '../../components/auth/LoginForm';
+import { Link } from "react-router-dom";
+import LoginForm from "../../components/auth/LoginForm";
 
 const LoginPage = () => {
   return (
@@ -10,13 +10,18 @@ const LoginPage = () => {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Or{" "}
+            <Link
+              to="/auth/register"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
               create a new account
             </Link>
           </p>
         </div>
+
         <LoginForm />
+
         <div className="text-center">
           <Link
             to="/auth/forgot-password"

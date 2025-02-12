@@ -16,7 +16,7 @@ import ErrorMessage from '../common/ErrorMessage';
 
 const PerformanceChart = ({ dataKeys, colors }) => {
   const [performanceData, setPerformanceData] = useState(null);
-  const { loading, error, execute } = useApi(() => dashboardService.getPerformanceStats());
+  const { loading, error, execute } = useApi(dashboardService.getPerformanceStats);
 
   useEffect(() => {
     const loadPerformanceData = async () => {
@@ -24,8 +24,6 @@ const PerformanceChart = ({ dataKeys, colors }) => {
         const response = await execute();
         if (response?.success) {
           setPerformanceData(response.data);
-        } else {
-          throw new Error(response?.message || 'Failed to load performance data');
         }
       } catch (error) {
         console.error('Failed to load performance data:', error);
@@ -35,7 +33,7 @@ const PerformanceChart = ({ dataKeys, colors }) => {
     loadPerformanceData();
   }, [execute]);
 
-  if (loading) return <LoadingSpinner size="small" />;
+  if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
   if (!performanceData) return null;
 

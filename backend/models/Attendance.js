@@ -1,40 +1,45 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const attendanceSchema = new mongoose.Schema({
-  student: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-    required: true
+const { Schema, model } = mongoose;
+
+const attendanceSchema = new Schema(
+  {
+    student: {
+      type: Schema.Types.ObjectId,
+      ref: "Student",
+      required: true,
+    },
+
+    class: {
+      type: Schema.Types.ObjectId,
+      ref: "Class",
+      required: true,
+    },
+
+    date: {
+      type: Date,
+      required: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["PRESENT", "ABSENT", "LATE", "EXCUSED"],
+      required: true,
+    },
+
+    timeIn: Date,
+    timeOut: Date,
   },
-  class: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class',
-    required: true
-  },
-  date: {
-    type: Date,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED'],
-    required: true
-  },
-  timeIn: Date,
-  timeOut: Date,
-  remarks: String,
-  markedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
+);
 
-// Indexes
+// indexes for frequently queried fields
 attendanceSchema.index({ student: 1, date: 1 });
 attendanceSchema.index({ class: 1, date: 1 });
 attendanceSchema.index({ date: 1, status: 1 });
 
-module.exports = mongoose.model('Attendance', attendanceSchema);
+const Attendance = model("Attendance", attendanceSchema);
+
+export default Attendance;

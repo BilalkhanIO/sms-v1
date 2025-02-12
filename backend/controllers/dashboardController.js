@@ -1,175 +1,112 @@
-const StatsCalculator = require('../utils/statsCalculator');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-const User = require('../models/User');
-const Class = require('../models/Class'); // Add Class model import
-const Activity = require('../models/Activity'); // Add this if needed
-const Fee = require('../models/Fee'); // Add this if needed
-const Exam = require('../models/Exam'); // Add this if needed
+// controllers/dashboardController.js
+import asyncHandler from "express-async-handler";
+import Activity from "../models/Activity.js";
+import ClassModel from "../models/Class.js";
+import Student from "../models/Student.js";
+import Attendance from "../models/Attendance.js";
+import Fee from "../models/Fee.js";
+import Exam from "../models/Exam.js";
+import Calendar from "../models/Calendar.js";
+import Teacher from "../models/Teacher.js";
+import User from "../models/User.js";
 
-// @desc    Get dashboard stats based on role
-// @route   GET /api/dashboard/stats/:role
+// @desc    Get dashboard statistics
+// @route   GET /api/dashboard
 // @access  Private
-const getStats = catchAsync(async (req, res, next) => {
-  if (!req.user?.id) {
-    return next(new AppError('Not authenticated', 401));
-  }
+const getDashboardStats = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  const currentDate = new Date();
 
-  const requestedRole = req.params.role.toUpperCase();
-  const userRole = req.user.role.toUpperCase();
-
-  // Updated role validation
-  const allowedRoles = {
-    'ADMIN': ['SUPER_ADMIN', 'SCHOOL_ADMIN'],
-    'SUPER_ADMIN': ['SUPER_ADMIN'],
-    'SCHOOL_ADMIN': ['SUPER_ADMIN', 'SCHOOL_ADMIN'],
-    'TEACHER': ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER'],
-    'STUDENT': ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STUDENT']
+  // Common statistics for all roles
+  const baseStats = {
+    activities: await Activity.find({ user: userId })
+      .sort("-createdAt")
+      .limit(5)
+      .lean(),
+    upcomingEvents: await Calendar.find({
+      start: { $gte: currentDate },
+      $or: [
+        { visibility: "public" },
+        { participants: userId },
+        { createdBy: userId },
+      ],
+    })
+      .sort("start")
+      .limit(5)
+      .lean(),
   };
 
-  if (!allowedRoles[requestedRole] || !allowedRoles[requestedRole].includes(userRole)) {
-    return next(new AppError('Unauthorized access', 403));
+  // Role-specific statistics
+  let roleStats = {};
+
+  switch (userRole) {
+    case "SUPER_ADMIN":
+    case "SCHOOL_ADMIN":
+      roleStats = await getAdminStats();
+      break;
+    case "TEACHER":
+      roleStats = await getTeacherStats(userId);
+      break;
+    case "STUDENT":
+      roleStats = await getStudentStats(userId);
+      break;
+    case "PARENT":
+      roleStats = await getParentStats(userId);
+      break;
+    default:
+      roleStats = {};
   }
 
-  try {
-    let stats;
-    switch (requestedRole) {
-      case 'SUPER_ADMIN':
-      case 'SCHOOL_ADMIN':
-      case 'ADMIN':
-        stats = await getAdminStats();
-        break;
-      case 'TEACHER':
-        stats = await getTeacherStats(req.user.id);
-        break;
-      case 'STUDENT':
-        stats = await getStudentStats(req.user.id);
-        break;
-      default:
-        return next(new AppError('Invalid role', 400));
-    }
-
-    res.status(200).json({
-      success: true,
-      data: stats
-    });
-  } catch (error) {
-    next(new AppError(error.message, 500));
-  }
+  res.json({ ...baseStats, ...roleStats });
 });
 
-// @desc    Get recent activities
-// @route   GET /api/dashboard/activities
-// @access  Private
-const getRecentActivities = catchAsync(async (req, res) => {
-  const activities = await Activity.find()
-    .sort('-createdAt')
-    .limit(10)
-    .populate('user', 'name role');
-
-  res.status(200).json({
-    success: true,
-    data: activities
-  });
-});
-
-// @desc    Get upcoming classes
-// @route   GET /api/dashboard/upcoming-classes
-// @access  Private
-const getUpcomingClasses = catchAsync(async (req, res) => {
-  const classes = await Class.find({
-    date: { $gte: new Date() }
-  })
-    .sort('date')
-    .limit(5)
-    .populate('teacher', 'name')
-    .populate('subject', 'name');
-
-  res.status(200).json({
-    success: true,
-    data: classes
-  });
-});
-
-// Helper functions for getting role-specific stats
-const getStudentStats = catchAsync(async (userId) => {
-  const student = await User.findOne({ user: userId })
-    .populate('class')
-    .populate('academicRecords.subjects.subject');
-
-  if (!student) {
-    throw new AppError('Student record not found', 404);
-  }
-
-  const attendance = await Attendance.find({ student: student._id })
-    .sort('-date')
-    .limit(30);
-
-  const attendanceRate = calculateAttendanceRate(attendance);
-  const academicPerformance = calculateAcademicPerformance(student.academicRecords);
-  const upcomingExams = await getUpcomingExams(student.class);
-
-  return {
-    attendance: {
-      rate: attendanceRate,
-      present: attendance.filter(a => a.status === 'PRESENT').length,
-      absent: attendance.filter(a => a.status === 'ABSENT').length,
-      late: attendance.filter(a => a.status === 'LATE').length
-    },
-    academics: {
-      overallGrade: academicPerformance.overallGrade,
-      gradePercentage: academicPerformance.percentage,
-      subjectWisePerformance: academicPerformance.subjectWise
-    },
-    upcomingExams: upcomingExams,
-    assignments: await getAssignmentStats(student._id),
-    recentActivities: await getStudentActivities(student._id)
-  };
-});
-
-async function getTeacherStats(userId) {
-  const teacher = await Teacher.findOne({ user: userId });
-  const totalStudents = await Student.countDocuments({ 
-    currentClass: { $in: teacher.assignedClasses } 
-  });
-  const todayClasses = await Class.countDocuments({ 
-    teacher: teacher._id,
-    date: { 
-      $gte: new Date().setHours(0,0,0,0),
-      $lt: new Date().setHours(23,59,59,999)
-    }
-  });
-
-  return {
-    totalStudents,
-    todayClasses,
-    attendanceRate: await calculateClassAttendanceRate(teacher.assignedClasses),
-    pendingTasks: await getPendingTasks(teacher._id),
-    recentSubmissions: await getRecentSubmissions(teacher.assignedClasses),
-    upcomingClasses: await getUpcomingClasses(teacher._id),
-    classPerformance: await getClassPerformance(teacher.assignedClasses)
-  };
-}
-
-async function getAdminStats() {
+// Admin-specific statistics
+const getAdminStats = async () => {
   const [
-    feeStats,
-    attendanceStats,
-    performanceStats,
-    recentActivities
+    totalStudents,
+    totalTeachers,
+    totalClasses,
+    activeUsers,
+    todayAttendance,
+    feeSummary,
+    recentExams,
   ] = await Promise.all([
-    StatsCalculator.calculateFeeStats(),
-    StatsCalculator.calculateAttendanceStats(),
-    StatsCalculator.calculatePerformanceStats(),
-    StatsCalculator.getRecentActivities()
-  ]);
-
-  const [totalStudents, totalTeachers, totalClasses] = await Promise.all([
     Student.countDocuments(),
     Teacher.countDocuments(),
-    Class.countDocuments() // Now Class is defined
+    ClassModel.countDocuments(),
+    User.countDocuments({ status: "ACTIVE" }),
+    Attendance.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: new Date().setHours(0, 0, 0, 0),
+            $lte: new Date().setHours(23, 59, 59, 999),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+    Fee.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          totalPaid: { $sum: "$paidAmount" },
+          pending: { $sum: { $subtract: ["$amount", "$paidAmount"] } },
+        },
+      },
+    ]),
+    Exam.find({ status: "SCHEDULED" })
+      .sort("date")
+      .limit(5)
+      .populate("class subject")
+      .lean(),
   ]);
 
   return {
@@ -177,217 +114,158 @@ async function getAdminStats() {
       totalStudents,
       totalTeachers,
       totalClasses,
-      activeStudents: await Student.countDocuments({ status: 'ACTIVE' })
+      activeUsers,
+      todayAttendance: todayAttendance.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      feeSummary: feeSummary[0] || {},
     },
-    feeCollection: feeStats,
-    attendance: attendanceStats,
-    performance: performanceStats,
-    recentActivities
+    recentExams,
   };
-}
+};
 
-// Helper utility functions
-function calculateAttendanceRate(attendance) {
-  if (!attendance.length) return 0;
-  const present = attendance.filter(a => a.status === 'PRESENT').length;
-  return (present / attendance.length) * 100;
-}
+// Teacher-specific statistics
+const getTeacherStats = async (userId) => {
+  const teacher = await Teacher.findOne({ user: userId }).populate(
+    "assignedClasses assignedSubjects"
+  );
 
-function calculateAcademicPerformance(records) {
-  // Implement grade calculation logic
+  const [classes, schedule, upcomingExams, students] = await Promise.all([
+    ClassModel.find({ classTeacher: teacher._id }),
+    ClassModel.aggregate([
+      { $unwind: "$schedule" },
+      { $unwind: "$schedule.periods" },
+      { $match: { "schedule.periods.teacher": teacher._id } },
+      {
+        $group: {
+          _id: "$schedule.day",
+          periods: { $push: "$schedule.periods" },
+        },
+      },
+    ]),
+    Exam.find({
+      createdBy: userId,
+      status: "SCHEDULED",
+      date: { $gte: new Date() },
+    })
+      .sort("date")
+      .limit(5)
+      .lean(),
+    Student.countDocuments({
+      class: { $in: teacher.assignedClasses },
+    }),
+  ]);
+
   return {
-    overallGrade: 'A',
-    percentage: 85,
-    subjectWise: []
-  };
-}
-
-async function getUpcomingExams(classId) {
-  return await Exam.find({
-    class: classId,
-    date: { $gte: new Date() }
-  })
-    .sort('date')
-    .limit(5)
-    .populate('subject', 'name');
-}
-
-// Add more helper functions as needed
-
-const calculateFeeCollection = async () => {
-  try {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-
-    // Get all fee records
-    const feeRecords = await Fee.find({
-      createdAt: {
-        $gte: new Date(currentYear, 0, 1), // Start of current year
-        $lte: currentDate
-      }
-    });
-
-    // Calculate total collection
-    const total = feeRecords.reduce((acc, fee) => acc + (fee.paidAmount || 0), 0);
-
-    // Calculate pending amount
-    const pending = feeRecords.reduce((acc, fee) => {
-      const pendingAmount = fee.amount - (fee.paidAmount || 0);
-      return acc + (pendingAmount > 0 ? pendingAmount : 0);
-    }, 0);
-
-    // Calculate this month's collection
-    const thisMonth = feeRecords
-      .filter(fee => {
-        const feeMonth = new Date(fee.paidDate).getMonth() + 1;
-        const feeYear = new Date(fee.paidDate).getFullYear();
-        return feeMonth === currentMonth && feeYear === currentYear;
-      })
-      .reduce((acc, fee) => acc + (fee.paidAmount || 0), 0);
-
-    // Calculate collection rate
-    const rate = total > 0 ? ((total / (total + pending)) * 100).toFixed(2) : 0;
-
-    return {
-      total,
-      pending,
-      thisMonth,
-      rate: parseFloat(rate)
-    };
-  } catch (error) {
-    console.error('Error calculating fee collection:', error);
-    return {
-      total: 0,
-      pending: 0,
-      thisMonth: 0,
-      rate: 0
-    };
-  }
-};
-
-const getAttendanceOverview = async () => {
-  try {
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-
-    const attendance = await Attendance.find({
-      date: {
-        $gte: startOfDay,
-        $lte: endOfDay
-      }
-    });
-
-    const total = attendance.length;
-    const present = attendance.filter(a => a.status === 'PRESENT').length;
-    const absent = attendance.filter(a => a.status === 'ABSENT').length;
-    const late = attendance.filter(a => a.status === 'LATE').length;
-
-    return {
-      total,
-      present,
-      absent,
-      late,
-      rate: total > 0 ? ((present / total) * 100).toFixed(2) : 0
-    };
-  } catch (error) {
-    console.error('Error calculating attendance overview:', error);
-    return {
-      total: 0,
-      present: 0,
-      absent: 0,
-      late: 0,
-      rate: 0
-    };
-  }
-};
-
-const getOverallPerformance = async () => {
-  try {
-    // Get all exam results
-    const examResults = await Exam.find({
-      status: 'COMPLETED'
-    }).populate('results');
-
-    // Calculate average performance
-    let totalScore = 0;
-    let totalStudents = 0;
-
-    examResults.forEach(exam => {
-      exam.results.forEach(result => {
-        totalScore += (result.obtainedMarks / exam.totalMarks) * 100;
-        totalStudents++;
-      });
-    });
-
-    const averagePerformance = totalStudents > 0 
-      ? (totalScore / totalStudents).toFixed(2)
-      : 0;
-
-    return {
-      averagePerformance: parseFloat(averagePerformance),
-      totalExams: examResults.length,
-      totalParticipants: totalStudents
-    };
-  } catch (error) {
-    console.error('Error calculating overall performance:', error);
-    return {
-      averagePerformance: 0,
-      totalExams: 0,
-      totalParticipants: 0
-    };
-  }
-};
-
-const getPerformanceStats = catchAsync(async (req, res, next) => {
-  if (!req.user?.id) {
-    return next(new AppError('Not authenticated', 401));
-  }
-
-  const userRole = req.user.role.toUpperCase();
-
-  // Define allowed roles and their stats functions
-  const allowedRoles = {
-    'SUPER_ADMIN': async () => await StatsCalculator.calculatePerformanceStats(),
-    'SCHOOL_ADMIN': async () => await StatsCalculator.calculatePerformanceStats(),
-    'TEACHER': async () => {
-      const teacher = await Teacher.findOne({ user: req.user.id });
-      if (!teacher) {
-        throw new AppError('Teacher not found', 404);
-      }
-      return await StatsCalculator.calculateTeacherPerformanceStats(teacher._id);
+    teacherOverview: {
+      totalClasses: classes.length,
+      totalSubjects: teacher.assignedSubjects.length,
+      totalStudents: students,
     },
-    'STUDENT': async () => {
-      const student = await Student.findOne({ user: req.user.id });
-      if (!student) {
-        throw new AppError('Student not found', 404);
-      }
-      return await StatsCalculator.calculateStudentPerformanceStats(student._id);
-    }
+    schedule,
+    upcomingExams,
   };
-
-  try {
-    if (!allowedRoles[userRole]) {
-      return next(new AppError('Unauthorized access', 403));
-    }
-
-    const stats = await allowedRoles[userRole]();
-
-    res.status(200).json({
-      success: true,
-      data: stats
-    });
-  } catch (error) {
-    console.error('Performance stats error:', error);
-    return next(new AppError(error.message || 'Error fetching performance stats', 500));
-  }
-});
-
-module.exports = {
-  getStats,
-  getRecentActivities,
-  getUpcomingClasses,
-  getPerformanceStats,
- 
 };
+
+// Student-specific statistics
+const getStudentStats = async (userId) => {
+  const student = await Student.findOne({ user: userId }).populate(
+    "class",
+    "name section"
+  );
+
+  const [attendanceSummary, upcomingExams, feeStatus] = await Promise.all([
+    Attendance.aggregate([
+      { $match: { student: student._id } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          lastDate: { $max: "$date" },
+        },
+      },
+    ]),
+    Exam.find({
+      class: student.class,
+      status: "SCHEDULED",
+      date: { $gte: new Date() },
+    })
+      .sort("date")
+      .limit(5)
+      .lean(),
+    Fee.aggregate([
+      { $match: { student: student._id } },
+      {
+        $group: {
+          _id: "$status",
+          total: { $sum: "$amount" },
+          paid: { $sum: "$paidAmount" },
+        },
+      },
+    ]),
+  ]);
+
+  return {
+    studentOverview: {
+      class: student.class,
+      attendanceSummary: attendanceSummary.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      feeStatus: feeStatus.reduce((acc, curr) => {
+        acc[curr._id] = { total: curr.total, paid: curr.paid };
+        return acc;
+      }, {}),
+      upcomingExams,
+    },
+  };
+};
+
+// Parent-specific statistics (assuming parent-student relationship)
+const getParentStats = async (userId) => {
+  const students = await Student.find({
+    "parentInfo.guardian": userId,
+  }).select("admissionNumber class status");
+
+  const studentIds = students.map((s) => s._id);
+
+  const [attendanceSummary, feeStatus] = await Promise.all([
+    Attendance.aggregate([
+      { $match: { student: { $in: studentIds } } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+    Fee.aggregate([
+      { $match: { student: { $in: studentIds } } },
+      {
+        $group: {
+          _id: "$status",
+          total: { $sum: "$amount" },
+          paid: { $sum: "$paidAmount" },
+        },
+      },
+    ]),
+  ]);
+
+  return {
+    parentOverview: {
+      totalWards: students.length,
+      attendanceSummary: attendanceSummary.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      feeStatus: feeStatus.reduce((acc, curr) => {
+        acc[curr._id] = { total: curr.total, paid: curr.paid };
+        return acc;
+      }, {}),
+      wards: students,
+    },
+  };
+};
+
+export { getDashboardStats };

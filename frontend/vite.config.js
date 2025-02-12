@@ -18,7 +18,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://supreme-garbanzo-64p5vq944qq35r95-6000.app.github.dev',
+        target: 'http://localhost:6000',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api')

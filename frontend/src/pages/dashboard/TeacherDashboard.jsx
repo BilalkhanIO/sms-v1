@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const TeacherDashboard = () => {
-  const { dashboardData, loading, error } = useDashboard('TEACHER');
+  const { dashboardData, loading, error } = useDashboard('teacher');
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -73,4 +73,4 @@ const TeacherDashboard = () => {
   );
 };
 
-export default TeacherDashboard; 
+export default TeacherDashboard;

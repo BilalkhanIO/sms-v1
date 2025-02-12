@@ -13,7 +13,7 @@ import LeaveManagementPage from '../pages/leave/LeaveManagementPage';
 import AttendanceManagementPage from '../pages/attendance/AttendanceManagementPage';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
-import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+// import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import { ROLES } from '../utils/constants';
 
 const AppRoutes = () => {
@@ -23,7 +23,7 @@ const AppRoutes = () => {
       <Route path="auth">
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
-        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        {/* <Route path="forgot-password" element={<ForgotPasswordPage />} /> */}
       </Route>
 
       {/* Protected Routes */}

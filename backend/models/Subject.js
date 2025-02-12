@@ -1,64 +1,68 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const subjectSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  code: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
-  },
-  description: {
-    type: String,
-    trim: true
-  },
-  credits: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  type: {
-    type: String,
-    enum: ['mandatory', 'elective'],
-    default: 'mandatory'
-  },
-  syllabus: [{
-    unit: {
+const { Schema, model } = mongoose;
+
+const subjectSchema = new Schema(
+  {
+    name: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
     },
-    topics: [{
+    code: {
       type: String,
-      required: true
-    }]
-  }],
-  assignedTeachers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teacher'
-  }],
-  assignedClasses: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class'
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    credits: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    type: {
+      type: String,
+      enum: ["mandatory", "elective"],
+      default: "mandatory",
+    },
+    syllabus: [
+      {
+        unit: {
+          type: String,
+          required: true,
+        },
+        topics: [
+          {
+            type: String,
+            required: true,
+          },
+        ],
+      },
+    ],
+    assignedTeachers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Teacher",
+      },
+    ],
+    assignedClasses: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Class",
+      },
+    ],
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
+);
 
-// Indexes
-subjectSchema.index({ code: 1 }, { unique: true });
+// Indexes for faster queries
 subjectSchema.index({ name: 1 });
 
-const Subject = mongoose.model('Subject', subjectSchema);
-export default Subject; 
+const Subject = model("Subject", subjectSchema);
+export default Subject;
