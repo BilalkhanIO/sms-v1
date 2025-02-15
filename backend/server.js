@@ -1,11 +1,11 @@
-// server.js (or your main entry file)
-import "dotenv/config"; // Load environment variables first
+// server.js
+import "dotenv/config";
 import app from "./app.js";
 import connectDB from "./utils/db.js";
 
 const PORT = process.env.PORT || 6001;
 
-// Connect to MongoDB first
+// Connect to MongoDB
 connectDB()
   .then(() => {
     // Start server after successful DB connection

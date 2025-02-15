@@ -22,10 +22,6 @@ const teacherSchema = new Schema(
       type: String,
       required: true,
     },
-    experience: {
-      type: Number,
-      default: 0,
-    },
     assignedClasses: [
       {
         type: Schema.Types.ObjectId,
@@ -38,14 +34,26 @@ const teacherSchema = new Schema(
         ref: "Subject",
       },
     ],
+    status: {
+      type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+    },
+    address: {
+      type: String,
+    },
+    contactNumber: {
+      type: String,
+    },
+    dateOfBirth: {
+      type: Date,
+    },
+    salary: {
+      type: Number,
+    },
     joiningDate: {
       type: Date,
       default: Date.now,
-    },
-    status: {
-      type: String,
-      enum: ["ACTIVE", "INACTIVE", "ON_LEAVE"],
-      default: "ACTIVE",
     },
     contactInfo: {
       address: String,
@@ -76,7 +84,6 @@ const teacherSchema = new Schema(
     timestamps: true,
   }
 );
-
 
 const Teacher = mongoose.models.Teacher || model("Teacher", teacherSchema);
 export default Teacher;

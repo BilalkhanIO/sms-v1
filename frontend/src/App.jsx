@@ -1,19 +1,10 @@
-import { BrowserRouter } from 'react-router-dom';
-import { ToastProvider } from './contexts/ToastContext';
-import ErrorBoundary from './components/common/ErrorBoundary';
-import AppRoutes from './routes/AppRoutes';
-import { routerConfig } from './routes/router.config';
+import { BrowserRouter } from "react-router";
+import Router from "./routes/Router";
 
-const App = () => {
+export default function App() {
   return (
-    <ErrorBoundary>
-      <BrowserRouter future={routerConfig.future}>
-        <ToastProvider>
-          <AppRoutes />
-        </ToastProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <Router />
+    </BrowserRouter>
   );
-};
-
-export default App; 
+}
