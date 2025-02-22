@@ -1,9 +1,34 @@
 // routes/calendarRoutes.js
 import express from "express";
-import { createEvent, getEvents } from "../controllers/calendarController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import {
+  createEvent,
+  getEvents,
+  updateEvent,
+  deleteEvent,
+  getEventById,
+} from "../controllers/calendarController.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-router.route("/").post(protect, createEvent).get(protect, getEvents);
+
+// POST /api/calendar - Create a new event (Admin, Teacher)
+// GET /api/calendar - Get events within a date range (All roles)
+router
+  .route("/")
+  .post(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    createEvent
+  )
+  .get(protect, getEvents); // Removed redundant authorize
+
+// GET /api/calendar/:id - Get event by ID (All roles)
+// PUT /api/calendar/:id - Update event (Admin, Teacher, creator)
+// DELETE /api/calendar/:id - Delete event (Admin, creator)
+router
+  .route("/:id")
+  .get(protect, getEventById) // Removed redundant authorize
+  .put(protect, updateEvent) // Removed redundant authorize
+  .delete(protect, deleteEvent); // Removed redundant authorize
 
 export default router;

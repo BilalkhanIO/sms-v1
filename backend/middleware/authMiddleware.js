@@ -2,31 +2,39 @@
 import jwt from 'jsonwebtoken';
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
+import { errorResponse } from '../utils/apiResponse.js';
 
-const protect = asyncHandler(async (req, res, next) => {
-  let token;
-  
-  if (req.headers.authorization?.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
-  }
+// Protect routes
+export const protect = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.accessToken;
 
   if (!token) {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+    return errorResponse(res, 'Not authorized - no token', 401);
   }
-  
-  next();
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user || user.status !== 'ACTIVE') {
+        return errorResponse(res, 'User account inactive or not found', 401);
+
+    }
+
+    req.user = user; // Attach user to the request
+    next();
+  } catch (error) {
+      return errorResponse(res, 'Not authorized - token failed', 401);
+
+  }
 });
 
-const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'SUPER_ADMIN') {
+// Authorize access based on roles
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+        return errorResponse(res, `Access denied. Role ${req.user?.role || 'UNKNOWN'} not authorized.`, 403);
+    }
     next();
-  } else {
-    res.status(403);
-    throw new Error('Not authorized as admin');
-  }
+  };
 };
-
-export { protect, admin };

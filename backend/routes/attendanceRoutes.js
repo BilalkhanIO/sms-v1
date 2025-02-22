@@ -4,14 +4,30 @@ import {
   markAttendance,
   getAttendanceReport,
   bulkUpdateAttendance,
+  getAttendanceById,
 } from "../controllers/attendanceController.js";
-import { protect, admin } from "../middleware/authMiddleware.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-router.route("/").post(protect, markAttendance);
 
-router.route("/bulk").put(protect, bulkUpdateAttendance);
+// POST /api/attendance - Mark attendance (Teacher only)
+router.route("/").post(protect, authorize("TEACHER"), markAttendance);
 
-router.route("/report").get(protect, admin, getAttendanceReport);
+// PUT /api/attendance/bulk - Bulk update attendance (Teacher only)
+router.route("/bulk").put(protect, authorize("TEACHER"), bulkUpdateAttendance);
+
+// GET /api/attendance/report - Get attendance report (Admin only)
+router
+  .route("/report")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), getAttendanceReport);
+
+// GET /api/attendance/:id - Get attendance by ID (Admin, Teacher)
+router
+  .route("/:id")
+  .get(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    getAttendanceById
+  );
 
 export default router;

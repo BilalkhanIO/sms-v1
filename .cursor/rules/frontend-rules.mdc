@@ -1,0 +1,67 @@
+---
+description: School Management System Frontend
+globs: 
+---
+Project: School Management System Frontend
+
+
+Task: Review, update, and complete the frontend codebase.
+
+Context:
+
+- We are building a frontend for a school management system using React, Vite, Tailwind CSS, React Router v6, and Redux Toolkit (including RTK Query).
+- The backend API is already defined (provided in previous conversations) and uses RESTful principles.
+- The frontend should be responsive and follow best practices for React development.
+- We have a defined directory structure (provided in previous responses).
+- We are using Formik and Yup for form handling and validation.
+- Authentication is handled using JWTs stored in HTTP-only cookies.
+- All API requests should be made using RTK Query.
+
+Instructions:
+
+1. Review ALL existing frontend code files (listed in the previous response). Pay close attention to:
+
+   - Correct usage of React hooks.
+   - Proper integration with Redux Toolkit and RTK Query.
+   - Consistent use of Tailwind CSS classes.
+   - Correct routing using react-router-dom.
+   - Form handling with Formik and Yup.
+   - Error handling and loading states.
+   - Adherence to the AI Rules for the Cursor (provided above).
+
+2. Identify and fix any errors, inconsistencies, or deviations from best practices.
+
+3. Complete any missing functionality, including:
+
+   - Implementing all CRUD operations for Users, Teachers, Students, and Classes.
+   - Adding form validation to all forms.
+   - Ensuring proper navigation and routing.
+   - Displaying appropriate error messages to the user.
+   - Handling loading states with spinners.
+   - Finish the file upload functionality for profile picture.
+
+4. Ensure that ALL API interactions are done through RTK Query, using the defined API slices. There should be NO direct `axios` calls within components.
+
+5. Ensure that the frontend is responsive and uses Tailwind CSS classes appropriately.
+
+6. Provide the COMPLETE, UPDATED code for ALL frontend files, organized by file path. Do NOT provide snippets; provide the entire file content.
+
+7. If there are any ambiguities or missing requirements, make reasonable assumptions and clearly document those assumptions.
+
+8. Ensure code is well-formatted and commented.
+
+9. Make sure frontend is aligned with the backend.
+
+10. If you encounter any situation that would require modifying the backend, clearly state the necessary backend changes. DO NOT make any backend changes yourself.
+
+Output:
+
+Provide the updated frontend code, one file at a time, with the full file path for each file. For example:
+
+```javascript
+// src/components/UserList.jsx
+import React, { ... } from 'react';
+// ... rest of the UserList.jsx code ...
+
+
+```

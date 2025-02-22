@@ -1,10 +1,16 @@
-import { BrowserRouter } from "react-router";
-import Router from "./routes/Router";
+// src/App.jsx
+import React from "react";
 
-export default function App() {
+import Navbar from "./components/common/Navbar";
+import Routes from "./routes/Router";
+
+function App() {
   return (
-    <BrowserRouter>
-      <Router />
-    </BrowserRouter>
+    <>
+      <Navbar /> {/* Add the Navbar */}
+      <Routes />
+    </>
   );
 }
+
+export default App;

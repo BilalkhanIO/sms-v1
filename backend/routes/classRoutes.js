@@ -1,30 +1,27 @@
-import express from "express";
+// routes/classRoutes.js
+import express from 'express';
+const router = express.Router();
 import {
   getClasses,
   getClassById,
   createClass,
   updateClass,
   deleteClass,
-  addStudentToClass,
-  removeStudentFromClass,
-} from "../controllers/classController.js";
-import { protect, admin } from "../middleware/authMiddleware.js";
+} from '../controllers/classController.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
-const router = express.Router();
+// GET /api/classes - Get all classes (Admin, Teacher, Student)
+// POST /api/classes - Create a new class (Admin only)
+router.route('/')
+    .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"), getClasses)
+    .post(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createClass);
 
-router.route("/").get(protect, admin, getClasses).post(protect, admin, createClass); // GET all, POST new
-router
-    .route("/:id")
-    .get(protect, getClassById) // GET one
-    .put(protect, admin, updateClass) // PUT update
-    .delete(protect, admin, deleteClass); // DELETE one
-
-router
-    .route("/:id/students")
-    .put(protect, admin, addStudentToClass); // PUT add student
-
-router
-    .route("/:id/students/:studentId")
-    .delete(protect, admin, removeStudentFromClass); // DELETE remove student
+// GET /api/classes/:id - Get class by ID (Admin, Teacher, Student)
+// PUT /api/classes/:id - Update class (Admin only)
+// DELETE /api/classes/:id - Delete class (Admin only)
+router.route('/:id')
+    .get(protect, getClassById) // Authorization handled within the controller
+    .put(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), updateClass)
+    .delete(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), deleteClass);
 
 export default router;

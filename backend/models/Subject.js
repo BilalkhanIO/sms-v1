@@ -1,3 +1,4 @@
+// Subject.js
 import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
@@ -12,7 +13,7 @@ const subjectSchema = new Schema(
     code: {
       type: String,
       required: true,
-      unique: true,
+      unique: true, // Subject codes MUST be unique
       trim: true,
     },
     description: {
@@ -26,8 +27,8 @@ const subjectSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["mandatory", "elective"],
-      default: "mandatory",
+      enum: ["MANDATORY", "ELECTIVE"],
+      default: "MANDATORY",
     },
     syllabus: [
       {
@@ -41,6 +42,7 @@ const subjectSchema = new Schema(
             required: true,
           },
         ],
+        _id: false, // Prevent _id for subdocuments
       },
     ],
     assignedTeachers: [
@@ -56,13 +58,13 @@ const subjectSchema = new Schema(
       },
     ],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Indexes for faster queries
 subjectSchema.index({ name: 1 });
+subjectSchema.index({ code: 1 }, { unique: true }); // Ensure code uniqueness
+subjectSchema.index({ 'assignedTeachers': 1 });
+subjectSchema.index({ 'assignedClasses': 1 });
 
 const Subject = model("Subject", subjectSchema);
 export default Subject;

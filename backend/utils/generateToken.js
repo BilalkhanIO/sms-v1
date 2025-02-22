@@ -1,10 +1,8 @@
-// D:/Projects/sms-v1/backend/utils/generateToken.js
-
+// utils/generateToken.js
 import jwt from "jsonwebtoken";
 
-const generateToken = (id) => {
-  // Ensure you have a JWT_SECRET in your environment variables
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+const generateToken = (userId, role) => { // Corrected: Pass userId and role
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 export default generateToken;

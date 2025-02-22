@@ -1,9 +1,11 @@
 // routes/dashboardRoutes.js
 import express from "express";
 import { getDashboardStats } from "../controllers/dashboardController.js";
-import { admin, protect } from "../middleware/authMiddleware.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-router.route("/").get(protect, admin, getDashboardStats);
+
+// GET /api/dashboard - Get dashboard statistics (All roles)
+router.route("/").get(protect, getDashboardStats); // Removed redundant authorize
 
 export default router;

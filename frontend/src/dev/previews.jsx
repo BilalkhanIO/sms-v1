@@ -1,9 +1,9 @@
-import { Previews } from '@react-buddy/ide-toolbox'
-import { PaletteTree } from './palette'
+import {Previews} from '@react-buddy/ide-toolbox'
+import {PaletteTree} from './palette'
 
 const ComponentPreviews = () => {
     return (
-        <Previews palette={<PaletteTree />}>
+        <Previews palette={<PaletteTree/>}>
         </Previews>
     )
 }

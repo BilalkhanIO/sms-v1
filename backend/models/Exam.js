@@ -1,3 +1,4 @@
+// Exam.js
 import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
@@ -11,7 +12,7 @@ const examSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["MIDTERM", "FINAL", "QUIZ", "ASSIGNMENT"],
+      enum: ["MIDTERM", "FINAL", "QUIZ", "ASSIGNMENT", "PRACTICAL"],
       required: true,
     },
     class: {
@@ -29,7 +30,7 @@ const examSchema = new Schema(
       required: true,
     },
     duration: {
-      type: Number, // Duration in minutes
+      type: Number, // in minutes
       required: true,
     },
     totalMarks: {
@@ -39,25 +40,22 @@ const examSchema = new Schema(
     passingMarks: {
       type: Number,
       required: true,
+      validate: {
+        validator: function (value) {
+          return value <= this.totalMarks;
+        },
+        message: (props) => `Passing marks (${props.value}) cannot exceed total marks`,
+      },
     },
     status: {
       type: String,
-      enum: ["SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED"],
-      default: "SCHEDULED",
+      enum: ["UPCOMING", "SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED", "POSTPONED"],
+      default: "UPCOMING", // More descriptive default
     },
     results: [
       {
-        student: {
-          type: Schema.Types.ObjectId,
-          ref: "Student",
-          required: true,
-        },
-        marksObtained: {
-          type: Number,
-          required: true,
-        },
-        grade: String,
-        remarks: String,
+        type: Schema.Types.ObjectId,
+        ref: "Result", // Reference to the Result schema
       },
     ],
     createdBy: {
@@ -70,12 +68,10 @@ const examSchema = new Schema(
       ref: "User",
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Indexes for efficient queries
+// Indexing
 examSchema.index({ class: 1, subject: 1, date: 1 });
 examSchema.index({ status: 1 });
 

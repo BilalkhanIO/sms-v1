@@ -1,3 +1,4 @@
+// Fee.js
 import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
@@ -17,14 +18,7 @@ const feeSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: [
-        "TUITION",
-        "TRANSPORT",
-        "LIBRARY",
-        "LABORATORY",
-        "SPORTS",
-        "OTHER",
-      ],
+      enum: ["TUITION", "TRANSPORT", "LIBRARY", "LABORATORY", "SPORTS", "OTHER", "ANNOUNCEMENT"],
     },
     dueDate: {
       type: Date,
@@ -46,13 +40,24 @@ const feeSchema = new Schema(
       type: Number,
       default: 0,
       min: 0,
+      validate: {
+        validator: function (value) {
+          return value <= this.amount;
+        },
+        message: (props) => `Paid amount (${props.value}) cannot exceed total amount`,
+      },
     },
-    paidDate: Date,
+    paidDate: {
+      type: Date,
+      required: function () {
+        return this.status === "PAID" || this.status === "PARTIAL";
+      },
+    },
     academicYear: {
       type: String,
       required: true,
     },
-    term: {
+    term: { // Consider making this an enum if terms are fixed (e.g., "FALL", "SPRING", "SUMMER")
       type: String,
       required: true,
     },
@@ -62,7 +67,7 @@ const feeSchema = new Schema(
     },
     transactionId: {
       type: String,
-      sparse: true,
+      sparse: true, // Allows multiple null values, but enforces uniqueness if a value is present
     },
     receiptNumber: {
       type: String,
@@ -78,13 +83,11 @@ const feeSchema = new Schema(
       ref: "User",
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Indexes for efficient querying
-feeSchema.index({ student: 1, type: 1, academicYear: 1, term: 1 });
+// Indexing
+feeSchema.index({ student: 1, type: 1, academicYear: 1, term: 1 }, {unique: true}); // Prevent duplicate fee records
 feeSchema.index({ status: 1 });
 feeSchema.index({ dueDate: 1 });
 
