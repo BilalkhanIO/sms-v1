@@ -1,5 +1,3 @@
-// src/store/authSlice.js
-
 import { createSlice } from "@reduxjs/toolkit";
 import { authApi } from "../api/authApi";
 
@@ -16,10 +14,12 @@ const authSlice = createSlice({
     setCredentials: (state, { payload }) => {
       state.user = payload;
       state.error = null;
+      state.isLoading = false;
     },
     clearCredentials: (state) => {
       state.user = null;
       state.error = null;
+      state.isLoading = false;
     },
     setError: (state, { payload }) => {
       state.error = payload;
@@ -32,16 +32,13 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addMatcher(
-        authApi.endpoints.login.matchRejected,
-        (state, { payload }) => {
-          state.isLoading = false;
-          state.error = payload?.error || "Authentication failed";
-        }
-      )
-      // Logout (Keep these extraReducers for logout related state)
+      .addMatcher(authApi.endpoints.login.matchRejected, (state, { error }) => {
+        state.isLoading = false;
+        state.error = error?.data?.message || "Authentication failed";
+      })
       .addMatcher(authApi.endpoints.logout.matchPending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addMatcher(authApi.endpoints.logout.matchFulfilled, (state) => {
         state.user = null;
@@ -50,29 +47,34 @@ const authSlice = createSlice({
       })
       .addMatcher(
         authApi.endpoints.logout.matchRejected,
-        (state, { payload }) => {
+        (state, { error }) => {
           state.isLoading = false;
-          state.error = payload?.error || "Logout failed";
+          state.error = error?.data?.message || "Logout failed";
         }
       )
-      .addMatcher(
-        authApi.endpoints.login.matchFulfilled,
-        (state, { payload }) => {
-          state.user = payload.data;
-          state.isLoading = false;
-          state.error = null;
-        }
-      );
+      // Add matchers for forgotPassword and resetPassword if UI feedback is needed
+      .addMatcher(authApi.endpoints.forgotPassword.matchPending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addMatcher(authApi.endpoints.forgotPassword.matchFulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addMatcher(authApi.endpoints.resetPassword.matchPending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addMatcher(authApi.endpoints.resetPassword.matchFulfilled, (state) => {
+        state.isLoading = false;
+      });
   },
 });
 
-console.log((state) => state.auth.user);
+export const { setCredentials, clearCredentials, setError } = authSlice.actions;
 
-export const { setCredentials, clearCredentials, setError } = authSlice.actions; // <-----  MAKE SURE setCredentials IS EXPORTED
-
-// Selectors
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => !!state.auth.user;
+export const selectAuthError = (state) => state.auth.error;
 export const selectIsLoading = (state) => state.auth.isLoading;
 
 export default authSlice.reducer;

@@ -1,26 +1,22 @@
-// src/components/dashboard/ParentDashboard.jsx
-
 import React from "react";
 import { useGetDashboardStatsQuery } from "../../api/dashboardApi";
 import Spinner from "../common/Spinner";
 import {
   Users,
-  BookOpen,
-  Calendar,
   CheckCircle,
-  AlertCircle,
   FileText,
-  TrendingUp,
-  MessageCircle
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+  MessageCircle,
+  Calendar,
+  AlertCircle,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
-const StatCard = ({ title, value, icon: Icon, subtitle, color = 'blue' }) => {
+const StatCard = ({ title, value, icon: Icon, subtitle, color = "blue" }) => {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-700',
-    green: 'bg-green-50 text-green-700',
-    purple: 'bg-purple-50 text-purple-700',
-    orange: 'bg-orange-50 text-orange-700',
+    blue: "bg-blue-50 text-blue-700",
+    green: "bg-green-50 text-green-700",
+    purple: "bg-purple-50 text-purple-700",
+    orange: "bg-orange-50 text-orange-700",
   };
 
   return (
@@ -28,10 +24,10 @@ const StatCard = ({ title, value, icon: Icon, subtitle, color = 'blue' }) => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
-          {subtitle && (
-            <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
-          )}
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {value ?? "N/A"}
+          </p>
+          {subtitle && <p className="mt-2 text-sm text-gray-500">{subtitle}</p>}
         </div>
         <div className={`p-3 rounded-full ${colorClasses[color]}`}>
           <Icon className="w-6 h-6" />
@@ -44,17 +40,16 @@ const StatCard = ({ title, value, icon: Icon, subtitle, color = 'blue' }) => {
 const ParentDashboard = () => {
   const { data: stats, isLoading, error } = useGetDashboardStatsQuery();
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
-
+  if (isLoading) return <Spinner size="large" />;
   if (error) {
     return (
       <div className="rounded-md bg-red-50 p-4">
         <div className="flex">
           <AlertCircle className="h-5 w-5 text-red-400" />
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error loading dashboard</h3>
+            <h3 className="text-sm font-medium text-red-800">
+              Error loading dashboard
+            </h3>
             <p className="mt-2 text-sm text-red-700">{error.message}</p>
           </div>
         </div>
@@ -62,165 +57,140 @@ const ParentDashboard = () => {
     );
   }
 
+  const parentOverview = stats?.parentOverview || {};
+
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
+      <h2 className="text-2xl font-bold mb-4">Parent Dashboard</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Wards"
-          value={stats.parentOverview?.totalWards || 0}
+          value={parentOverview.totalWards}
           icon={Users}
           color="blue"
         />
         <StatCard
-          title="Average Attendance"
-          value={`${stats.parentOverview?.averageAttendance || 0}%`}
+          title="Attendance Rate"
+          value={`${parentOverview.attendanceSummary?.PRESENT || 0}%`}
           icon={CheckCircle}
           color="green"
         />
         <StatCard
-          title="Pending Assignments"
-          value={stats.parentOverview?.pendingAssignments || 0}
+          title="Pending Fees"
+          value={parentOverview.feeStatus?.PENDING?.total || 0}
           icon={FileText}
           color="orange"
         />
         <StatCard
-          title="Unread Messages"
-          value={stats.parentOverview?.unreadMessages || 0}
+          title="Messages"
+          value={0}
           icon={MessageCircle}
           color="purple"
-        />
+        />{" "}
+        {/* Placeholder - backend doesn't provide this */}
       </div>
 
-      {/* Wards Overview */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Wards Overview</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Wards Overview
+          </h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {stats.wardsOverview?.map((ward) => (
-              <div key={ward.id} className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">
-                      {ward.name}
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      Class {ward.class} - Roll No: {ward.rollNumber}
-                    </p>
-                  </div>
-                  <Link
-                    to={`/dashboard/wards/${ward.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    View Details
-                  </Link>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Attendance</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      {ward.attendance}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Average Grade</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      {ward.averageGrade}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Assignments</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      {ward.completedAssignments}/{ward.totalAssignments}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Behavior</p>
-                    <p className="text-lg font-medium text-gray-900">
-                      {ward.behaviorPoints} pts
-                    </p>
+            {parentOverview.wards?.length > 0 ? (
+              parentOverview.wards.map((ward) => (
+                <div key={ward._id} className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">
+                        {ward.admissionNumber}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        Class {ward.class?.name || "N/A"}
+                      </p>
+                    </div>
+                    <Link
+                      to={`/dashboard/students/${ward._id}`}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      View Details
+                    </Link>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No wards assigned</p>
+            )}
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Events */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Events</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Upcoming Events
+            </h3>
             <div className="space-y-4">
-              {stats.upcomingEvents?.map((event) => (
-                <div key={event.id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
+              {stats.upcomingEvents?.length > 0 ? (
+                stats.upcomingEvents.map((event) => (
+                  <div key={event._id} className="flex items-start space-x-3">
                     <Calendar className="h-5 w-5 text-gray-400" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">
+                        {event.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(event.start).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(event.date).toLocaleDateString()}
-                    </p>
-                    {event.description && (
-                      <p className="mt-1 text-sm text-gray-500">{event.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {(!stats.upcomingEvents || stats.upcomingEvents.length === 0) && (
+                ))
+              ) : (
                 <p className="text-sm text-gray-500">No upcoming events</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* Recent Communications */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Communications</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Recent Activities
+            </h3>
             <div className="space-y-4">
-              {stats.recentCommunications?.map((comm) => (
-                <div key={comm.id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <MessageCircle className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {comm.subject}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      From: {comm.from} | {new Date(comm.timestamp).toLocaleString()}
-                    </p>
-                    {comm.preview && (
-                      <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-                        {comm.preview}
+              {stats.activities?.length > 0 ? (
+                stats.activities.map((activity) => (
+                  <div
+                    key={activity._id}
+                    className="flex items-start space-x-3"
+                  >
+                    <Clock className="h-5 w-5 text-gray-400" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">
+                        {activity.description}
                       </p>
-                    )}
-                  </div>
-                  {!comm.read && (
-                    <div className="flex-shrink-0">
-                      <span className="inline-block w-2 h-2 bg-blue-600 rounded-full" />
+                      <p className="text-sm text-gray-500">
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </p>
                     </div>
-                  )}
-                </div>
-              ))}
-              {(!stats.recentCommunications || stats.recentCommunications.length === 0) && (
-                <p className="text-sm text-gray-500">No recent communications</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No recent activities</p>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Quick Actions
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
-              to="/dashboard/messages/new"
+              to="/dashboard/messages"
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
@@ -237,7 +207,7 @@ const ParentDashboard = () => {
               to="/dashboard/grades"
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
-              <TrendingUp className="w-5 h-5 mr-2" />
+              <FileText className="w-5 h-5 mr-2" />
               <span>View Grades</span>
             </Link>
             <Link

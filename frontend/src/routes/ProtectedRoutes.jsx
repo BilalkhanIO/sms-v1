@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth'; // Import the useAuth hook
-import Spinner from '../common/Spinner'; // Assuming you have a Spinner component
+import useAuth from '../hooks/useAuth'; // Import the useAuth hook
+import Spinner from '../components/common/Spinner'; // Assuming you have a Spinner component
 
 export const PublicRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth(); // Use the hook

@@ -1,47 +1,39 @@
-// controllers/authController.js
 import User from "../models/User.js";
 import asyncHandler from "express-async-handler";
 import generateToken from "../utils/generateToken.js";
 import Activity from "../models/Activity.js";
 import { body, validationResult } from "express-validator";
-import { successResponse, errorResponse } from "../utils/apiResponse.js";
-import { protect } from "../middleware/authMiddleware.js";
+import crypto from "crypto";
 
 // @desc    Authenticate user & get token
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = [
-  // Validation rules
   body("email").isEmail().withMessage("Invalid email address"),
   body("password").notEmpty().withMessage("Password is required"),
-
   asyncHandler(async (req, res) => {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return errorResponse(res, "Validation failed", 400, errors.array());
+      return res
+        .status(400)
+        .json({ message: "Validation failed", errors: errors.array() });
     }
 
     const { email, password } = req.body;
-
-    // Find user by email and include the password (for authentication)
     const user = await User.findOne({ email }).select("+password");
 
-    // Check if user exists and password matches
     if (user && (await user.matchPassword(password))) {
-      // Check if user status is active
       if (user.status !== "ACTIVE") {
-        return errorResponse(
-          res,
-          `Account is ${user.status}. Please contact support.`,
-          403
-        );
+        return res
+          .status(403)
+          .json({
+            message: `Account is ${user.status}. Please contact support.`,
+          });
       }
 
       await user.updateLastLogin();
 
-      // Log login activity
-      await Activity.logActivity({
+      await Activity.create({
         userId: user._id,
         type: "LOGIN",
         description: "User logged in",
@@ -52,15 +44,13 @@ const loginUser = [
 
       const token = generateToken(user._id, user.role);
 
-      // Set JWT as an HTTP-Only cookie
       res.cookie("accessToken", token, {
-        httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript
-        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-        sameSite: "strict", // Mitigates CSRF attacks
-        maxAge: 30 * 24 * 60 * 60 * 1000, // Cookie expiration (30 days)
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
       });
 
-      // Return user data (excluding password)
       const sanitizedUser = {
         _id: user._id,
         firstName: user.firstName,
@@ -69,13 +59,12 @@ const loginUser = [
         role: user.role,
         profilePicture: user.profilePicture,
       };
-      return successResponse(
-        res,
-        { data: sanitizedUser },
-        " User login successfully"
-      );
+
+      return res
+        .status(200)
+        .json({ data: sanitizedUser, message: "User logged in successfully" });
     } else {
-      return errorResponse(res, "Invalid email or password", 401);
+      return res.status(401).json({ message: "Invalid email or password" });
     }
   }),
 ];
@@ -83,29 +72,98 @@ const loginUser = [
 // @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Private
-const logoutUser = [
-  protect, // Apply protect middleware to ensure user is authenticated
+const logoutUser = asyncHandler(async (req, res) => {
+  await Activity.create({
+    userId: req.user._id,
+    type: "LOGOUT",
+    description: "User logged out",
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+    context: "authentication",
+  });
+
+  res.cookie("accessToken", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  return res.status(200).json({ message: "Logged out successfully" });
+});
+
+// @desc    Forgot password - Generate reset token
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = [
+  body("email").isEmail().withMessage("Invalid email address"),
   asyncHandler(async (req, res) => {
-    // Log logout activity
-    await Activity.logActivity({
-      userId: req.user._id, // Use req.user.id to get the logged-in user's ID
-      type: "LOGOUT",
-      description: "User logged out",
-      ip: req.ip,
-      userAgent: req.headers["user-agent"],
-      context: "authentication",
-    });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", errors: errors.array() });
+    }
 
-    // Clear the accessToken cookie
-    res.cookie("accessToken", "", {
-      httpOnly: true,
-      expires: new Date(0), // Set expiration to a past date to delete the cookie
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
-    return successResponse(res, null, "Logged out successfully");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User with this email does not exist" });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // In a real app, send this token via email. For now, return it in response for testing.
+    res.status(200).json({ message: "Reset token generated", resetToken });
   }),
 ];
 
-export { loginUser, logoutUser };
+// @desc    Reset password with token
+// @route   POST /api/auth/reset-password
+// @access  Public
+const resetPassword = [
+  body("token").notEmpty().withMessage("Reset token is required"),
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters"),
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token" });
+    }
+
+    user.password = password; // Will be hashed by pre-save hook
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+  }),
+];
+
+export { loginUser, logoutUser, forgotPassword, resetPassword };

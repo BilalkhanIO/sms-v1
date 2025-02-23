@@ -77,15 +77,13 @@ const userSchema = new Schema(
       default: null,
     },
     passwordChangedAt: Date,
-    emailVerificationToken: String,
-    emailVerificationExpires: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
   },
   { timestamps: true }
 );
 
-userSchema.index({ email: 1 }, { unique: true }); // Email must be unique
+
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 
@@ -104,6 +102,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
+// Method to save/update last login
 userSchema.methods.updateLastLogin = async function() {
   this.lastLogin = Date.now();
   await this.save({ validateBeforeSave: false });

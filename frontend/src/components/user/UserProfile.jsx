@@ -1,5 +1,5 @@
 // frontend/src/components/UserProfile.js (continued)
-import { useGetUserProfileQuery, useUpdateUserProfileMutation } from "../api/usersApi";
+import { useGetUserProfileQuery, useUpdateUserProfileMutation } from "../../api/usersApi";
 import { useState, useEffect } from "react";
 
 const UserProfile = () => {

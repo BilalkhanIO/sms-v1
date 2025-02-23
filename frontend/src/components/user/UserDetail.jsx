@@ -1,8 +1,8 @@
 import { useParams, Link } from "react-router-dom";
-import { useGetUserByIdQuery } from "../api/usersApi";
-import Spinner from "./common/Spinner";
-import ErrorMessage from "./common/ErrorMessage";
-import PageHeader from "./common/PageHeader";
+import { useGetUserByIdQuery } from "../../api/usersApi";
+import Spinner from "../common/Spinner";
+import ErrorMessage from "../common/ErrorMessage";
+import PageHeader from "../common/PageHeader";
 
 const UserDetail = () => {
   const { id: userId } = useParams(); // Get user ID from URL params
