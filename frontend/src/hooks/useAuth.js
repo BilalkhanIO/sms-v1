@@ -1,10 +1,10 @@
 import { useSelector } from "react-redux";
-import { selectCurrentUser, selectIsLoading } from "../store/authSlice"; // Adjust path to your authSlice
+import { selectCurrentUser, selectIsLoading, selectIsAuthenticated } from "../store/authSlice"; 
 
 const useAuth = () => {
   const user = useSelector(selectCurrentUser);
   const isLoading = useSelector(selectIsLoading);
-  const isAuthenticated = !!user; // Or useSelector(selectIsAuthenticated) if you have that selector in authSlice
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   return { user, isAuthenticated, isLoading };
 };

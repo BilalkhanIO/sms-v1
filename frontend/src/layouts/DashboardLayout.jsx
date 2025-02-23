@@ -4,6 +4,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { useLogoutMutation } from "../api/authApi";
 
+const UserWelcome = ({ user }) => (
+  <div>
+    <p className="text-sm text-gray-400">{user.role}</p>
+    <p className="text-sm text-gray-600">
+      Welcome, {user.firstName} {user.lastName}
+    </p>
+  </div>
+);
+
 export default function DashboardLayout() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -35,12 +44,7 @@ export default function DashboardLayout() {
                 <div className="mb-8">
                     <h2 className="text-xl font-bold">School Management</h2>
                     {user && (
-                        <div>
-                            <p className="text-sm text-gray-400">{user.role}</p>
-                            <p className="text-sm text-gray-600">
-                                Welcome, {user.firstName} {user.lastName}
-                            </p>
-                        </div>
+                        <UserWelcome user={user} />
                     )}
                 </div>
 
@@ -131,12 +135,7 @@ export default function DashboardLayout() {
                 <div className="mb-4">
                     <h1 className="text-2xl font-bold">Dashboard</h1>
                     {user && (
-                        <div>
-                            <p className="text-sm text-gray-400">{user.role}</p>
-                            <p className="text-sm text-gray-600">
-                                Welcome, {user.firstName} {user.lastName}
-                            </p>
-                        </div>
+                        <UserWelcome user={user} />
                     )}
                 </div>
                 <Outlet />

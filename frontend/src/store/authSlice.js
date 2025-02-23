@@ -14,7 +14,7 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, { payload }) => {
-      state.user = payload.data;
+      state.user = payload;
       state.error = null;
     },
     clearCredentials: (state) => {
@@ -32,13 +32,6 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addMatcher(
-        authApi.endpoints.login.matchFulfilled,
-        (state) => {
-          state.isLoading = false;
-          state.error = null;
-        }
-      )
       .addMatcher(
         authApi.endpoints.login.matchRejected,
         (state, { payload }) => {
@@ -61,16 +54,25 @@ const authSlice = createSlice({
           state.isLoading = false;
           state.error = payload?.error || "Logout failed";
         }
+      )
+      .addMatcher(
+        authApi.endpoints.login.matchFulfilled,
+        (state, { payload }) => {
+          state.user = payload.data;
+          state.isLoading = false;
+          state.error = null;
+        }
       );
   },
 });
+
+console.log((state) => state.auth.user);
 
 export const { setCredentials, clearCredentials, setError } = authSlice.actions; // <-----  MAKE SURE setCredentials IS EXPORTED
 
 // Selectors
 export const selectCurrentUser = (state) => state.auth.user;
-export const selectIsAuthenticated = (state) => !!state.auth.token; // Adjust if token is stored in state
-export const selectAuthError = (state) => state.auth.error;
+export const selectIsAuthenticated = (state) => !!state.auth.user;
 export const selectIsLoading = (state) => state.auth.isLoading;
 
 export default authSlice.reducer;

@@ -1,4 +1,3 @@
-
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth'; // Import the useAuth hook
 import Spinner from '../common/Spinner'; // Assuming you have a Spinner component
@@ -15,17 +14,11 @@ export const PublicRoute = ({ children }) => {
 };
 
 export const PrivateRoute = ({ children, roles = [] }) => {
-  const { user, isAuthenticated, isLoading } = useAuth(); // Use the hook
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
-    return <Spinner />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
+  if (isLoading) return <Spinner />;
+  if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
   if (roles.length > 0 && !roles.includes(user?.role)) {
     return <Navigate to="/dashboard" state={{ from: location }} replace />;
   }

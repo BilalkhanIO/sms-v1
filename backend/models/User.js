@@ -104,5 +104,10 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
+userSchema.methods.updateLastLogin = async function() {
+  this.lastLogin = Date.now();
+  await this.save({ validateBeforeSave: false });
+};
+
 const User = model("User", userSchema);
 export default User;
