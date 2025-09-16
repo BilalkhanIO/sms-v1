@@ -3,6 +3,10 @@ import { setCredentials, clearCredentials, setError } from "../store/authSlice";
 
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    getCurrentUser: builder.query({
+      query: () => "/users/profile",
+      providesTags: ["Auth"],
+    }),
     login: builder.mutation({
       query: (credentials) => ({
         url: "/auth/login",
@@ -65,6 +69,7 @@ export const authApi = api.injectEndpoints({
 });
 
 export const {
+  useGetCurrentUserQuery,
   useLoginMutation,
   useLogoutMutation,
   useForgotPasswordMutation,

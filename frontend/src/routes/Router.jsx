@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { PublicRoute, PrivateRoute } from "./ProtectedRoutes";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
+import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -10,6 +11,7 @@ import Users from "../pages/Users";
 import UserDetail from "../components/user/UserDetail";
 import UpdateUserForm from "../components/user/UpdateUserForm";
 import UserProfile from "../components/UserProfile";
+import CreateUserForm from "../components/CreateUserForm";
 import TeacherList from "../pages/teachers/TeacherList";
 import TeacherDetails from "../pages/teachers/TeacherDetails";
 import CreateTeacher from "../pages/teachers/CreateTeacher";
@@ -49,6 +51,7 @@ const Router = () => {
     <Routes>
       <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
@@ -60,6 +63,7 @@ const Router = () => {
         <Route path="parent-dashboard" element={<PrivateRoute roles={["PARENT"]}><ParentDashboard /></PrivateRoute>} />
         <Route path="users" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><Users /></PrivateRoute>} />
         <Route path="users/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UserDetail /></PrivateRoute>} />
+        <Route path="users/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateUserForm /></PrivateRoute>} />
         <Route path="users/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateUserForm /></PrivateRoute>} />
         <Route path="profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
         <Route path="teachers" element={<PrivateRoute><TeacherList /></PrivateRoute>} />
