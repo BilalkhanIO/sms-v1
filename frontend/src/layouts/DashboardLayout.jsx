@@ -12,7 +12,13 @@ import {
   School,
   GraduationCap,
   LogOut,
-} from "lucide-react"; // Added icons
+  Settings,
+  Activity,
+  BookOpen,
+  Calendar,
+  DollarSign,
+  ClipboardList
+} from "lucide-react";
 
 const UserWelcome = ({ user }) => (
   <div className="flex items-center space-x-2">
@@ -47,25 +53,191 @@ export default function DashboardLayout() {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const navLinks = [
-    { to: "/dashboard/profile", label: "Profile", icon: User },
-    ...(user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN"
-      ? [
-          { to: "/dashboard/users", label: "Users", icon: Users },
-          { to: "/dashboard/users/create", label: "Create User", icon: UserPlus },
-          { to: "/dashboard/admin-dashboard", label: "Admin Dashboard", icon: Home },
-        ]
-      : []),
-    ...(user?.role === "TEACHER"
-      ? [{ to: "/dashboard/teacher-dashboard", label: "Teacher Dashboard", icon: Home }]
-      : []),
-    ...(user?.role === "STUDENT"
-      ? [{ to: "/dashboard/student-dashboard", label: "Student Dashboard", icon: Home }]
-      : []),
-    { to: "/dashboard/teachers", label: "Teachers", icon: Users },
-    { to: "/dashboard/students", label: "Students", icon: GraduationCap },
-    { to: "/dashboard/classes", label: "Classes", icon: School },
-  ];
+  const getNavLinks = () => {
+    const commonLinks = [
+      {
+        to: "",
+        icon: Home,
+        text: "Dashboard",
+        roles: ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"],
+      }
+    ];
+
+    const superAdminLinks = [
+      {
+        to: "/schools",
+        icon: School,
+        text: "Schools",
+        roles: ["SUPER_ADMIN"],
+      },
+      {
+        to: "/users",
+        icon: Users,
+        text: "System Users",
+        roles: ["SUPER_ADMIN"],
+      },
+      {
+        to: "/settings",
+        icon: Settings,
+        text: "System Settings",
+        roles: ["SUPER_ADMIN"],
+      },
+      {
+        to: "/activity-logs",
+        icon: Activity,
+        text: "Activity Logs",
+        roles: ["SUPER_ADMIN"],
+      }
+    ];
+
+    const adminLinks = [
+      {
+        to: "/teachers",
+        icon: GraduationCap,
+        text: "Teachers",
+        roles: ["SCHOOL_ADMIN"],
+      },
+      {
+        to: "/students",
+        icon: User,
+        text: "Students",
+        roles: ["SCHOOL_ADMIN"],
+      },
+      {
+        to: "/classes",
+        icon: BookOpen,
+        text: "Classes",
+        roles: ["SCHOOL_ADMIN"],
+      },
+      {
+        to: "/subjects",
+        icon: ClipboardList,
+        text: "Subjects",
+        roles: ["SCHOOL_ADMIN"],
+      },
+      {
+        to: "/calendar",
+        icon: Calendar,
+        text: "Calendar",
+        roles: ["SCHOOL_ADMIN"],
+      },
+      {
+        to: "/fees",
+        icon: DollarSign,
+        text: "Fees Management",
+        roles: ["SCHOOL_ADMIN"],
+      }
+    ];
+
+    const teacherLinks = [
+      {
+        to: "/classes",
+        icon: BookOpen,
+        text: "My Classes",
+        roles: ["TEACHER"],
+      },
+      {
+        to: "/students",
+        icon: User,
+        text: "Students",
+        roles: ["TEACHER"],
+      },
+      {
+        to: "/attendance",
+        icon: ClipboardList,
+        text: "Attendance",
+        roles: ["TEACHER"],
+      },
+      {
+        to: "/calendar",
+        icon: Calendar,
+        text: "Calendar",
+        roles: ["TEACHER"],
+      }
+    ];
+
+    const studentLinks = [
+      {
+        to: "/attendance",
+        icon: ClipboardList,
+        text: "My Attendance",
+        roles: ["STUDENT"],
+      },
+      {
+        to: "/subjects",
+        icon: BookOpen,
+        text: "My Subjects",
+        roles: ["STUDENT"],
+      },
+      {
+        to: "/calendar",
+        icon: Calendar,
+        text: "Calendar",
+        roles: ["STUDENT"],
+      },
+      {
+        to: "/fees",
+        icon: DollarSign,
+        text: "Fees",
+        roles: ["STUDENT"],
+      }
+    ];
+
+    const parentLinks = [
+      {
+        to: "/children",
+        icon: User,
+        text: "My Children",
+        roles: ["PARENT"],
+      },
+      {
+        to: "/attendance",
+        icon: ClipboardList,
+        text: "Attendance",
+        roles: ["PARENT"],
+      },
+      {
+        to: "/calendar",
+        icon: Calendar,
+        text: "Calendar",
+        roles: ["PARENT"],
+      },
+      {
+        to: "/fees",
+        icon: DollarSign,
+        text: "Fees",
+        roles: ["PARENT"],
+      }
+    ];
+
+    // Common links for all users
+    let links = [...commonLinks];
+
+    // Add role-specific links
+    if (user?.role === "SUPER_ADMIN") {
+      links = [...links, ...superAdminLinks];
+    } else if (user?.role === "SCHOOL_ADMIN") {
+      links = [...links, ...adminLinks];
+    } else if (user?.role === "TEACHER") {
+      links = [...links, ...teacherLinks];
+    } else if (user?.role === "STUDENT") {
+      links = [...links, ...studentLinks];
+    } else if (user?.role === "PARENT") {
+      links = [...links, ...parentLinks];
+    }
+
+    // Add profile link at the end for all users
+    links.push({
+      to: "/profile",
+      icon: User,
+      text: "My Profile",
+      roles: ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"],
+    });
+
+    return links;
+  };
+
+  const navLinks = getNavLinks();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -115,8 +287,8 @@ export default function DashboardLayout() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`block p-3 rounded text-sm font-medium transition-colors flex items-center space-x-3 ${
-                  isActive(link.to.replace("/dashboard", ""))
+                className={`flex items-center space-x-3 p-3 rounded text-sm font-medium transition-colors ${
+                  isActive(link.to)
                     ? "bg-gray-700 text-white"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}
