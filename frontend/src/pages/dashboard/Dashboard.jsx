@@ -2,6 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import AdminDashboard from "../../components/dashboard/AdminDashboard";
+import TeacherDashboard from "../../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../../components/dashboard/StudentDashboard";
 import ParentDashboard from "../../components/dashboard/ParentDashboard";
 
@@ -20,7 +21,7 @@ const Dashboard = () => {
       case "SCHOOL_ADMIN":
         return <AdminDashboard />;
       case "TEACHER":
-        return <TeacherDashboardd />;
+        return <TeacherDashboard />;
       case "STUDENT":
         return <StudentDashboard />;
       case "PARENT":
@@ -34,7 +35,7 @@ const Dashboard = () => {
     }
   };
 
-  return <div className="container mx-auto p-4"> <AdminDashboard/></div>;
+  return <div className="container mx-auto p-4">{renderDashboard(user)}</div>;
 };
 
 export default Dashboard;
