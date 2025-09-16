@@ -69,12 +69,12 @@ const Router = () => {
         <Route path="users" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><Users /></PrivateRoute>} />
         <Route path="users/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UserDetail /></PrivateRoute>} />
         <Route path="users/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateUserForm /></PrivateRoute>} />
-        <Route path="users/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateUserForm /></PrivateRoute>} />
-        <Route path="user-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UserManagement /></PrivateRoute>} />
-        <Route path="system-settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
-        <Route path="audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
-        <Route path="reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
-        <Route path="backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
+  <Route path="users/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateUserForm /></PrivateRoute>} />
+  <Route path="user-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UserManagement /></PrivateRoute>} />
+  <Route path="system-settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
+  <Route path="audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
+  <Route path="reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
+  <Route path="backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
         <Route path="profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
         <Route path="teachers" element={<PrivateRoute><TeacherList /></PrivateRoute>} />
         <Route path="teachers/:id" element={<PrivateRoute><TeacherDetails /></PrivateRoute>} />
