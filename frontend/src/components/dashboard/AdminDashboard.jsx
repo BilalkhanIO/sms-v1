@@ -66,7 +66,7 @@ const AdminDashboard = () => {
         <StatCard title="Active Users" value={overview.activeUsers} icon={BookOpen} color="orange" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activities</h3>
@@ -90,21 +90,53 @@ const AdminDashboard = () => {
 
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Events</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Exams</h3>
             <div className="space-y-4">
-              {stats.upcomingEvents?.length > 0 ? (
-                stats.upcomingEvents.map((event) => (
-                  <div key={event._id} className="flex items-start space-x-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+              {recentExams.length > 0 ? (
+                recentExams.map((exam) => (
+                  <div key={exam._id} className="flex items-start space-x-3">
+                    <BookOpen className="h-5 w-5 text-gray-400" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                      <p className="text-sm text-gray-500">{new Date(event.start).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium text-gray-900">{exam.title}</p>
+                      <p className="text-sm text-gray-500">{exam.type} - {new Date(exam.date).toLocaleDateString()}</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">No upcoming events</p>
+                <p className="text-sm text-gray-500">No recent exams</p>
               )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">System Status</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Database</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Online
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">File Storage</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Online
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Email Service</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  Pending
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Backup</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Active
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -113,7 +145,7 @@ const AdminDashboard = () => {
       <div className="bg-white rounded-lg shadow">
         <div className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             <Link to="/dashboard/students/create" className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors">
               <GraduationCap className="w-5 h-5 mr-2" />
               <span>Add Student</span>
@@ -129,6 +161,14 @@ const AdminDashboard = () => {
             <Link to="/dashboard/users/create" className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors">
               <Users className="w-5 h-5 mr-2" />
               <span>Add User</span>
+            </Link>
+            <Link to="/dashboard/subjects/create" className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors">
+              <BookOpen className="w-5 h-5 mr-2" />
+              <span>Add Subject</span>
+            </Link>
+            <Link to="/dashboard/exams/create" className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors">
+              <Calendar className="w-5 h-5 mr-2" />
+              <span>Schedule Exam</span>
             </Link>
           </div>
         </div>

@@ -29,8 +29,7 @@ function Login() {
 
   useEffect(() => {
     if (user?.role) {
-      const dashboardPath = `/dashboard/${user.role.toLowerCase()}-dashboard`;
-      navigate(dashboardPath, { replace: true });
+      navigate("/dashboard", { replace: true });
     }
     if (authError) setFormError(authError);
   }, [user, authError, navigate]);
@@ -100,13 +99,22 @@ function Login() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-600">
             <Link
               to="/forgot-password"
               className="text-blue-600 hover:underline"
             >
               Forgot your password?
+            </Link>
+          </p>
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="text-blue-600 hover:underline"
+            >
+              Sign up
             </Link>
           </p>
         </div>

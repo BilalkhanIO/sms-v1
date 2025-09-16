@@ -1,336 +1,219 @@
-// // src/components/UpdateUserForm.jsx
+import React from "react";
+import PageHeader from "../common/PageHeader";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useGetUserByIdQuery, useUpdateUserMutation } from "../../api/usersApi";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import Input from "../common/Input";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
 
-// import React, { useState, useEffect } from "react";
-// import PageHeader from "./common/PageHeader";
-// import { useParams, useNavigate, Link } from "react-router-dom";
-// // import { useGetUserByIdQuery, useUpdateUserMutation } from "../api/usersApi";
-// // import { Formik, Form, Field, ErrorMessage } from "formik";
-// // import * as Yup from "yup";
-// // import InputField from "./forms/InputField";
-// // import SelectField from "./forms/SelectField";
-// // import { ArrowLeft, Save, Loader2, XCircle } from "lucide-react";
+const validationSchema = Yup.object().shape({
+  firstName: Yup.string().required("First name is required"),
+  lastName: Yup.string().required("Last name is required"),
+  email: Yup.string()
+    .email("Invalid email address")
+    .required("Email is required"),
+  role: Yup.string()
+    .oneOf(
+      ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"],
+      "Invalid role"
+    )
+    .required("Role is required"),
+  status: Yup.string()
+    .oneOf(
+      [
+        "ACTIVE",
+        "INACTIVE",
+        "PENDING_EMAIL_VERIFICATION",
+        "PENDING_ADMIN_APPROVAL",
+        "SUSPENDED",
+        "DELETED",
+      ],
+      "Invalid Status"
+    )
+    .required("Status is required"),
+});
 
-// // const validationSchema = Yup.object().shape({
-// //   firstName: Yup.string().required("First name is required"),
-// //   lastName: Yup.string().required("Last name is required"),
-// //   email: Yup.string()
-// //     .email("Invalid email address")
-// //     .required("Email is required"),
-// //   // Removed password from here as this update.
-// //   role: Yup.string()
-// //     .oneOf(
-// //       ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"],
-// //       "Invalid role"
-// //     )
-// //     .required("Role is required"),
-// //   status: Yup.string()
-// //     .oneOf(
-// //       [
-// //         "ACTIVE",
-// //         "INACTIVE",
-// //         "PENDING_EMAIL_VERIFICATION",
-// //         "PENDING_ADMIN_APPROVAL",
-// //         "SUSPENDED",
-// //         "DELETED",
-// //       ],
-// //       "Invalid Status"
-// //     )
-// //     .required("Status is required"),
-// //   // Add validation for role-specific fields here, as needed.  Example:
-// //   employeeId: Yup.string().when("role", {
-// //     is: "TEACHER",
-// //     then: () => Yup.string().required("Employee ID is required for teachers"),
-// //     otherwise: () => Yup.string().notRequired(),
-// //   }),
-// //   admissionNumber: Yup.string().when("role", {
-// //     is: "STUDENT",
-// //     then: () =>
-// //       Yup.string().required("Admission Number is required for students"),
-// //     otherwise: () => Yup.string().notRequired(),
-// //   }),
-// // });
+const UpdateUserForm = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const { data: user, isLoading, error } = useGetUserByIdQuery(id);
 
-//  const UpdateUserForm = () => {
-// //   const { id: userId } = useParams();
-// //   const {
-// //     data: user,
-// //     isLoading: isFetchingUser,
-// //     isError: isFetchError,
-// //     refetch,
-// //   } = useGetUserByIdQuery(userId); // Get user data
-// //   const [
-// //     updateUser,
-// //     { isLoading: isUpdating, isSuccess, isError, error, reset },
-// //   ] = useUpdateUserMutation(); // Get update mutation
-// //   const navigate = useNavigate();
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
-// //   const [initialValues, setInitialValues] = useState(null);
+  if (error) {
+    return (
+      <div className="text-red-500 text-center">
+        Error loading user: {error.data?.message || "Unknown error"}
+      </div>
+    );
+  }
 
-// //   useEffect(() => {
-// //     if (user) {
-// //       let userData = {
-// //         firstName: user.firstName || "",
-// //         lastName: user.lastName || "",
-// //         email: user.email || "", // Email usually isn't changed in an update form
-// //         role: user.role || "",
-// //         status: user.status || "",
-// //       };
+  if (!user) {
+    return (
+      <div className="text-center">
+        <p>User not found</p>
+        <Link to="/dashboard/users" className="text-blue-500 hover:underline">
+          Back to Users
+        </Link>
+      </div>
+    );
+  }
 
-// //       if (user.role === "TEACHER") {
-// //         userData = {
-// //           ...userData,
-// //           employeeId: user.teacherDetails?.employeeId || "",
-// //           qualification: user.teacherDetails?.qualification || "",
-// //           specialization: user.teacherDetails?.specialization || "",
-// //         };
-// //       } else if (user.role === "STUDENT") {
-// //         userData = {
-// //           ...userData,
-// //           admissionNumber: user.studentDetails?.admissionNumber || "",
-// //           rollNumber: user.studentDetails?.rollNumber || "",
-// //           class: user.studentDetails?.class || "",
-// //           gender: user.studentDetails?.gender || "",
-// //           dateOfBirth: user.studentDetails?.dateOfBirth || "",
-// //         };
-// //       } else if (user.role === "PARENT") {
-// //         userData = {
-// //           ...userData,
-// //           contactNumber: user.parentDetails?.contactNumber || "",
-// //         };
-// //       }
-// //       setInitialValues(userData);
-// //     }
-// //   }, [user]);
+  const handleSubmit = async (values, { setSubmitting, setFieldError }) => {
+    try {
+      await updateUser({ id, ...values }).unwrap();
+      navigate("/dashboard/users");
+    } catch (error) {
+      if (error.data?.errors) {
+        error.data.errors.forEach((err) => {
+          setFieldError(err.field, err.message);
+        });
+      } else {
+        setFieldError("general", error.data?.message || "Update failed");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-// //   useEffect(() => {
-// //     if (isSuccess) {
-// //       alert("User updated successfully!"); // Use a better notification
-// //       reset();
-// //       navigate(`/dashboard/users/${userId}`); // Go back to user details
-// //     }
-// //     if (isError) {
-// //       alert(`Error updating user: ${error.data?.message || "Unknown error"}`);
-// //     }
-// //   }, [isSuccess, isError, navigate, userId, reset, error]);
+  return (
+    <div className="container mx-auto px-4 py-6">
+      <PageHeader title="Update User" backUrl="/dashboard/users" />
+      
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <Formik
+          initialValues={{
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            email: user.email || "",
+            role: user.role || "",
+            status: user.status || "",
+          }}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ isSubmitting, errors }) => (
+            <Form className="space-y-6">
+              {errors.general && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {errors.general}
+                </div>
+              )}
 
-// //   if (isFetchingUser || !initialValues) {
-// //     return <div>Loading...</div>; // Show loading indicator
-// //   }
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Field
+                    as={Input}
+                    label="First Name"
+                    name="firstName"
+                    id="firstName"
+                    placeholder="Enter first name"
+                  />
+                  <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm mt-1" />
+                </div>
 
-// //   if (isFetchError) {
-// //     return <div>Error fetching user data.</div>; // Show error message
-// //   }
-// //   const handleSubmit = async (values, { setSubmitting }) => {
-// //     try {
-// //       await updateUser({ id: userId, ...values }).unwrap();
-// //       refetch(); // Refetch user data after update
-// //     } catch (err) {
-// //       console.error("Failed to update user", err);
-// //       // Error already handled in useEffect.
-// //     } finally {
-// //       setSubmitting(false);
-// //     }
-// //   };
+                <div>
+                  <Field
+                    as={Input}
+                    label="Last Name"
+                    name="lastName"
+                    id="lastName"
+                    placeholder="Enter last name"
+                  />
+                  <ErrorMessage name="lastName" component="div" className="text-red-500 text-sm mt-1" />
+                </div>
+              </div>
 
-// //   // Conditional Fields based on role (using Formik's <Field>)
-// //   const roleSpecificFields = (role, values, setFieldValue, errors, touched) => {
-// //     // Add setFieldValue
+              <div>
+                <Field
+                  as={Input}
+                  label="Email"
+                  name="email"
+                  id="email"
+                  type="email"
+                  placeholder="Enter email address"
+                />
+                <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
+              </div>
 
-// //     switch (role) {
-// //       case "TEACHER":
-// //         return (
-// //           <>
-// //             <div className="mb-4">
-// //               <label className="block text-gray-700 text-sm font-bold mb-2">
-// //                 Employee ID
-// //               </label>
-// //               <Field
-// //                 type="text"
-// //                 name="employeeId"
-// //                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-// //               />
-// //               <ErrorMessage
-// //                 name="employeeId"
-// //                 component="div"
-// //                 className="text-red-500 text-xs italic"
-// //               />
-// //             </div>
-// //             {/* ... other teacher fields */}
-// //           </>
-// //         );
-// //       case "STUDENT":
-// //         return (
-// //           <>
-// //             <div className="mb-4">
-// //               <label className="block text-gray-700 text-sm font-bold mb-2">
-// //                 Admission Number
-// //               </label>
-// //               <Field
-// //                 type="text"
-// //                 name="admissionNumber"
-// //                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-// //               />
-// //               <ErrorMessage
-// //                 name="admissionNumber"
-// //                 component="div"
-// //                 className="text-red-500 text-xs italic"
-// //               />
-// //             </div>
-// //             {/* ... other student fields */}
-// //           </>
-// //         );
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                    Role
+                  </label>
+                  <Field
+                    as="select"
+                    name="role"
+                    id="role"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Role</option>
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="SCHOOL_ADMIN">School Admin</option>
+                    <option value="TEACHER">Teacher</option>
+                    <option value="STUDENT">Student</option>
+                    <option value="PARENT">Parent</option>
+                  </Field>
+                  <ErrorMessage name="role" component="div" className="text-red-500 text-sm mt-1" />
+                </div>
 
-// //       case "PARENT":
-// //         return (
-// //           <>
-// //             <div className="mb-4">
-// //               <label className="block text-gray-700 text-sm font-bold mb-2">
-// //                 Contact Number
-// //               </label>
-// //               <Field
-// //                 type="text"
-// //                 name="contactNumber"
-// //                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-// //               />
-// //               <ErrorMessage
-// //                 name="contactNumber"
-// //                 component="div"
-// //                 className="text-red-500 text-xs italic"
-// //               />
-// //             </div>
-// //           </>
-// //         );
-// //       default:
-// //         return null;
-// //     }
-// //   };
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <Field
+                    as="select"
+                    name="status"
+                    id="status"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="PENDING_EMAIL_VERIFICATION">Pending Email Verification</option>
+                    <option value="PENDING_ADMIN_APPROVAL">Pending Admin Approval</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="DELETED">Deleted</option>
+                  </Field>
+                  <ErrorMessage name="status" component="div" className="text-red-500 text-sm mt-1" />
+                </div>
+              </div>
 
-//   return (
-//     <>
-//       <PageHeader title="Update User" />
-//       <div className="container mx-auto p-6">
-//         {/* <Formik
-//           initialValues={initialValues}
-//           validationSchema={validationSchema}
-//           onSubmit={handleSubmit}
-//           enableReinitialize
-//         >
-//           {(
-//             { isSubmitting, values, setFieldValue, errors, touched } // Destructure setFieldValue
-//           ) => (
-//             <Form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-//               <InputField
-//                 label="First Name"
-//                 name="firstName"
-//                 type="text"
-//                 required
-//               />
-//               <InputField
-//                 label="Last Name"
-//                 name="lastName"
-//                 type="text"
-//                 required
-//               />
-//               <div className="mb-4">
-//                 <label className="block text-gray-700 text-sm font-bold mb-2">
-//                   Email
-//                 </label>
-//                 <Field
-//                   type="email"
-//                   name="email"
-//                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-//                   disabled
-//                 />
-//                 <ErrorMessage
-//                   name="email"
-//                   component="div"
-//                   className="text-red-500 text-xs italic"
-//                 />
-//               </div>
+              <div className="flex justify-end space-x-4">
+                <Link
+                  to="/dashboard/users"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Cancel
+                </Link>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isUpdating}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {(isSubmitting || isUpdating) ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Update User
+                </button>
+              </div>
+            </Form>
+          )}
+        </Formik>
+      </div>
+    </div>
+  );
+};
 
-//               <div className="mb-4">
-//                 <label className="block text-gray-700 text-sm font-bold mb-2">
-//                   Role:
-//                 </label>
-//                 <Field
-//                   as="select"
-//                   name="role"
-//                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-//                   disabled
-//                 >
-//                   {" "}
-//                   {/* Role might not be editable in edit form */}
-//                   <option value="STUDENT">Student</option>
-//                   <option value="TEACHER">Teacher</option>
-//                   <option value="PARENT">Parent</option>
-//                   <option value="SCHOOL_ADMIN">School Admin</option>
-//                   <option value="SUPER_ADMIN">Super Admin</option>
-//                 </Field>
-//                 <ErrorMessage
-//                   name="role"
-//                   component="div"
-//                   className="text-red-500 text-xs italic"
-//                 />
-//               </div>
-//               <div className="mb-4">
-//                 <label className="block text-gray-700 text-sm font-bold mb-2">
-//                   Status:
-//                 </label>
-//                 <Field
-//                   as="select"
-//                   name="status"
-//                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-//                 >
-//                   <option value="PENDING">Pending</option>
-//                   <option value="ACTIVE">Active</option>
-//                   <option value="INACTIVE">Inactive</option>
-//                   {/* Add other statuses if needed */}
-//                 </Field>
-//                 <ErrorMessage
-//                   name="status"
-//                   component="div"
-//                   className="text-red-500 text-xs italic"
-//                 />
-//               </div>
-
-//               {roleSpecificFields(
-//                 values.role,
-//                 values,
-//                 setFieldValue,
-//                 errors,
-//                 touched
-//               )}
-
-//               <div className="flex items-center justify-between">
-//                 <button
-//                   className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-//                   type="submit"
-//                   disabled={isUpdating}
-//                 >
-//                   {isUpdating ? (
-//                     <>
-//                       <Loader2 size={16} className="animate-spin mr-2" />
-//                       Updating...
-//                     </>
-//                   ) : (
-//                     <>
-//                       <Save size={16} className="mr-2" /> Update User
-//                     </>
-//                   )}
-//                 </button>
-//                 <Link
-//                   to={`/dashboard/users/`}
-//                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-//                 >
-//                   <XCircle size={16} className="mr-2" /> Cancel
-//                 </Link>
-//               </div>
-//             </Form>
-//           )}
-//         </Formik> */}
-//       </div>
-//     </>
-//   );
-// };
-
-// export default UpdateUserForm;
+export default UpdateUserForm;

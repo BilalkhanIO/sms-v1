@@ -1,19 +1,12 @@
 // src/pages/classes/ClassList.jsx
 import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useEffect } from 'react';
-import { fetchClasses } from '../../store/classSlice';
+import { useGetClassesQuery } from '../../api/classesApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function ClassList() {
-  const dispatch = useDispatch();
-  const {items: classes, status, error } = useSelector((state) => state.classes);
+  const { data: classes, isLoading, error } = useGetClassesQuery();
 
-  useEffect(() => {
-    dispatch(fetchClasses());
-  }, [dispatch]);
-
-  if (status === 'loading') {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 

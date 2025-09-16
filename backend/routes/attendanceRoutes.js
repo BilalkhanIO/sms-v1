@@ -2,6 +2,7 @@
 import express from "express";
 import {
   markAttendance,
+  getAttendance,
   getAttendanceReport,
   bulkUpdateAttendance,
   getAttendanceById,
@@ -10,8 +11,11 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// GET /api/attendance - Get attendance records (Admin, Teacher)
 // POST /api/attendance - Mark attendance (Teacher only)
-router.route("/").post(protect, authorize("TEACHER"), markAttendance);
+router.route("/")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getAttendance)
+  .post(protect, authorize("TEACHER"), markAttendance);
 
 // PUT /api/attendance/bulk - Bulk update attendance (Teacher only)
 router.route("/bulk").put(protect, authorize("TEACHER"), bulkUpdateAttendance);

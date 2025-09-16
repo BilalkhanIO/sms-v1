@@ -8,6 +8,9 @@ import {
   MessageCircle,
   Calendar,
   AlertCircle,
+  Clock,
+  Award,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -102,10 +105,10 @@ const ParentDashboard = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h4 className="text-sm font-medium text-gray-900">
-                        {ward.admissionNumber}
+                        {ward.user?.firstName} {ward.user?.lastName}
                       </h4>
                       <p className="text-sm text-gray-500">
-                        Class {ward.class?.name || "N/A"}
+                        Admission: {ward.admissionNumber} | Class {ward.class?.name || "N/A"}
                       </p>
                     </div>
                     <Link
@@ -114,6 +117,20 @@ const ParentDashboard = () => {
                     >
                       View Details
                     </Link>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <p className="text-xs text-gray-500">Attendance</p>
+                      <p className="text-sm font-medium text-green-600">
+                        {ward.attendanceRate || 0}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Average Grade</p>
+                      <p className="text-sm font-medium text-blue-600">
+                        {ward.averageGrade || 'N/A'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))
@@ -124,7 +141,7 @@ const ParentDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -147,6 +164,43 @@ const ParentDashboard = () => {
                 ))
               ) : (
                 <p className="text-sm text-gray-500">No upcoming events</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Recent Grades
+            </h3>
+            <div className="space-y-4">
+              {stats.recentGrades?.length > 0 ? (
+                stats.recentGrades.map((grade) => (
+                  <div key={grade._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Award className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {grade.exam?.title || 'Exam'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {grade.subject?.name || 'Subject'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-gray-900">
+                        {grade.marksObtained}/{grade.totalMarks}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {grade.grade || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No recent grades</p>
               )}
             </div>
           </div>

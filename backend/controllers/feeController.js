@@ -384,8 +384,35 @@ const deleteFee = [
   }),
 ];
 
+// @desc    Get all fees
+// @route   GET /api/fees
+// @access  Private/Admin
+const getFees = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const { studentId, classId, status, type } = req.query;
+    
+    let query = {};
+    
+    if (studentId) query.student = studentId;
+    if (classId) query.class = classId;
+    if (status) query.status = status;
+    if (type) query.type = type;
+
+    const fees = await Fee.find(query)
+      .populate("student", "admissionNumber rollNumber")
+      .populate("class", "name section")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return successResponse(res, fees, "Fees retrieved successfully");
+  }),
+];
+
 export {
   updateFeePayment,
+  getFees,
   getFeesByStudent,
   generateFeeReport,
   createFee,

@@ -61,31 +61,33 @@ const TeacherDashboard = () => {
     );
   }
 
+  const teacherOverview = stats?.teacherOverview || {};
+
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="My Classes"
-          value={stats.assignedClasses}
+          value={teacherOverview.totalClasses || 0}
           icon={Layers}
           color="blue"
         />
         <StatCard
           title="Total Students"
-          value={stats.totalStudents}
+          value={teacherOverview.totalStudents || 0}
           icon={Users}
           color="green"
         />
         <StatCard
-          title="Today's Attendance"
-          value={`${stats.todayAttendance || 0}%`}
-          icon={CheckCircle}
+          title="Total Subjects"
+          value={teacherOverview.totalSubjects || 0}
+          icon={BookOpen}
           color="purple"
         />
         <StatCard
-          title="Pending Assignments"
-          value={stats.pendingAssignments}
+          title="Upcoming Exams"
+          value={stats?.upcomingExams?.length || 0}
           icon={FileText}
           color="orange"
         />
@@ -97,35 +99,25 @@ const TeacherDashboard = () => {
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Schedule</h3>
             <div className="space-y-4">
-              {stats.todaySchedule?.map((schedule) => (
-                <div key={schedule.id} className="flex items-start space-x-3">
+              {stats?.schedule?.map((daySchedule) => (
+                <div key={daySchedule._id} className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     <Clock className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">
-                      {schedule.subject} - Class {schedule.className}
+                      {daySchedule._id} - {daySchedule.periods?.length || 0} periods
                     </p>
                     <p className="text-sm text-gray-500">
-                      {schedule.startTime} - {schedule.endTime}
+                      {daySchedule.periods?.map(period => 
+                        `${period.startTime}-${period.endTime}`
+                      ).join(', ')}
                     </p>
-                    <p className="text-sm text-gray-500">Room {schedule.room}</p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      schedule.status === 'ongoing'
-                        ? 'bg-green-100 text-green-800'
-                        : schedule.status === 'upcoming'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {schedule.status}
-                    </span>
                   </div>
                 </div>
               ))}
-              {(!stats.todaySchedule || stats.todaySchedule.length === 0) && (
-                <p className="text-sm text-gray-500">No classes scheduled for today</p>
+              {(!stats?.schedule || stats.schedule.length === 0) && (
+                <p className="text-sm text-gray-500">No schedule available</p>
               )}
             </div>
           </div>
@@ -136,34 +128,75 @@ const TeacherDashboard = () => {
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Submissions</h3>
             <div className="space-y-4">
-              {stats.recentSubmissions?.map((submission) => (
-                <div key={submission.id} className="flex items-start space-x-3">
+              {stats?.upcomingExams?.map((exam) => (
+                <div key={exam._id} className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     <FileText className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">
-                      {submission.student} - {submission.assignment}
+                      {exam.title}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {new Date(submission.timestamp).toLocaleString()}
+                      {new Date(exam.date).toLocaleDateString()} - {exam.type}
                     </p>
                   </div>
                   <div className="flex-shrink-0">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      submission.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {submission.status}
+                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                      {exam.status}
                     </span>
                   </div>
                 </div>
               ))}
-              {(!stats.recentSubmissions || stats.recentSubmissions.length === 0) && (
-                <p className="text-sm text-gray-500">No recent submissions</p>
+              {(!stats?.upcomingExams || stats.upcomingExams.length === 0) && (
+                <p className="text-sm text-gray-500">No upcoming exams</p>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Classes */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Classes</h3>
+          <div className="space-y-4">
+            {stats?.schedule?.map((daySchedule) => {
+              const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+              if (daySchedule._id === today) {
+                return (
+                  <div key={daySchedule._id} className="space-y-3">
+                    {daySchedule.periods?.map((period, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Clock className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {period.startTime} - {period.endTime}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {period.subject?.label || 'Subject'} - Class {period.class?.label || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Link
+                            to="/dashboard/attendance/create"
+                            className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200"
+                          >
+                            Attendance
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return null;
+            })}
+            {(!stats?.schedule || stats.schedule.length === 0) && (
+              <p className="text-sm text-gray-500">No classes scheduled for today</p>
+            )}
           </div>
         </div>
       </div>
@@ -174,62 +207,62 @@ const TeacherDashboard = () => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
-              to="/dashboard/attendance"
+              to="/dashboard/attendance/create"
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
               <CheckCircle className="w-5 h-5 mr-2" />
               <span>Take Attendance</span>
             </Link>
             <Link
-              to="/dashboard/assignments/new"
+              to="/dashboard/exams/create"
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
               <FileText className="w-5 h-5 mr-2" />
-              <span>Create Assignment</span>
+              <span>Create Exam</span>
             </Link>
             <Link
-              to="/dashboard/grades"
+              to="/dashboard/students"
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
               <BookOpen className="w-5 h-5 mr-2" />
-              <span>Enter Grades</span>
+              <span>View Students</span>
             </Link>
             <Link
-              to="/dashboard/schedule"
+              to="/dashboard/calendar/create"
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
               <Calendar className="w-5 h-5 mr-2" />
-              <span>View Schedule</span>
+              <span>Add Event</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Class Overview */}
-      {stats.classOverview && (
+      {/* Upcoming Exams */}
+      {stats?.upcomingExams && stats.upcomingExams.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Class Overview</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Exams</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats.classOverview.map((cls) => (
-                <div key={cls.id} className="p-4 bg-gray-50 rounded-lg">
+              {stats.upcomingExams.map((exam) => (
+                <div key={exam._id} className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-sm font-medium text-gray-900">
-                      Class {cls.name}
+                      {exam.title}
                     </h4>
                     <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                      {cls.totalStudents} students
+                      {exam.type}
                     </span>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-gray-500">
-                      Attendance: {cls.attendance}%
+                      Date: {new Date(exam.date).toLocaleDateString()}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Assignments: {cls.completedAssignments}/{cls.totalAssignments}
+                      Duration: {exam.duration} minutes
                     </p>
                     <p className="text-sm text-gray-500">
-                      Average Grade: {cls.averageGrade}%
+                      Total Marks: {exam.totalMarks}
                     </p>
                   </div>
                 </div>
