@@ -7,6 +7,7 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import ClassModel from "../models/Class.js";
 import Student from "../models/Student.js";
+import Teacher from "../models/Teacher.js";
 import mongoose from "mongoose";
 // @desc    Mark attendance (for multiple students at once)
 // @route   POST /api/attendance
@@ -61,7 +62,8 @@ const markAttendance = [
     if (!teacher) {
       return errorResponse(res, "Teacher Not Found", 404);
     }
-    if (!teacher.assignedClasses.includes(classId)) {
+    const assignedClasses = (teacher.assignedClasses || []).map((c) => c.toString());
+    if (!assignedClasses.includes(classId.toString())) {
       return errorResponse(
         res,
         "You are not authorized to mark attendance for this class",
@@ -182,10 +184,11 @@ const getAttendanceReport = [
       if (!teacher) {
         return errorResponse(res, "Teacher not found", 404);
       }
+      const assigned = (teacher.assignedClasses || []).map((c) => c.toString());
       if (Object.keys(match).length === 0) {
         match.class = { $in: teacher.assignedClasses };
       } else if (match.class) {
-        if (!teacher.assignedClasses.includes(match.class.toString())) {
+        if (!assigned.includes(match.class.toString())) {
           return errorResponse(
             res,
             "Not authorized to view attendance for this class",
@@ -364,10 +367,8 @@ const getAttendanceById = [
     // Check authorization for teachers.
     if (req.user.role === "TEACHER") {
       const teacher = await Teacher.findOne({ user: req.user._id });
-      if (
-        !teacher ||
-        !teacher.assignedClasses.includes(attendanceRecord.class._id.toString())
-      ) {
+      const assigned = (teacher?.assignedClasses || []).map((c) => c.toString());
+      if (!teacher || !assigned.includes(attendanceRecord.class._id.toString())) {
         return errorResponse(
           res,
           "Not authorized to view this attendance record",

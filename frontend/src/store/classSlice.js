@@ -3,14 +3,12 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../api'; // Your API client
 
 // Fetch all classes
-export const fetchClasses = createAsyncThunk('classes/fetchAll', async () => {
+export const fetchClasses = createAsyncThunk('classes/fetchAll', async (_, { rejectWithValue }) => {
   try {
     const response = await API.get('/classes');
     return response.data;
-
-
   } catch (error) {
-    return rejectWithValue(error.response.data); // Handle errors and send to reducer
+    return rejectWithValue(error.response?.data || 'Failed to fetch classes'); // Handle errors and send to reducer
   }
 });
 
@@ -20,7 +18,7 @@ export const fetchClassById = createAsyncThunk('classes/fetchById', async (id, {
     const response = await API.get(`/classes/${id}?populate=classTeacher,user&populate=subjects.subject,user&populate=students,user`); // Populate!
     return response.data;
   } catch (error) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || 'Failed to fetch class');
   }
 });
 
@@ -30,7 +28,7 @@ export const createClass = createAsyncThunk('classes/create', async (classData, 
     const response = await API.post('/classes', classData);
     return response.data;
   } catch (error) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || 'Failed to create class');
   }
 });
 
@@ -40,7 +38,7 @@ export const updateClass = createAsyncThunk('classes/update', async ({ id, data 
     const response = await API.put(`/classes/${id}`, data);
     return response.data;
   } catch (error) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || 'Failed to update class');
   }
 });
 
@@ -51,10 +49,10 @@ export const deleteClass = createAsyncThunk('classes/delete', async (id, { rejec
     if(response.status === 200) {
       return id;
     } else {
-      return rejectWithValue("Failed to delete")
+      return rejectWithValue('Failed to delete');
     }
   } catch (error) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || 'Failed to delete class');
   }
 });
 
@@ -64,7 +62,7 @@ export const addStudentToClass = createAsyncThunk('classes/addStudent', async ({
     const response = await API.put(`/classes/${classId}/students`, { studentId });
     return response.data;
   } catch (error) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || 'Failed to add student');
   }
 });
 
@@ -74,7 +72,7 @@ export const removeStudentFromClass = createAsyncThunk('classes/removeStudent', 
     const response = await API.delete(`/classes/${classId}/students/${studentId}`);
     return response.data;
   } catch (error) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || 'Failed to remove student');
   }
 });
 

@@ -19,11 +19,20 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 const app = express();
 
 // Configure CORS properly (Allow multiple origins)
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+  : ["http://localhost:5173", "http://127.0.0.1:5173"];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL?.split(",") || "*", // Allow multiple origins
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow non-browser requests
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
 };
 
 // Middleware
