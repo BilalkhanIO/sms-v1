@@ -3,6 +3,7 @@ import Exam from "../models/Exam.js";
 import Result from "../models/Result.js";
 import asyncHandler from "express-async-handler";
 import Activity from "../models/Activity.js";
+import Teacher from "../models/Teacher.js";
 import { body, validationResult } from "express-validator";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
@@ -243,12 +244,17 @@ const getExams = [
 
     // If the user is a teacher, only return exams they created or that are for their assigned classes/subjects
     if (req.user.role === "TEACHER") {
-      query = {
-        $or: [
-          { createdBy: req.user._id }, // Exams the teacher created
-          { class: { $in: req.user.assignedClasses } }, // Exams for classes the teacher is assigned to
-        ],
-      };
+      const teacher = await Teacher.findOne({ user: req.user._id }).lean();
+      if (teacher) {
+        query = {
+          $or: [
+            { createdBy: req.user._id },
+            { class: { $in: teacher.assignedClasses } },
+          ],
+        };
+      } else {
+        query = { createdBy: req.user._id };
+      }
     }
 
     const exams = await Exam.find(query)
@@ -277,9 +283,10 @@ const getExamById = [
     // If the user is a teacher, only allow access if they created the exam or it's for their assigned classes
     if (req.user.role === "TEACHER") {
       const teacher = await Teacher.findOne({ user: req.user._id });
+      const assigned = (teacher?.assignedClasses || []).map((c) => c.toString());
       if (
         exam.createdBy.toString() !== req.user._id.toString() &&
-        !teacher.assignedClasses.includes(exam.class._id.toString())
+        !assigned.includes(exam.class._id.toString())
       ) {
         return errorResponse(res, "Not authorized to access this exam", 403);
       }
@@ -575,9 +582,10 @@ const updateExamResult = [
     if (!teacher) {
       return errorResponse(res, "Teacher not found", 404);
     }
+    const assigned = (teacher.assignedClasses || []).map((c) => c.toString());
     if (
       exam.createdBy.toString() !== req.user._id.toString() &&
-      !teacher.assignedClasses.includes(exam.class.toString())
+      !assigned.includes(exam.class.toString())
     ) {
       return errorResponse(res, "Not authorized to update this result", 403);
     }

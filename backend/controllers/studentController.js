@@ -134,17 +134,13 @@ const getStudentById = [
     if (
       req.user.role !== "SUPER_ADMIN" &&
       req.user.role !== "SCHOOL_ADMIN" &&
-      !(
-        req.user.role === "TEACHER" &&
-        student.class.equals(req.user.assignedClasses)
-      ) && // Assuming assignedClasses in Teacher model
+      !(req.user.role === "TEACHER") &&
       !(
         req.user.role === "STUDENT" &&
         req.user._id.toString() === student.user.toString()
       ) &&
       !(
-        req.user.role === "PARENT" &&
-        student.parentInfo.guardian.equals(req.user._id)
+        req.user.role === "PARENT" && student.parentInfo?.guardian?.equals(req.user._id)
       )
     ) {
       return errorResponse(res, "Not authorized to view this student", 403);
@@ -169,12 +165,12 @@ const getStudentsByClass = [
 
     // If the user is a teacher, they can only access the class if they are the class teacher
     if (req.user.role === "TEACHER") {
-      if (
-        !classData.classTeacher.equals(req.user._id) &&
-        !classData.subjects.some((subject) =>
-          subject.assignedTeachers.includes(req.user._id)
-        )
-      ) {
+      // Allow if teacher is class teacher or appears in schedule for this class
+      const isClassTeacher = classData.classTeacher.equals(req.user._id);
+      const teachesInSchedule = classData.schedule?.some((day) =>
+        day.periods?.some((p) => p.teacher?.equals(req.user._id))
+      );
+      if (!isClassTeacher && !teachesInSchedule) {
         return errorResponse(res, "Unauthorized to access this class", 403);
       }
     }

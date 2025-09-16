@@ -121,7 +121,7 @@ const getSubjectById = [
     if (
       req.user.role === "TEACHER" &&
       !subject.assignedTeachers.some((teacher) =>
-        teacher._id.equals(req.user._id)
+        teacher._id?.toString() === req.user._id.toString()
       )
     ) {
       return errorResponse(res, "Unauthorized to access this subject", 403);

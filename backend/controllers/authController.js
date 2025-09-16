@@ -33,7 +33,7 @@ const loginUser = [
 
       await user.updateLastLogin();
 
-      await Activity.create({
+      await Activity.logActivity({
         userId: user._id,
         type: "LOGIN",
         description: "User logged in",
@@ -73,7 +73,7 @@ const loginUser = [
 // @route   POST /api/auth/logout
 // @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
-  await Activity.create({
+  await Activity.logActivity({
     userId: req.user._id,
     type: "LOGOUT",
     description: "User logged out",
