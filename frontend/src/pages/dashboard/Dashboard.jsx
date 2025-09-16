@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
+import SuperAdminDashboard from "../../components/dashboard/SuperAdminDashboard";
 import AdminDashboard from "../../components/dashboard/AdminDashboard";
 import TeacherDashboard from "../../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../../components/dashboard/StudentDashboard";
@@ -18,6 +19,7 @@ const Dashboard = () => {
     console.log("Rendering dashboard for role:", user.role); // Debug log
     switch (user.role) {
       case "SUPER_ADMIN":
+        return <SuperAdminDashboard />;
       case "SCHOOL_ADMIN":
         return <AdminDashboard />;
       case "TEACHER":
