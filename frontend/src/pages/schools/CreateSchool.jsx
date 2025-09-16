@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useCreateSchoolMutation } from '@/api/schoolsApi';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,10 +48,11 @@ const CreateSchool = () => {
     },
   });
 
+    const [createSchool, { isLoading }] = useCreateSchoolMutation();
+
   const onSubmit = async (data) => {
     try {
-      // TODO: Implement API call to create school
-      console.log('School data:', data);
+      await createSchool(data).unwrap();
       
       toast({
         title: 'Success',
@@ -61,7 +63,7 @@ const CreateSchool = () => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to create school. Please try again.',
+        description: error?.data?.message || 'Failed to create school. Please try again.',
         variant: 'destructive',
       });
     }

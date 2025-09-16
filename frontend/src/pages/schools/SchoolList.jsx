@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { useGetSchoolsQuery } from '@/api/schoolsApi';
 import {
   Table,
   TableBody,
@@ -22,33 +25,28 @@ import { MoreVertical, Plus, Search } from 'lucide-react';
 const SchoolList = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock data - replace with actual API call
-  const schools = [
-    {
-      id: 1,
-      name: 'Global Education Academy',
-      location: 'New York, USA',
-      adminName: 'John Smith',
-      studentCount: 1200,
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Excellence High School',
-      location: 'London, UK',
-      adminName: 'Sarah Johnson',
-      studentCount: 800,
-      status: 'active'
-    },
-    {
-      id: 3,
-      name: 'Innovation College',
-      location: 'Toronto, Canada',
-      adminName: 'Michael Brown',
-      studentCount: 1500,
-      status: 'inactive'
-    }
-  ];
+  const { data: schools = [], isLoading, error } = useGetSchoolsQuery();
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 flex justify-center items-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error.message || 'Failed to fetch schools. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const getStatusBadgeClass = (status) => {
     return status === 'active'

@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { useGetSchoolByIdQuery, useUpdateSchoolMutation } from '@/api/schoolsApi';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,20 +45,27 @@ const UpdateSchool = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Mock data - replace with actual API call
-  const schoolData = {
-    id: 1,
-    name: 'Global Education Academy',
-    status: 'active',
-    address: '123 Education Street',
-    city: 'New York',
-    state: 'NY',
-    country: 'USA',
-    phone: '+1 234-567-8900',
-    email: 'admin@globaledu.com',
-    website: 'https://www.globaledu.com',
-    description: 'A leading educational institution committed to excellence in teaching and learning.',
-  };
+  const { data: schoolData, isLoading: fetchLoading } = useGetSchoolByIdQuery(id);
+  const [updateSchool, { isLoading: updateLoading }] = useUpdateSchoolMutation();
+
+  if (fetchLoading) {
+    return (
+      <div className="container mx-auto p-6 flex justify-center items-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!schoolData) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>School not found.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const form = useForm({
     resolver: zodResolver(schoolFormSchema),
@@ -86,8 +96,7 @@ const UpdateSchool = () => {
 
   const onSubmit = async (data) => {
     try {
-      // TODO: Implement API call to update school
-      console.log('Updated school data:', data);
+      await updateSchool({ id, ...data }).unwrap();
       
       toast({
         title: 'Success',
@@ -98,7 +107,7 @@ const UpdateSchool = () => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to update school. Please try again.',
+        description: error?.data?.message || 'Failed to update school. Please try again.',
         variant: 'destructive',
       });
     }

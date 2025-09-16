@@ -6,29 +6,38 @@ import {
   updateEvent,
   deleteEvent,
   getEventById,
+  getUpcomingEvents,
+  getEventsByType,
+  getEventsByDateRange,
+  getParticipants,
+  updateParticipants,
 } from "../controllers/calendarController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// POST /api/calendar - Create a new event (Admin, Teacher)
-// GET /api/calendar - Get events within a date range (All roles)
+// Base events routes
 router
-  .route("/")
-  .post(
-    protect,
-    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
-    createEvent
-  )
-  .get(protect, getEvents); // Removed redundant authorize
+  .route("/events")
+  .post(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), createEvent)
+  .get(protect, getEvents);
 
-// GET /api/calendar/:id - Get event by ID (All roles)
-// PUT /api/calendar/:id - Update event (Admin, Teacher, creator)
-// DELETE /api/calendar/:id - Delete event (Admin, creator)
+// Event by ID routes
 router
-  .route("/:id")
-  .get(protect, getEventById) // Removed redundant authorize
-  .put(protect, updateEvent) // Removed redundant authorize
-  .delete(protect, deleteEvent); // Removed redundant authorize
+  .route("/events/:id")
+  .get(protect, getEventById)
+  .put(protect, updateEvent)
+  .delete(protect, deleteEvent);
+
+// Special event routes
+router.route("/events/upcoming").get(protect, getUpcomingEvents);
+router.route("/events/type").get(protect, getEventsByType);
+router.route("/events/range").get(protect, getEventsByDateRange);
+
+// Participant management routes
+router
+  .route("/events/:id/participants")
+  .get(protect, getParticipants)
+  .put(protect, updateParticipants);
 
 export default router;

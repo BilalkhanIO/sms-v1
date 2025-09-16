@@ -2,6 +2,9 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { useGetSchoolByIdQuery, useGetSchoolStatsQuery } from '@/api/schoolsApi';
 import {
   Tabs,
   TabsContent,
@@ -30,55 +33,40 @@ import {
 const SchoolDetails = () => {
   const { id } = useParams();
 
-  // Mock data - replace with actual API call
-  const schoolData = {
-    id: 1,
-    name: 'Global Education Academy',
-    status: 'active',
-    address: '123 Education Street',
-    city: 'New York',
-    state: 'NY',
-    country: 'USA',
-    phone: '+1 234-567-8900',
-    email: 'admin@globaledu.com',
-    website: 'https://www.globaledu.com',
-    adminName: 'John Smith',
-    studentCount: 1200,
-    teacherCount: 80,
-    classCount: 40,
-    founded: '2010',
-    lastUpdated: '2024-01-20',
-    description: 'A leading educational institution committed to excellence in teaching and learning.',
-    stats: {
-      totalStudents: 1200,
-      activeStudents: 1150,
-      totalTeachers: 80,
-      activeTeachers: 75,
-      totalClasses: 40,
-      averageAttendance: '95%',
-      feesCollection: '92%',
-    },
-    recentActivities: [
-      {
-        id: 1,
-        date: '2024-01-20',
-        activity: 'New teacher hired',
-        details: 'Mathematics Department'
-      },
-      {
-        id: 2,
-        date: '2024-01-19',
-        activity: 'Parent meeting conducted',
-        details: 'Grade 10 section'
-      },
-      {
-        id: 3,
-        date: '2024-01-18',
-        activity: 'System maintenance',
-        details: 'Software update'
-      }
-    ]
-  };
+  const { data: schoolData, isLoading, error } = useGetSchoolByIdQuery(id);
+  const { data: stats, isLoading: statsLoading } = useGetSchoolStatsQuery(id);
+
+  if (isLoading || statsLoading) {
+    return (
+      <div className="container mx-auto p-6 flex justify-center items-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error.message || 'Failed to fetch school details. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!schoolData) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>School not found.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const StatCard = ({ icon: Icon, title, value, description }) => (
     <Card>

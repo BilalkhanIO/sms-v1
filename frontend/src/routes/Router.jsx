@@ -51,27 +51,26 @@ import UpdateClass from "../pages/classes/UpdateClass";
 
 // Subject Management
 import SubjectList from "../pages/subjects/SubjectList";
-import CreateSubject from "../pages/subjects/CreateSubject";
-import UpdateSubject from "../pages/subjects/UpdateSubject";
 import SubjectDetails from "../pages/subjects/SubjectDetails";
+import SubjectForm from "../pages/subjects/SubjectForm";
 
 // Calendar Management
 import CalendarView from "../pages/calendar/CalendarView";
 
-// Fee Management
-import FeesList from "../pages/fees/FeesList";
-import CreateFee from "../pages/fees/CreateFee";
-import UpdateFee from "../pages/fees/UpdateFee";
-import PaymentHistory from "../pages/fees/PaymentHistory";
+// // Fee Management
+// import FeesList from "../pages/fees/FeesList";
+// import CreateFee from "../pages/fees/CreateFee";
+// import UpdateFee from "../pages/fees/UpdateFee";
+// import PaymentHistory from "../pages/fees/PaymentHistory";
 
-// Attendance Management
-import AttendanceList from "../pages/attendance/AttendanceList";
-import AttendanceEntry from "../pages/attendance/AttendanceEntry";
-import AttendanceReport from "../pages/attendance/AttendanceReport";
+// // Attendance Management
+// import AttendanceList from "../pages/attendance/AttendanceList";
+// import AttendanceEntry from "../pages/attendance/AttendanceEntry";
+// import AttendanceReport from "../pages/attendance/AttendanceReport";
 
 // System Settings
 import Settings from "../pages/settings/Settings";
-import ActivityLogs from "../pages/settings/ActivityLogs";
+// import ActivityLogs from "../pages/settings/ActivityLogs";
 
 const Router = () => {
   return (
@@ -100,7 +99,7 @@ const Router = () => {
 
         {/* Settings Routes */}
         <Route path="settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Settings /></PrivateRoute>} />
-        <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><ActivityLogs /></PrivateRoute>} />
+        {/* <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><ActivityLogs /></PrivateRoute>} /> */}
 
         {/* User Management Routes */}
         <Route path="users">
@@ -135,28 +134,28 @@ const Router = () => {
         {/* Subject Routes */}
         <Route path="subjects">
           <Route index element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><SubjectList /></PrivateRoute>} />
-          <Route path="create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateSubject /></PrivateRoute>} />
+          <Route path="create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><SubjectForm mode="create" /></PrivateRoute>} />
           <Route path=":id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><SubjectDetails /></PrivateRoute>} />
-          <Route path="edit/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateSubject /></PrivateRoute>} />
+          <Route path="edit/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><SubjectForm mode="edit" /></PrivateRoute>} />
         </Route>
 
         {/* Calendar Routes */}
         <Route path="calendar" element={<PrivateRoute><CalendarView /></PrivateRoute>} />
 
         {/* Fee Routes */}
-        <Route path="fees">
+        {/* <Route path="fees">
           <Route index element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><FeesList /></PrivateRoute>} />
           <Route path="create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateFee /></PrivateRoute>} />
           <Route path="edit/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateFee /></PrivateRoute>} />
           <Route path="history" element={<PrivateRoute><PaymentHistory /></PrivateRoute>} />
-        </Route>
+        </Route> */}
 
         {/* Attendance Routes */}
-        <Route path="attendance">
+        {/* <Route path="attendance">
           <Route index element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><AttendanceList /></PrivateRoute>} />
           <Route path="entry" element={<PrivateRoute roles={["TEACHER"]}><AttendanceEntry /></PrivateRoute>} />
           <Route path="report" element={<PrivateRoute><AttendanceReport /></PrivateRoute>} />
-        </Route>
+        </Route> */}
 
         {/* Profile Routes */}
         <Route path="profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
