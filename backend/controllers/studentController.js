@@ -384,8 +384,26 @@ const deleteStudent = [
   }),
 ];
 
+// @desc    Get all students
+// @route   GET /api/students
+// @access  Private/Admin, Teacher
+const getStudents = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+  asyncHandler(async (req, res) => {
+    const students = await Student.find()
+      .populate("user", "firstName lastName email")
+      .populate("class", "name section")
+      .populate("parentInfo.guardian", "contactNumber")
+      .lean();
+
+    return successResponse(res, students, "Students retrieved successfully");
+  }),
+];
+
 export {
   createStudent,
+  getStudents,
   getStudentsByClass,
   getStudentById,
   updateStudent,

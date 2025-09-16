@@ -1,8 +1,7 @@
 // src/pages/classes/ClassDetails.jsx
 import  { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchClassById, addStudentToClass, removeStudentFromClass } from '../../store/classSlice';
+import { useGetClassByIdQuery } from '../../api/classesApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ScheduleView from '../../components/ScheduleView';
 import StudentList from '../../components/StudentList';
@@ -11,16 +10,13 @@ import AsyncSelect from 'react-select/async';
 
 export default function ClassDetails() {
   const { id } = useParams();
-  const dispatch = useDispatch();
-  const { item: classDetails, status, error } = useSelector((state) => state.classes);
+  const { data: classDetails, isLoading, error } = useGetClassByIdQuery(id);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [studentToAdd, setStudentToAdd] = useState(null);
   const [serverError, setServerError] = useState(null);
   const [students, setStudents] = useState([]);
 
-  useEffect(() => {
-    dispatch(fetchClassById(id));
-  }, [id, dispatch]);
+  // Class data is now fetched automatically by RTK Query
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -77,12 +73,12 @@ export default function ClassDetails() {
     }));
   };
 
-  if (status === 'loading' || !classDetails) {
+  if (isLoading || !classDetails) {
     return <LoadingSpinner />;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div>Error: {error?.data?.message || 'Failed to load class details'}</div>;
   }
 
   return (

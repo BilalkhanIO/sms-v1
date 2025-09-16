@@ -383,8 +383,40 @@ const getAttendanceById = [
   }),
 ];
 
+// @desc    Get attendance records
+// @route   GET /api/attendance
+// @access  Private/Admin, Teacher
+const getAttendance = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+  asyncHandler(async (req, res) => {
+    const { classId, date, status, studentId } = req.query;
+    
+    let query = {};
+    
+    if (classId) query.class = classId;
+    if (studentId) query.student = studentId;
+    if (status) query.status = status;
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      query.date = { $gte: startDate, $lte: endDate };
+    }
+
+    const attendance = await Attendance.find(query)
+      .populate("student", "admissionNumber rollNumber")
+      .populate("class", "name section")
+      .sort({ date: -1, createdAt: -1 })
+      .lean();
+
+    return successResponse(res, attendance, "Attendance records retrieved successfully");
+  }),
+];
+
 export {
   markAttendance,
+  getAttendance,
   getAttendanceReport,
   bulkUpdateAttendance,
   getAttendanceById,

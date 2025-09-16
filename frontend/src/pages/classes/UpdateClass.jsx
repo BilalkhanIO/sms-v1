@@ -1,26 +1,16 @@
 // src/pages/classes/UpdateClass.jsx
-import React, { useEffect } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchClassById } from "../../store/classSlice"; // Import the thunk
+import { useGetClassByIdQuery } from "../../api/classesApi";
 import ClassForm from "../../components/ClassForm"; // Reuse the form
 import LoadingSpinner from "../../components/common/Spinner";
 import PageHeader from "../../components/common/PageHeader";
 
 const UpdateClass = () => {
   const { id } = useParams();
-  const dispatch = useDispatch();
-  const {
-    item: classData,
-    status,
-    error,
-  } = useSelector((state) => state.classes);
+  const { data: classData, isLoading, error } = useGetClassByIdQuery(id);
 
-  useEffect(() => {
-    dispatch(fetchClassById(id)); // Dispatch the thunk to fetch the class
-  }, [dispatch, id]);
-
-  if (status === "loading" || !classData) {
+  if (isLoading || !classData) {
     return <LoadingSpinner />;
   }
 

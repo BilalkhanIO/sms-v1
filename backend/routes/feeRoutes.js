@@ -2,6 +2,7 @@
 import express from "express";
 import {
   updateFeePayment,
+  getFees,
   getFeesByStudent,
   generateFeeReport,
   createFee,
@@ -12,9 +13,11 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// GET /api/fees - Get all fees (Admin only)
 // POST /api/fees - Create a new fee record (Admin only)
 router
   .route("/")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), getFees)
   .post(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createFee);
 
 // GET /api/fees/student/:studentId - Get fees by student (Admin, Student, Parent)

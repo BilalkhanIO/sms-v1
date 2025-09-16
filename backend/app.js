@@ -15,6 +15,7 @@ import subjectRoutes from "./routes/subjectRoutes.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

@@ -2,6 +2,7 @@
 import express from "express";
 import {
   createStudent,
+  getStudents,
   getStudentsByClass,
   getStudentById,
   updateStudent,
@@ -11,9 +12,11 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// GET /api/students - Get all students (Admin, Teacher)
 // POST /api/students - Create a new student profile (Admin only)
 router
   .route("/")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getStudents)
   .post(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createStudent);
 
 // GET /api/students/class/:classId - Get students by class (Admin, Teacher)
