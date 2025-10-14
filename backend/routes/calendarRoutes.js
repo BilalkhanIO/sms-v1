@@ -6,6 +6,9 @@ import {
   updateEvent,
   deleteEvent,
   getEventById,
+  getEventsByDateRange,
+  getEventsByType,
+  getUpcomingEvents,
 } from "../controllers/calendarController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
@@ -30,5 +33,10 @@ router
   .get(protect, getEventById) // Removed redundant authorize
   .put(protect, updateEvent) // Removed redundant authorize
   .delete(protect, deleteEvent); // Removed redundant authorize
+
+// Convenience endpoints
+router.route("/range").get(protect, getEventsByDateRange);
+router.route("/type/:type").get(protect, getEventsByType);
+router.route("/upcoming").get(protect, getUpcomingEvents);
 
 export default router;

@@ -6,6 +6,7 @@ export const authApi = api.injectEndpoints({
     getCurrentUser: builder.query({
       query: () => "/users/profile",
       providesTags: ["Auth"],
+      transformResponse: (response) => response.data,
     }),
     login: builder.mutation({
       query: (credentials) => ({
