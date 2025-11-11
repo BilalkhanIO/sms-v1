@@ -356,7 +356,9 @@ const deleteStudent = [
     // Delete associated documents from Cloudinary
     if (student.documents && student.documents.length > 0) {
       const deletePromises = student.documents.map((doc) => {
-        const publicId = doc.url.split("/").pop().split(".")[0];
+        const urlParts = doc.url.split('/');
+        const publicIdWithVersion = urlParts.slice(urlParts.indexOf('upload') + 2).join('/');
+        const publicId = publicIdWithVersion.substring(0, publicIdWithVersion.lastIndexOf('.'));
         return cloudinary.uploader.destroy(publicId);
       });
 
