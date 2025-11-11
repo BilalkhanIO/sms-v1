@@ -7,6 +7,7 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import ClassModel from "../models/Class.js";
 import Student from "../models/Student.js";
+import Teacher from "../models/Teacher.js";
 import mongoose from "mongoose";
 // @desc    Mark attendance (for multiple students at once)
 // @route   POST /api/attendance
@@ -421,3 +422,100 @@ export {
   bulkUpdateAttendance,
   getAttendanceById,
 };
+
+// ----- Additional endpoints to align with frontend -----
+// @desc    Update attendance by id
+// @route   PUT /api/attendance/:id
+// @access  Private/Teacher
+export const updateAttendanceById = [
+  protect,
+  authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { status, timeIn, timeOut } = req.body;
+    const attendance = await Attendance.findById(id);
+    if (!attendance) return errorResponse(res, "Attendance record not found", 404);
+    attendance.status = status ?? attendance.status;
+    attendance.timeIn = timeIn ?? attendance.timeIn;
+    attendance.timeOut = timeOut ?? attendance.timeOut;
+    const updated = await attendance.save();
+    return successResponse(res, updated, "Attendance updated successfully");
+  }),
+];
+
+// @desc    Delete attendance by id
+// @route   DELETE /api/attendance/:id
+// @access  Private/Admin, Teacher (own class)
+export const deleteAttendanceById = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const attendance = await Attendance.findById(id);
+    if (!attendance) return errorResponse(res, "Attendance record not found", 404);
+    await Attendance.deleteOne({ _id: id });
+    return successResponse(res, null, "Attendance record deleted");
+  }),
+];
+
+// @desc    Get attendance by student across range
+// @route   GET /api/attendance/student/:studentId
+// @access  Private (Admin, Teacher, Student self)
+export const getStudentAttendance = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { studentId } = req.params;
+    const { startDate, endDate } = req.query;
+    const match = { student: studentId };
+    if (startDate || endDate) {
+      match.date = {};
+      if (startDate) match.date.$gte = new Date(startDate);
+      if (endDate) match.date.$lte = new Date(endDate);
+    }
+    const records = await Attendance.find(match).sort({ date: -1 }).lean();
+    return successResponse(res, records, "Student attendance retrieved");
+  }),
+];
+
+// @desc    Get attendance by class across range
+// @route   GET /api/attendance/class/:classId
+// @access  Private (Admin, Teacher for own classes)
+export const getClassAttendance = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { classId } = req.params;
+    const { startDate, endDate } = req.query;
+    const match = { class: classId };
+    if (startDate || endDate) {
+      match.date = {};
+      if (startDate) match.date.$gte = new Date(startDate);
+      if (endDate) match.date.$lte = new Date(endDate);
+    }
+    const records = await Attendance.find(match).sort({ date: -1 }).lean();
+    return successResponse(res, records, "Class attendance retrieved");
+  }),
+];
+
+// @desc    Attendance statistics summary
+// @route   GET /api/attendance/stats
+// @access  Private (Admin, Teacher)
+export const getAttendanceStats = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+  asyncHandler(async (req, res) => {
+    const { classId, studentId, startDate, endDate } = req.query;
+    const match = {};
+    if (classId) match.class = new mongoose.Types.ObjectId(classId);
+    if (studentId) match.student = new mongoose.Types.ObjectId(studentId);
+    if (startDate || endDate) {
+      match.date = {};
+      if (startDate) match.date.$gte = new Date(startDate);
+      if (endDate) match.date.$lte = new Date(endDate);
+    }
+    const summary = await Attendance.aggregate([
+      { $match: match },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+    return successResponse(res, summary, "Attendance stats generated");
+  }),
+];

@@ -9,6 +9,7 @@ import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import ClassModel from "../models/Class.js";
 import Subject from "../models/Subject.js";
 import Student from "../models/Student.js";
+import Teacher from "../models/Teacher.js";
 import mongoose from "mongoose";
 
 // @desc    Create new exam
@@ -256,6 +257,201 @@ const getExams = [
       .populate("subject", "name code")
       .populate("createdBy", "firstName lastName");
     return successResponse(res, exams, "Exams retrieved successfully");
+  }),
+];
+
+// @desc    Get exams by class
+// @route   GET /api/exams/class/:classId
+// @access  Private (Admin, Teacher, Student)
+const getExamsByClass = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { classId } = req.params;
+    const classDoc = await ClassModel.findById(classId);
+    if (!classDoc) return errorResponse(res, "Class not found", 404);
+
+    // Teacher visibility
+    if (req.user.role === "TEACHER") {
+      const teacher = await Teacher.findOne({ user: req.user._id });
+      if (!teacher || !teacher.assignedClasses.includes(classId)) {
+        return errorResponse(res, "Not authorized to view exams for this class", 403);
+      }
+    }
+    // Student visibility
+    if (req.user.role === "STUDENT") {
+      const student = await Student.findOne({ user: req.user._id });
+      if (!student || student.class.toString() !== classId) {
+        return errorResponse(res, "Not authorized to view exams for this class", 403);
+      }
+    }
+
+    const exams = await Exam.find({ class: classId })
+      .populate("class", "name section")
+      .populate("subject", "name code")
+      .populate("createdBy", "firstName lastName");
+    return successResponse(res, exams, "Exams retrieved successfully");
+  }),
+];
+
+// @desc    Get exams by subject
+// @route   GET /api/exams/subject/:subjectId
+// @access  Private (Admin, Teacher)
+const getExamsBySubject = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+  asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const subject = await Subject.findById(subjectId);
+    if (!subject) return errorResponse(res, "Subject not found", 404);
+
+    // Teacher visibility
+    if (req.user.role === "TEACHER") {
+      const teacher = await Teacher.findOne({ user: req.user._id });
+      if (!teacher || !teacher.assignedSubjects.includes(subjectId)) {
+        return errorResponse(res, "Not authorized to view exams for this subject", 403);
+      }
+    }
+
+    const exams = await Exam.find({ subject: subjectId })
+      .populate("class", "name section")
+      .populate("subject", "name code")
+      .populate("createdBy", "firstName lastName");
+    return successResponse(res, exams, "Exams retrieved successfully");
+  }),
+];
+
+// Helper grade calculator
+const calculateGrade = (marksObtained, total) => {
+  const pct = (marksObtained / total) * 100;
+  if (pct >= 90) return "A";
+  if (pct >= 80) return "B";
+  if (pct >= 70) return "C";
+  if (pct >= 60) return "D";
+  return "F";
+};
+
+// @desc    Submit results (bulk upsert per student)
+// @route   POST /api/exams/:id/results
+// @access  Private/Teacher
+const submitResults = [
+  protect,
+  authorize("TEACHER"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { results } = req.body; // [{ studentId, marksObtained, grade?, remarks? }]
+    if (!Array.isArray(results) || results.length === 0) {
+      return errorResponse(res, "Results array is required", 400);
+    }
+
+    const exam = await Exam.findById(id);
+    if (!exam) return errorResponse(res, "Exam not found", 404);
+
+    const teacher = await Teacher.findOne({ user: req.user._id });
+    if (!teacher || exam.createdBy.toString() !== req.user._id.toString()) {
+      return errorResponse(res, "Not authorized to submit results for this exam", 403);
+    }
+
+    const bulkOps = [];
+    for (const r of results) {
+      const grade = r.grade ?? calculateGrade(r.marksObtained, exam.totalMarks);
+      bulkOps.push({
+        updateOne: {
+          filter: { student: r.studentId, exam: exam._id },
+          update: { $set: { marksObtained: r.marksObtained, grade, remarks: r.remarks } },
+          upsert: true,
+        },
+      });
+    }
+    await Result.bulkWrite(bulkOps);
+
+    // Refresh exam.results links: ensure result ids included
+    const updatedResults = await Result.find({ exam: exam._id }).select("_id");
+    const ids = updatedResults.map((r) => r._id);
+    await Exam.findByIdAndUpdate(exam._id, { results: ids });
+
+    await Activity.logActivity({
+      userId: req.user._id,
+      type: "EXAM_RESULT_ADDED",
+      description: `Submitted ${results.length} results for exam ${exam.title}`,
+      context: "exam-management",
+      metadata: { examId: exam._id, count: results.length },
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    return successResponse(res, null, "Results submitted successfully");
+  }),
+];
+
+// @desc    Get a specific student's result for an exam
+// @route   GET /api/exams/:id/results/:studentId
+// @access  Private (Admin, Teacher, Student)
+const getStudentExamResult = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { id, studentId } = req.params;
+    const exam = await Exam.findById(id);
+    if (!exam) return errorResponse(res, "Exam not found", 404);
+
+    // Authorization
+    if (req.user.role === "TEACHER") {
+      const teacher = await Teacher.findOne({ user: req.user._id });
+      if (
+        !teacher ||
+        (exam.createdBy.toString() !== req.user._id.toString() &&
+          !teacher.assignedClasses.includes(exam.class.toString()))
+      ) {
+        return errorResponse(res, "Not authorized", 403);
+      }
+    }
+    if (req.user.role === "STUDENT") {
+      const student = await Student.findOne({ user: req.user._id });
+      if (!student || student._id.toString() !== studentId) {
+        return errorResponse(res, "Not authorized", 403);
+      }
+    }
+
+    const result = await Result.findOne({ exam: id, student: studentId })
+      .populate({ path: "student", select: "admissionNumber user", populate: { path: "user", select: "firstName lastName" } })
+      .lean();
+    if (!result) return errorResponse(res, "Result not found", 404);
+    return successResponse(res, result, "Result retrieved successfully");
+  }),
+];
+
+// @desc    Generate report card for a student (single exam or all exams in class)
+// @route   POST /api/exams/report-card
+// @access  Private (Admin, Teacher, Student)
+const generateReportCard = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { studentId, examId } = req.body;
+    if (!studentId) return errorResponse(res, "studentId is required", 400);
+
+    // Student self-access
+    if (req.user.role === "STUDENT" && req.user._id.toString() !== (await Student.findById(studentId)).user.toString()) {
+      return errorResponse(res, "Not authorized", 403);
+    }
+
+    const match = examId ? { exam: new mongoose.Types.ObjectId(examId), student: new mongoose.Types.ObjectId(studentId) } : { student: new mongoose.Types.ObjectId(studentId) };
+    const results = await Result.find(match)
+      .populate("exam")
+      .populate({ path: "student", populate: { path: "user", select: "firstName lastName" } })
+      .lean();
+    if (results.length === 0) return successResponse(res, { results: [] }, "No results found");
+
+    const summary = results.map((r) => ({
+      exam: { id: r.exam._id, title: r.exam.title, subject: r.exam.subject, totalMarks: r.exam.totalMarks, date: r.exam.date },
+      marksObtained: r.marksObtained,
+      grade: r.grade,
+      remarks: r.remarks,
+    }));
+
+    const totalObtained = results.reduce((s, r) => s + r.marksObtained, 0);
+    const totalPossible = results.reduce((s, r) => s + r.exam.totalMarks, 0);
+    const overallPct = totalPossible ? Math.round((totalObtained / totalPossible) * 100) : 0;
+
+    return successResponse(res, { results: summary, overallPercentage: overallPct }, "Report card generated");
   }),
 ];
 

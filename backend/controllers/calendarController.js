@@ -290,3 +290,51 @@ const getEventById = [
 ];
 
 export { createEvent, getEvents, updateEvent, deleteEvent, getEventById };
+
+// ----- Additional endpoints to align with frontend -----
+// @desc    Get events by date range via /calendar/range
+// @route   GET /api/calendar/range?startDate=&endDate=
+// @access  Private
+export const getEventsByDateRange = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) return errorResponse(res, "startDate and endDate are required", 400);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const events = await Calendar.find({ start: { $lte: end }, end: { $gte: start } })
+      .populate("createdBy", "firstName lastName")
+      .populate("participants", "firstName lastName role");
+    return successResponse(res, events, "Events retrieved successfully");
+  }),
+];
+
+// @desc    Get events by type
+// @route   GET /api/calendar/type/:type
+// @access  Private
+export const getEventsByType = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { type } = req.params;
+    const events = await Calendar.find({ type })
+      .sort("-start")
+      .limit(50)
+      .lean();
+    return successResponse(res, events, "Events retrieved successfully");
+  }),
+];
+
+// @desc    Get upcoming events
+// @route   GET /api/calendar/upcoming?limit=5
+// @access  Private
+export const getUpcomingEvents = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const limit = Number(req.query.limit) || 5;
+    const events = await Calendar.find({ start: { $gte: new Date() } })
+      .sort("start")
+      .limit(limit)
+      .lean();
+    return successResponse(res, events, "Upcoming events retrieved successfully");
+  }),
+];

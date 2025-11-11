@@ -9,6 +9,11 @@ import {
   updateExam,
   deleteExam,
   updateExamResult,
+  getExamsByClass,
+  getExamsBySubject,
+  submitResults,
+  getStudentExamResult,
+  generateReportCard,
 } from "../controllers/examController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
@@ -24,6 +29,12 @@ router
     authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
     createExam
   );
+
+// Convenience filters
+router.route("/class/:classId").get(protect, getExamsByClass);
+router
+  .route("/subject/:subjectId")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getExamsBySubject);
 
 // GET /api/exams/:id - Get exam by ID (Admin, Teacher)
 // PUT /api/exams/:id - Update exam (Teacher, Admin)
@@ -45,9 +56,14 @@ router
 
 // GET /api/exams/:id/results - Get exam results (Admin, Teacher, Student)
 router.route("/:id/results").get(protect, getExamResults); // Authorize removed since its handled in controller
+router.route("/:id/results").post(protect, authorize("TEACHER"), submitResults);
 
 // PUT /api/exams/:examId/results/:resultId - Update a specific exam result (Teacher)
 router
   .route("/:id/results/:resultId")
   .put(protect, authorize("TEACHER"), updateExamResult);
+router.route("/:id/results/:studentId").get(protect, getStudentExamResult);
+
+// Report card
+router.route("/report-card").post(protect, generateReportCard);
 export default router;

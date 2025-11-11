@@ -1,5 +1,7 @@
 // controllers/subjectController.js
 import Subject from "../models/Subject.js";
+import ClassModel from "../models/Class.js";
+import Teacher from "../models/Teacher.js";
 import asyncHandler from "express-async-handler";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
@@ -89,11 +91,14 @@ const getSubjects = [
     let query = {};
 
     if (req.user.role === "TEACHER") {
-      query = { assignedTeachers: req.user._id }; // Subjects the teacher is assigned to
+      const teacher = await Teacher.findOne({ user: req.user._id });
+      query = { assignedTeachers: teacher?._id };
     }
 
     if (req.user.role === "STUDENT") {
-      query = { assignedClasses: req.user.class };
+      // Student's class lookup
+      const student = await (await import("../models/Student.js")).default.findOne({ user: req.user._id });
+      query = { assignedClasses: student?.class };
     }
 
     const subjects = await Subject.find(query)
@@ -101,6 +106,69 @@ const getSubjects = [
       .populate("assignedClasses", "name section");
 
     return successResponse(res, subjects, "Subjects retrieved successfully");
+  }),
+];
+
+// @desc Get subjects by class
+// @route GET /api/subjects/class/:classId
+// @access Private (Admin, Teacher, Student)
+const getSubjectsByClass = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"),
+  asyncHandler(async (req, res) => {
+    const { classId } = req.params;
+    const classDoc = await ClassModel.findById(classId);
+    if (!classDoc) return errorResponse(res, "Class not found", 404);
+    const subjects = await Subject.find({ assignedClasses: classId })
+      .populate("assignedTeachers", "firstName lastName")
+      .populate("assignedClasses", "name section");
+    return successResponse(res, subjects, "Subjects retrieved successfully");
+  }),
+];
+
+// @desc Get subjects by teacher
+// @route GET /api/subjects/teacher/:teacherId
+// @access Private (Admin, Teacher)
+const getSubjectsByTeacher = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+  asyncHandler(async (req, res) => {
+    const { teacherId } = req.params;
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) return errorResponse(res, "Teacher not found", 404);
+    const subjects = await Subject.find({ assignedTeachers: teacherId })
+      .populate("assignedTeachers", "firstName lastName")
+      .populate("assignedClasses", "name section");
+    return successResponse(res, subjects, "Subjects retrieved successfully");
+  }),
+];
+
+// @desc Assign a teacher to a subject
+// @route POST /api/subjects/:id/assign-teacher
+// @access Private/Admin
+const assignTeacher = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params; // subject id
+    const { teacherId } = req.body;
+    const subject = await Subject.findById(id);
+    if (!subject) return errorResponse(res, "Subject not found", 404);
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) return errorResponse(res, "Teacher not found", 404);
+    if (!subject.assignedTeachers.includes(teacherId)) {
+      subject.assignedTeachers.push(teacherId);
+      await subject.save();
+    }
+    await Activity.logActivity({
+      userId: req.user._id,
+      type: "SUBJECT_UPDATED",
+      description: `Assigned teacher to subject ${subject.name}`,
+      context: "subject-management",
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+    return successResponse(res, subject, "Teacher assigned successfully");
   }),
 ];
 
@@ -263,4 +331,7 @@ export {
   getSubjectById,
   updateSubject,
   deleteSubject,
+  getSubjectsByClass,
+  getSubjectsByTeacher,
+  assignTeacher,
 };

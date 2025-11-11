@@ -419,3 +419,87 @@ export {
   updateFee,
   deleteFee,
 };
+
+// ----- Additional endpoints to align with frontend -----
+// @desc    Get fee by ID
+// @route   GET /api/fees/:id
+// @access  Private/Admin
+export const getFeeById = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const fee = await Fee.findById(req.params.id)
+      .populate("student", "admissionNumber")
+      .lean();
+    if (!fee) return errorResponse(res, "Fee record not found", 404);
+    return successResponse(res, fee, "Fee retrieved successfully");
+  }),
+];
+
+// @desc    Get fees by class
+// @route   GET /api/fees/class/:classId
+// @access  Private/Admin
+export const getFeesByClass = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const { classId } = req.params;
+    const students = await Student.find({ class: classId }).select("_id");
+    const studentIds = students.map((s) => s._id);
+    const fees = await Fee.find({ student: { $in: studentIds } })
+      .populate("student", "admissionNumber")
+      .lean();
+    return successResponse(res, fees, "Fees retrieved successfully");
+  }),
+];
+
+// @desc    Record payment (alias for update payment by payload feeId)
+// @route   POST /api/fees/payment
+// @access  Private/Admin
+export const recordPayment = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  body("feeId").notEmpty().withMessage("feeId is required"),
+  body("amountPaid").isNumeric().withMessage("Amount paid must be a number"),
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return errorResponse(res, "Validation failed", 400, errors.array());
+    }
+    const { feeId, amountPaid, paymentMethod, transactionId, receiptNumber, paidDate } = req.body;
+    req.params.id = feeId; // Reuse controller logic
+    req.body = { amountPaid, paymentMethod, transactionId, receiptNumber, paidDate };
+    return updateFeePayment[2](req, res); // Call the async handler
+  }),
+];
+
+// @desc    Get payment history by student
+// @route   GET /api/fees/payment-history/:studentId
+// @access  Private (Admin, Student self, Parent)
+export const getPaymentHistory = [
+  protect,
+  asyncHandler(async (req, res) => {
+    const { studentId } = req.params;
+    const fees = await Fee.find({ student: studentId, paidAmount: { $gt: 0 } })
+      .sort("-paidDate")
+      .lean();
+    return successResponse(res, fees, "Payment history retrieved successfully");
+  }),
+];
+
+// @desc    Generate invoice placeholder (returns current fee data)
+// @route   POST /api/fees/:id/invoice
+// @access  Private/Admin
+export const generateInvoice = [
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const fee = await Fee.findById(req.params.id)
+      .populate("student", "admissionNumber")
+      .populate("createdBy", "firstName lastName")
+      .lean();
+    if (!fee) return errorResponse(res, "Fee record not found", 404);
+    // For now return data that frontend can format as invoice
+    return successResponse(res, { invoice: fee }, "Invoice generated");
+  }),
+];

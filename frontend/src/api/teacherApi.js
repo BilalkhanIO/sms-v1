@@ -37,6 +37,30 @@ export const teacherApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Teachers'],
     }),
+    assignTeacherToClass: builder.mutation({
+      query: ({ teacherId, classId }) => ({
+        url: `/teachers/${teacherId}/assign-class`,
+        method: 'PUT',
+        body: { classId },
+      }),
+      invalidatesTags: ['Teachers', 'Classes'],
+    }),
+    assignSubjectToTeacher: builder.mutation({
+      query: ({ teacherId, subjectId, classId }) => ({
+        url: `/teachers/${teacherId}/assign-subject`,
+        method: 'PUT',
+        body: { subjectId, classId },
+      }),
+      invalidatesTags: ['Teachers', 'Subjects', 'Classes'],
+    }),
+    unassignSubjectFromTeacher: builder.mutation({
+      query: ({ teacherId, subjectId, classId }) => ({
+        url: `/teachers/${teacherId}/unassign-subject`,
+        method: 'PUT',
+        body: { subjectId, classId },
+      }),
+      invalidatesTags: ['Teachers', 'Subjects', 'Classes'],
+    }),
   }),
 });
 
@@ -46,14 +70,8 @@ export const {
   useCreateTeacherMutation,
   useUpdateTeacherMutation,
   useDeleteTeacherMutation,
+  useAssignTeacherToClassMutation,
+  useAssignSubjectToTeacherMutation,
+  useUnassignSubjectFromTeacherMutation,
 } = teacherApi;
 
-export const assignTeacherToClass = async (teacherId, classId) => {
-  const response = await API.put(`/teachers/${teacherId}/assign-class`, { classId });
-  return response.data;
-};
-
-export const assignSubjectToTeacher = async (teacherId, subjectId) => {
-  const response = await API.put(`/teachers/${teacherId}/assign-subject`, { subjectId });
-  return response.data;
-};
