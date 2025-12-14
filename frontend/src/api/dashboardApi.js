@@ -46,12 +46,17 @@ export const dashboardApi = api.injectEndpoints({
       query: () => "dashboard/super-admin-stats",
       providesTags: ["Dashboard"],
     }),
+    getSchoolDetails: builder.query({
+      query: (schoolId) => `dashboard/school-details/${schoolId}`,
+      providesTags: ["Dashboard"],
+    }),
   }),
 });
 
 export const {
   useGetDashboardStatsQuery,
   useGetSuperAdminStatsQuery,
+  useGetSchoolDetailsQuery,
 export const useGetSchoolStatsQuery = dashboardApi.useGetSchoolStatsQuery;
 export const useGetAdminDashboardStatsQuery = dashboardApi.useGetAdminDashboardStatsQuery;
 export const useGetParentDashboardStatsQuery = dashboardApi.useGetParentDashboardStatsQuery;

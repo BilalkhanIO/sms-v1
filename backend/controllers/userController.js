@@ -72,6 +72,8 @@ const getUsers = [
     const filter = {};
     if (req.user.role === "SCHOOL_ADMIN") {
       filter.school = req.user.school;
+    } else if (req.user.role === "MULTI_SCHOOL_ADMIN") {
+      filter.school = { $in: req.user.managedSchools };
     }
 
     if (role) filter.role = role;

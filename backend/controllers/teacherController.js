@@ -11,31 +11,23 @@ import Activity from "../models/Activity.js";
 import cloudinary from "../utils/cloudinary.js"; // Import Cloudinary
 import upload from "../utils/multer.js"; // Import Multer
 
-// Helper function to get the base filter for teacher queries
-const _getTeacherFilter = (req) => {
-  if (req.user.role === "SUPER_ADMIN") {
-    return {}; // Super Admin sees all
-  } else if (req.user.schoolId) {
-    return { school: req.user.schoolId }; // School Admin, Teacher, Student, Parent see only their school's data
-  } else {
-    // This case should ideally not happen for school-specific roles without a schoolId
-    // or if a SUPER_ADMIN is trying to access data without a school context.
-    return { _id: null }; // Return an impossible filter to prevent data leakage
-  }
-};
-
 // @desc    Get all teachers
 // @route   GET /api/teachers
 // @access  Private/Admin
 const getTeachers = [
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const filter = _getTeacherFilter(req); // Get school-based filter
+    const filter = {};
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    } else if (req.user.role === "MULTI_SCHOOL_ADMIN") {
+      filter.school = { $in: req.user.managedSchools };
+    }
 
-    const teachers = await Teacher.find(filter) // Apply filter
-      .populate("user", "firstName lastName email") // Populate user details
-      .populate("assignedClasses", "name section") // Populate assigned classes
+    const teachers = await Teacher.find(filter)
+      .populate("user", "firstName lastName email")
+      .populate("assignedClasses", "name section")
       .populate("assignedSubjects", "name code"); // Populate assigned subjects
 
     return successResponse(res, teachers, "Teachers retrieved successfully");
@@ -50,8 +42,10 @@ const getTeacherById = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), // Allow teacher to see their own profile
   asyncHandler(async (req, res) => {
     const teacherId = req.params.id;
-    const baseFilter = _getTeacherFilter(req);
-    let filter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
     // If a teacher is trying to access their own profile, ensure it's their ID
     if (req.user.role === "TEACHER" && req.user._id.toString() !== teacherId) {
@@ -286,10 +280,12 @@ const updateTeacher = [
     } = req.body;
 
     const teacherId = req.params.id;
-    const baseFilter = _getTeacherFilter(req); // Get school-based filter
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
-    const teacher = await Teacher.findOne(teacherFilter).populate("user");
+    const teacher = await Teacher.findOne(filter).populate("user");
 
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to access", 404);
@@ -420,10 +416,12 @@ const deleteTeacher = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
     const teacherId = req.params.id;
-    const baseFilter = _getTeacherFilter(req);
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
-    const teacher = await Teacher.findOne(teacherFilter).populate("user");
+    const teacher = await Teacher.findOne(filter).populate("user");
 
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to delete", 404);
@@ -503,11 +501,13 @@ const updateTeacherStatus = [
     }
 
     const teacherId = req.params.id;
-    const baseFilter = _getTeacherFilter(req);
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
     const { status } = req.body;
-    const teacher = await Teacher.findOne(teacherFilter); // Use findOne with filter
+    const teacher = await Teacher.findOne(filter); // Use findOne with filter
 
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to update status", 404);
@@ -541,11 +541,13 @@ const getTeacherClasses = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), // Authorize Teacher to view their own classes
   asyncHandler(async (req, res) => {
     const teacherId = req.params.id;
-    const baseFilter = _getTeacherFilter(req);
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
     // Find the teacher within the authorized school scope
-    const teacher = await Teacher.findOne(teacherFilter);
+    const teacher = await Teacher.findOne(filter);
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to access", 404);
     }
@@ -643,10 +645,12 @@ const assignTeacherToClass = [
     const { classId } = req.body;
     const teacherId = req.params.id;
 
-    const baseFilter = _getTeacherFilter(req);
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
-    const teacher = await Teacher.findOne(teacherFilter); // Find teacher within school scope
+    const teacher = await Teacher.findOne(filter); // Find teacher within school scope
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to assign", 404);
     }
@@ -731,10 +735,12 @@ const assignSubjectToTeacher = [
     const { subjectId, classId } = req.body;
     const teacherId = req.params.id;
 
-    const baseFilter = _getTeacherFilter(req);
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
-    const teacher = await Teacher.findOne(teacherFilter); // Find teacher within school scope
+    const teacher = await Teacher.findOne(filter); // Find teacher within school scope
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to assign subject", 404);
     }
@@ -835,10 +841,12 @@ const unassignSubjectFromTeacher = [
     const { subjectId, classId } = req.body;
     const teacherId = req.params.id;
 
-    const baseFilter = _getTeacherFilter(req);
-    let teacherFilter = { _id: teacherId, ...baseFilter };
+    const filter = { _id: teacherId };
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
 
-    const teacher = await Teacher.findOne(teacherFilter); // Find teacher within school scope
+    const teacher = await Teacher.findOne(filter); // Find teacher within school scope
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to unassign subject", 404);
     }

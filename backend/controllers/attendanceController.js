@@ -161,7 +161,10 @@ const getAttendanceReport = [
   asyncHandler(async (req, res) => {
     const { startDate, endDate, classId, studentId, status } = req.query;
 
-    const match = { school: new mongoose.Types.ObjectId(req.schoolId) };
+    const match = {};
+    if (req.schoolId) {
+      match.school = new mongoose.Types.ObjectId(req.schoolId);
+    }
 
     if (startDate && endDate) {
       match.date = {
@@ -402,7 +405,10 @@ const getAttendance = [
   asyncHandler(async (req, res) => {
     const { classId, date, status, studentId } = req.query;
     
-    let query = { school: req.schoolId };
+    let query = {};
+    if (req.schoolId) {
+      query.school = req.schoolId;
+    }
     
     if (classId) query.class = classId;
     if (studentId) query.student = studentId;
@@ -519,7 +525,10 @@ export const getAttendanceStats = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
     const { classId, studentId, startDate, endDate } = req.query;
-    const match = { school: new mongoose.Types.ObjectId(req.schoolId) };
+    const match = {};
+    if (req.schoolId) {
+      match.school = new mongoose.Types.ObjectId(req.schoolId);
+    }
     if (classId) match.class = new mongoose.Types.ObjectId(classId);
     if (studentId) match.student = new mongoose.Types.ObjectId(studentId);
     if (startDate || endDate) {
