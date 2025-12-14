@@ -12,11 +12,6 @@ import {
   School,
   GraduationCap,
   LogOut,
-  BookOpen,
-  Calendar,
-  CheckCircle,
-  DollarSign,
-  FileText,
 } from "lucide-react"; // Added icons
 
 const UserWelcome = ({ user }) => (
@@ -70,11 +65,6 @@ export default function DashboardLayout() {
     { to: "/dashboard/teachers", label: "Teachers", icon: Users },
     { to: "/dashboard/students", label: "Students", icon: GraduationCap },
     { to: "/dashboard/classes", label: "Classes", icon: School },
-    { to: "/dashboard/subjects", label: "Subjects", icon: BookOpen },
-    { to: "/dashboard/attendance", label: "Attendance", icon: CheckCircle },
-    { to: "/dashboard/exams", label: "Exams", icon: FileText },
-    { to: "/dashboard/fees", label: "Fees", icon: DollarSign },
-    { to: "/dashboard/calendar", label: "Calendar", icon: Calendar },
   ];
 
   return (
@@ -125,8 +115,8 @@ export default function DashboardLayout() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`block p-3 rounded text-sm font-medium transition-colors flex items-center space-x-3 ${
-                  isActive(link.to.replace("/dashboard", ""))
+                className={`flex items-center space-x-3 p-3 rounded text-sm font-medium transition-colors ${
+                  isActive(link.to)
                     ? "bg-gray-700 text-white"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}

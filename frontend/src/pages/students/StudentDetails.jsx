@@ -25,39 +25,49 @@ const StudentDetails = () => {
         </Link>
       </PageHeader>
 
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-gray-600 text-sm font-medium">Name</h3>
-            <p className="text-gray-900">
-              {student.firstName} {student.lastName}
-            </p>
-          </div>
-          
-          <div>
-            <h3 className="text-gray-600 text-sm font-medium">Roll Number</h3>
-            <p className="text-gray-900">{student.rollNumber}</p>
-          </div>
+      <div className="space-y-6">
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Admission Number</h4>
+              <p className="text-gray-900">{student.admissionNumber}</p>
+            </div>
+            
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Roll Number</h4>
+              <p className="text-gray-900">{student.rollNumber}</p>
+            </div>
 
-          <div>
-            <h3 className="text-gray-600 text-sm font-medium">Class</h3>
-            <p className="text-gray-900">{student.class?.name || 'N/A'}</p>
-          </div>
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Class</h4>
+              <p className="text-gray-900">{student.class?.name} - {student.class?.section || 'N/A'}</p>
+            </div>
 
-          <div>
-            <h3 className="text-gray-600 text-sm font-medium">Date of Birth</h3>
-            <p className="text-gray-900">{new Date(student.dateOfBirth).toLocaleDateString()}</p>
-          </div>
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Academic Year</h4>
+              <p className="text-gray-900">{student.class?.academicYear || 'N/A'}</p>
+            </div>
 
-          <div>
-            <h3 className="text-gray-600 text-sm font-medium">Gender</h3>
-            <p className="text-gray-900">{student.gender}</p>
-          </div>
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Date of Birth</h4>
+              <p className="text-gray-900">{new Date(student.dateOfBirth).toLocaleDateString()}</p>
+            </div>
 
-          <div>
-            <h3 className="text-gray-600 text-sm font-medium">Contact Number</h3>
-            <p className="text-gray-900">{student.contactNumber || 'N/A'}</p>
-          </div>
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Gender</h4>
+              <p className="text-gray-900">{student.gender}</p>
+            </div>
+
+            <div>
+              <h4 className="text-gray-600 text-sm font-medium">Status</h4>
+              <p className={`text-gray-900 ${
+                student.status === 'ACTIVE' ? 'text-green-600' : 
+                student.status === 'INACTIVE' ? 'text-red-600' : 'text-yellow-600'
+              }`}>
+                {student.status}
+              </p>
+            </div>
         </div>
 
         {student.parent && (
@@ -122,6 +132,7 @@ const StudentDetails = () => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

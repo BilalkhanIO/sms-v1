@@ -1,41 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useCreateStudentMutation } from '../../api/studentApi';
+import { useGetClassesQuery } from '../../api/classApi';
+import { useGetParentsQuery } from '../../api/parentApi';
+import Spinner from '../../components/common/Spinner';
 
 const CreateStudent = () => {
   const navigate = useNavigate();
   const [createStudent, { isLoading }] = useCreateStudentMutation();
+  const { data: classes, isLoading: classesLoading } = useGetClassesQuery();
+  const { data: parents, isLoading: parentsLoading } = useGetParentsQuery();
+  
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    admissionNumber: '',
     rollNumber: '',
+    class: '',
     dateOfBirth: '',
     gender: '',
-    contactNumber: '',
-    email: '',
-    address: '',
-    parentName: '',
-    parentContact: '',
-    parentEmail: '',
-    parentRelationship: '',
+    parentInfo: {
+      father: {
+        name: '',
+        occupation: '',
+        contact: '',
+      },
+      mother: {
+        name: '',
+        occupation: '',
+        contact: '',
+      },
+      guardian: '',
+    },
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'USA',
+    },
+    documents: [],
+    status: 'ACTIVE',
   });
+  
   const [errors, setErrors] = useState({});
+  const [files, setFiles] = useState([]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: { ...prev[parent], [child]: value }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  const handleFileChange = (e) => {
+    setFiles([...e.target.files]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createStudent(formData).unwrap();
+      const formDataWithFiles = new FormData();
+      
+      // Append JSON data
+      Object.keys(formData).forEach(key => {
+        if (key !== 'documents') {
+          formDataWithFiles.append(key, 
+            typeof formData[key] === 'object' 
+              ? JSON.stringify(formData[key]) 
+              : formData[key]
+          );
+        }
+      });
+      
+      // Append files
+      files.forEach(file => {
+        formDataWithFiles.append('documents', file);
+      });
+
+      await createStudent(formDataWithFiles).unwrap();
       navigate('/students');
     } catch (error) {
       const validationErrors = {};
@@ -48,6 +101,10 @@ const CreateStudent = () => {
     }
   };
 
+  if (classesLoading || parentsLoading) {
+    return <Spinner size="large" />;
+  }
+
   return (
     <div className="container mx-auto px-4 py-6">
       <PageHeader title="Create Student" backUrl="/students" />
@@ -57,7 +114,7 @@ const CreateStudent = () => {
           <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="First Name"
+              label="Admission Number"
               id="firstName"
               name="firstName"
               value={formData.firstName}

@@ -4,15 +4,30 @@ import { api } from './api';
 export const studentApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getStudents: builder.query({
-      query: () => '/students',
+      query: () => ({
+        url: '/students',
+        params: {
+          populate: 'class,parentInfo.guardian.user'
+        }
+      }),
       providesTags: ['Students'],
     }),
     getStudentById: builder.query({
-      query: (id) => `/students/${id}`,
+      query: (id) => ({
+        url: `/students/${id}`,
+        params: {
+          populate: 'class,parentInfo.guardian.user'
+        }
+      }),
       providesTags: (result, error, id) => [{ type: 'Students', id }],
     }),
     getStudentsByClass: builder.query({
-      query: (classId) => `/students/class/${classId}`,
+      query: (classId) => ({
+        url: `/students/class/${classId}`,
+        params: {
+          populate: 'parentInfo.guardian.user'
+        }
+      }),
       providesTags: ['Students'],
     }),
     createStudent: builder.mutation({
@@ -20,14 +35,16 @@ export const studentApi = api.injectEndpoints({
         url: '/students',
         method: 'POST',
         body: data,
+        formData: true,
       }),
       invalidatesTags: ['Students'],
     }),
     updateStudent: builder.mutation({
-      query: ({ id, ...data }) => ({
+      query: ({ id, data }) => ({
         url: `/students/${id}`,
         method: 'PUT',
         body: data,
+        formData: true,
       }),
       invalidatesTags: (result, error, { id }) => [
         'Students',
