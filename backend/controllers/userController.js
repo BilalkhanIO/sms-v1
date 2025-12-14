@@ -70,6 +70,9 @@ const getUsers = [
     const { role, status, search } = req.query;
 
     const filter = {};
+    if (req.user.role === "SCHOOL_ADMIN") {
+      filter.school = req.user.school;
+    }
 
     if (role) filter.role = role;
     if (status) filter.status = status;

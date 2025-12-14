@@ -42,10 +42,16 @@ export const dashboardApi = api.injectEndpoints({
       query: () => "dashboard/user-registration-trends",
       providesTags: ["Dashboard"],
     }),
+    getSuperAdminStats: builder.query({
+      query: () => "dashboard/super-admin-stats",
+      providesTags: ["Dashboard"],
+    }),
   }),
 });
 
-export const useGetDashboardStatsQuery = dashboardApi.useGetDashboardStatsQuery;
+export const {
+  useGetDashboardStatsQuery,
+  useGetSuperAdminStatsQuery,
 export const useGetSchoolStatsQuery = dashboardApi.useGetSchoolStatsQuery;
 export const useGetAdminDashboardStatsQuery = dashboardApi.useGetAdminDashboardStatsQuery;
 export const useGetParentDashboardStatsQuery = dashboardApi.useGetParentDashboardStatsQuery;

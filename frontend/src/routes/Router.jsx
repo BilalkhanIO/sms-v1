@@ -22,7 +22,7 @@ import StudentDashboard from "../components/dashboard/StudentDashboard";
 import ParentDashboard from "../components/dashboard/ParentDashboard";
 
 // User Management
-import Users from "../pages/Users";
+import UserList from "../pages/users/UserList";
 import UserDetail from "../components/user/UserDetail";
 import CreateUserForm from "../components/CreateUserForm";
 import UpdateUser from "../pages/users/UpdateUser";
@@ -68,7 +68,7 @@ const Router = () => {
         <Route path="teacher-dashboard" element={<PrivateRoute roles={["TEACHER"]}><TeacherDashboard /></PrivateRoute>} />
         <Route path="student-dashboard" element={<PrivateRoute roles={["STUDENT"]}><StudentDashboard /></PrivateRoute>} />
         <Route path="parent-dashboard" element={<PrivateRoute roles={["PARENT"]}><ParentDashboard /></PrivateRoute>} />
-        <Route path="users" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><Users /></PrivateRoute>} />
+        <Route path="users" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UserList /></PrivateRoute>} />
         <Route path="users/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateUserForm /></PrivateRoute>} />
         <Route path="users/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UserDetail /></PrivateRoute>} />
         <Route path="users/edit/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateUser /></PrivateRoute>} />
