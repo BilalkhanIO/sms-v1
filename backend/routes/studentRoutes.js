@@ -9,6 +9,7 @@ import {
   deleteStudent,
 } from "../controllers/studentController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
+import { setSchoolId } from "../middleware/schoolMiddleware.js";
 
 const router = express.Router();
 
@@ -16,8 +17,18 @@ const router = express.Router();
 // POST /api/students - Create a new student profile (Admin only)
 router
   .route("/")
-  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getStudents)
-  .post(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createStudent);
+  .get(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    setSchoolId,
+    getStudents
+  )
+  .post(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
+    createStudent
+  );
 
 // GET /api/students/class/:classId - Get students by class (Admin, Teacher)
 router
@@ -25,6 +36,7 @@ router
   .get(
     protect,
     authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    setSchoolId,
     getStudentsByClass
   );
 
@@ -33,8 +45,18 @@ router
 // DELETE /api/students/:id - Delete student profile (Admin only)
 router
   .route("/:id")
-  .get(protect, getStudentById) // Removed redundant authorize
-  .put(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), updateStudent)
-  .delete(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), deleteStudent);
+  .get(protect, setSchoolId, getStudentById)
+  .put(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
+    updateStudent
+  )
+  .delete(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
+    deleteStudent
+  );
 
 export default router;

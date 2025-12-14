@@ -61,10 +61,9 @@ const userSchema = new Schema(
       ],
       default: "PENDING_EMAIL_VERIFICATION",
     },
-    school: { // New: Reference to the School model, optional for SUPER_ADMIN
+    school: {
       type: Schema.Types.ObjectId,
       ref: 'School',
-      required: false, // Not required for SUPER_ADMIN, will be required by logic for others
     },
     profilePicture: {
       type: String,

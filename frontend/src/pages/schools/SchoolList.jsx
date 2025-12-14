@@ -1,13 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useGetSchoolsQuery, useDeleteSchoolMutation } from '../../api/schoolsApi';
+import { useSelector } from 'react-redux';
+import { selectCurrentUser } from '../../store/authSlice';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import { Trash2, Eye, Edit } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 
 const SchoolList = () => {
+  const user = useSelector(selectCurrentUser);
+
+  if (user && user.role === 'SCHOOL_ADMIN') {
+    return <Navigate to={`/dashboard/schools/${user.school}`} />;
+  }
+
   const { data: schools, isLoading, isError, error } = useGetSchoolsQuery();
   const [deleteSchool, { isLoading: isDeleting }] = useDeleteSchoolMutation();
 

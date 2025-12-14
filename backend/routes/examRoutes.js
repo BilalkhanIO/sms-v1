@@ -16,6 +16,7 @@ import {
   generateReportCard,
 } from "../controllers/examController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
+import { setSchoolId } from "../middleware/schoolMiddleware.js";
 
 const router = express.Router();
 
@@ -23,27 +24,48 @@ const router = express.Router();
 // POST /api/exams - Create a new exam (Teacher, Admin)
 router
   .route("/")
-  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getExams)
+  .get(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    setSchoolId,
+    getExams
+  )
   .post(
     protect,
     authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
     createExam
   );
 
 // Convenience filters
-router.route("/class/:classId").get(protect, getExamsByClass);
+router.route("/class/:classId").get(protect, setSchoolId, getExamsByClass);
 router
   .route("/subject/:subjectId")
-  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getExamsBySubject);
+  .get(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    setSchoolId,
+    getExamsBySubject
+  );
 
 // GET /api/exams/:id - Get exam by ID (Admin, Teacher)
 // PUT /api/exams/:id - Update exam (Teacher, Admin)
 // DELETE /api/exams/:id - Delete exam (Admin only)
 router
   .route("/:id")
-  .get(protect, getExamById) //Authorize removed since it is handled in controller
-  .put(protect, authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"), updateExam)
-  .delete(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), deleteExam);
+  .get(protect, setSchoolId, getExamById) //Authorize removed since it is handled in controller
+  .put(
+    protect,
+    authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
+    updateExam
+  )
+  .delete(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
+    deleteExam
+  );
 
 // PUT /api/exams/:id/status - Update exam status (Teacher, Admin)
 router
@@ -51,19 +73,24 @@ router
   .put(
     protect,
     authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
+    setSchoolId,
     updateExamStatus
   );
 
 // GET /api/exams/:id/results - Get exam results (Admin, Teacher, Student)
-router.route("/:id/results").get(protect, getExamResults); // Authorize removed since its handled in controller
-router.route("/:id/results").post(protect, authorize("TEACHER"), submitResults);
+router.route("/:id/results").get(protect, setSchoolId, getExamResults); // Authorize removed since its handled in controller
+router
+  .route("/:id/results")
+  .post(protect, authorize("TEACHER"), setSchoolId, submitResults);
 
 // PUT /api/exams/:examId/results/:resultId - Update a specific exam result (Teacher)
 router
   .route("/:id/results/:resultId")
-  .put(protect, authorize("TEACHER"), updateExamResult);
-router.route("/:id/results/:studentId").get(protect, getStudentExamResult);
+  .put(protect, authorize("TEACHER"), setSchoolId, updateExamResult);
+router
+  .route("/:id/results/:studentId")
+  .get(protect, setSchoolId, getStudentExamResult);
 
 // Report card
-router.route("/report-card").post(protect, generateReportCard);
+router.route("/report-card").post(protect, setSchoolId, generateReportCard);
 export default router;

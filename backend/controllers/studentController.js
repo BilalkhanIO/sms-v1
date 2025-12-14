@@ -84,6 +84,7 @@ const createStudent = [
     // Create the student profile (assuming user is already created)
     const student = await Student.create({
       user: req.body.userId, // Assuming userId is passed from user creation
+      school: req.schoolId,
       admissionNumber,
       rollNumber,
       class: classId,
@@ -121,7 +122,10 @@ const createStudent = [
 const getStudentById = [
   protect,
   asyncHandler(async (req, res) => {
-    const student = await Student.findById(req.params.id)
+    const student = await Student.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    })
       .populate("class", "name section")
       .populate("user", "firstName lastName email")
       .populate("parentInfo.guardian", "firstName lastName contactNumber");
@@ -161,7 +165,10 @@ const getStudentsByClass = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), // Only admins and teachers can access
   asyncHandler(async (req, res) => {
     const classId = req.params.classId;
-    const classData = await ClassModel.findById(classId);
+    const classData = await ClassModel.findOne({
+      _id: classId,
+      school: req.schoolId,
+    });
 
     if (!classData) {
       return errorResponse(res, "Class not found", 404);
@@ -246,7 +253,10 @@ const updateStudent = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!student) {
       return errorResponse(res, "Student not found", 404);
@@ -347,7 +357,10 @@ const deleteStudent = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!student) {
       return errorResponse(res, "Student not found", 404);
@@ -391,7 +404,7 @@ const getStudents = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
-    const students = await Student.find()
+    const students = await Student.find({ school: req.schoolId })
       .populate("user", "firstName lastName email")
       .populate("class", "name section")
       .populate("parentInfo.guardian", "contactNumber")

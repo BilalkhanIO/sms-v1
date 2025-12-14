@@ -91,6 +91,7 @@ const markAttendance = [
               date: new Date(date),
             },
             {
+              school: req.schoolId,
               student: student.studentId,
               class: classId,
               date: new Date(date),
@@ -109,6 +110,7 @@ const markAttendance = [
           // Log activity for each student
           await Activity.logActivity({
             userId: req.user._id,
+            schoolId: req.schoolId,
             type: "ATTENDANCE_MARKED",
             description: `Marked ${student.status} for student ${student.studentId} in class ${classId} on ${date}`,
             context: "attendance-management", // Added context
@@ -159,7 +161,7 @@ const getAttendanceReport = [
   asyncHandler(async (req, res) => {
     const { startDate, endDate, classId, studentId, status } = req.query;
 
-    const match = {};
+    const match = { school: new mongoose.Types.ObjectId(req.schoolId) };
 
     if (startDate && endDate) {
       match.date = {
@@ -271,7 +273,10 @@ const bulkUpdateAttendance = [
 
     const { date, classId, attendanceData } = req.body;
     // Check if the class exists
-    const classExists = await ClassModel.findById(classId);
+    const classExists = await ClassModel.findOne({
+      _id: classId,
+      school: req.schoolId,
+    });
     if (!classExists) {
       return errorResponse(res, "Class not found", 404);
     }
@@ -321,6 +326,7 @@ const bulkUpdateAttendance = [
       // Log activity
       await Activity.logActivity({
         userId: req.user._id,
+        schoolId: req.schoolId,
         type: "ATTENDANCE_UPDATED", // Use a more appropriate type
         description: `Bulk updated attendance for ${attendanceData.length} students in class ${classId} on ${date}`,
         context: "attendance-management", // Added context
@@ -353,7 +359,10 @@ const getAttendanceById = [
   asyncHandler(async (req, res) => {
     const attendanceId = req.params.id;
 
-    const attendanceRecord = await Attendance.findById(attendanceId)
+    const attendanceRecord = await Attendance.findOne({
+      _id: attendanceId,
+      school: req.schoolId,
+    })
       .populate("student", "admissionNumber user") // Populate student details
       .populate({ path: "student.user", select: "firstName lastName" })
       .populate("class", "name section"); // Populate class details
@@ -393,7 +402,7 @@ const getAttendance = [
   asyncHandler(async (req, res) => {
     const { classId, date, status, studentId } = req.query;
     
-    let query = {};
+    let query = { school: req.schoolId };
     
     if (classId) query.class = classId;
     if (studentId) query.student = studentId;
@@ -433,7 +442,10 @@ export const updateAttendanceById = [
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, timeIn, timeOut } = req.body;
-    const attendance = await Attendance.findById(id);
+    const attendance = await Attendance.findOne({
+      _id: id,
+      school: req.schoolId,
+    });
     if (!attendance) return errorResponse(res, "Attendance record not found", 404);
     attendance.status = status ?? attendance.status;
     attendance.timeIn = timeIn ?? attendance.timeIn;
@@ -451,9 +463,12 @@ export const deleteAttendanceById = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const attendance = await Attendance.findById(id);
+    const attendance = await Attendance.findOne({
+      _id: id,
+      school: req.schoolId,
+    });
     if (!attendance) return errorResponse(res, "Attendance record not found", 404);
-    await Attendance.deleteOne({ _id: id });
+    await Attendance.deleteOne({ _id: id, school: req.schoolId });
     return successResponse(res, null, "Attendance record deleted");
   }),
 ];
@@ -466,7 +481,7 @@ export const getStudentAttendance = [
   asyncHandler(async (req, res) => {
     const { studentId } = req.params;
     const { startDate, endDate } = req.query;
-    const match = { student: studentId };
+    const match = { student: studentId, school: req.schoolId };
     if (startDate || endDate) {
       match.date = {};
       if (startDate) match.date.$gte = new Date(startDate);
@@ -485,7 +500,7 @@ export const getClassAttendance = [
   asyncHandler(async (req, res) => {
     const { classId } = req.params;
     const { startDate, endDate } = req.query;
-    const match = { class: classId };
+    const match = { class: classId, school: req.schoolId };
     if (startDate || endDate) {
       match.date = {};
       if (startDate) match.date.$gte = new Date(startDate);
@@ -504,7 +519,7 @@ export const getAttendanceStats = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
     const { classId, studentId, startDate, endDate } = req.query;
-    const match = {};
+    const match = { school: new mongoose.Types.ObjectId(req.schoolId) };
     if (classId) match.class = new mongoose.Types.ObjectId(classId);
     if (studentId) match.student = new mongoose.Types.ObjectId(studentId);
     if (startDate || endDate) {

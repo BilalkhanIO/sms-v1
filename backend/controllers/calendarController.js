@@ -40,6 +40,7 @@ const createEvent = [
 
     const event = await Calendar.create({
       ...req.body,
+      schools: [req.schoolId],
       createdBy: req.user._id,
       participants: req.body.participants || [],
     });
@@ -63,7 +64,7 @@ const createEvent = [
 // @access  Private
 const getEvents = asyncHandler(async (req, res) => {
   const { start, end, type, visibility } = req.query;
-  let query = {};
+  let query = { schools: req.schoolId };
 
   if (start && end) {
     query.start = { $gte: new Date(start) };
@@ -89,7 +90,10 @@ const getEvents = asyncHandler(async (req, res) => {
 // @route   GET /api/calendar/events/:id
 // @access  Private
 const getEventById = asyncHandler(async (req, res) => {
-  const event = await Calendar.findById(req.params.id)
+  const event = await Calendar.findOne({
+    _id: req.params.id,
+    schools: req.schoolId,
+  })
     .populate('createdBy', 'name email')
     .populate('participants', 'name email');
 
@@ -122,7 +126,10 @@ const updateEvent = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const event = await Calendar.findById(req.params.id);
+    const event = await Calendar.findOne({
+      _id: req.params.id,
+      schools: req.schoolId,
+    });
     if (!event) {
       return errorResponse(res, "Event not found", 404);
     }
@@ -158,7 +165,10 @@ const updateEvent = [
 // @route   DELETE /api/calendar/events/:id
 // @access  Private
 const deleteEvent = asyncHandler(async (req, res) => {
-  const event = await Calendar.findById(req.params.id);
+  const event = await Calendar.findOne({
+    _id: req.params.id,
+    schools: req.schoolId,
+  });
   if (!event) {
     return errorResponse(res, "Event not found", 404);
   }
@@ -190,7 +200,8 @@ const deleteEvent = asyncHandler(async (req, res) => {
 const getUpcomingEvents = asyncHandler(async (req, res) => {
   const { limit = 5 } = req.query;
   const events = await Calendar.find({
-    start: { $gte: new Date() }
+    schools: req.schoolId,
+    start: { $gte: new Date() },
   })
     .sort({ start: 1 })
     .limit(parseInt(limit))
@@ -209,7 +220,7 @@ const getEventsByType = asyncHandler(async (req, res) => {
     return errorResponse(res, "Event type is required", 400);
   }
 
-  const events = await Calendar.find({ type })
+  const events = await Calendar.find({ type, schools: req.schoolId })
     .populate('createdBy', 'name email')
     .populate('participants', 'name email');
 
@@ -226,8 +237,9 @@ const getEventsByDateRange = asyncHandler(async (req, res) => {
   }
 
   const events = await Calendar.find({
+    schools: req.schoolId,
     start: { $gte: new Date(startDate) },
-    end: { $lte: new Date(endDate) }
+    end: { $lte: new Date(endDate) },
   })
     .sort({ start: 1 })
     .populate('createdBy', 'name email')
@@ -240,8 +252,10 @@ const getEventsByDateRange = asyncHandler(async (req, res) => {
 // @route   GET /api/calendar/events/:id/participants
 // @access  Private
 const getParticipants = asyncHandler(async (req, res) => {
-  const event = await Calendar.findById(req.params.id)
-    .populate('participants', 'name email role');
+  const event = await Calendar.findOne({
+    _id: req.params.id,
+    schools: req.schoolId,
+  }).populate("participants", "name email role");
 
   if (!event) {
     return errorResponse(res, "Event not found", 404);
@@ -264,7 +278,10 @@ const updateParticipants = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const event = await Calendar.findById(req.params.id);
+    const event = await Calendar.findOne({
+      _id: req.params.id,
+      schools: req.schoolId,
+    });
     if (!event) {
       return errorResponse(res, "Event not found", 404);
     }

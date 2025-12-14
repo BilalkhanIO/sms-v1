@@ -107,6 +107,7 @@ const createExam = [
       const exam = await Exam.create(
         [
           {
+            school: req.schoolId,
             title,
             type,
             class: classId,
@@ -240,7 +241,7 @@ const getExams = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
-    let query = {};
+    let query = { school: req.schoolId };
 
     // If the user is a teacher, only return exams they created or that are for their assigned classes/subjects
     if (req.user.role === "TEACHER") {
@@ -267,7 +268,10 @@ const getExamsByClass = [
   protect,
   asyncHandler(async (req, res) => {
     const { classId } = req.params;
-    const classDoc = await ClassModel.findById(classId);
+    const classDoc = await ClassModel.findOne({
+      _id: classId,
+      school: req.schoolId,
+    });
     if (!classDoc) return errorResponse(res, "Class not found", 404);
 
     // Teacher visibility
@@ -301,7 +305,10 @@ const getExamsBySubject = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
     const { subjectId } = req.params;
-    const subject = await Subject.findById(subjectId);
+    const subject = await Subject.findOne({
+      _id: subjectId,
+      school: req.schoolId,
+    });
     if (!subject) return errorResponse(res, "Subject not found", 404);
 
     // Teacher visibility
@@ -462,7 +469,10 @@ const getExamById = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"),
   asyncHandler(async (req, res) => {
-    const exam = await Exam.findById(req.params.id)
+    const exam = await Exam.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    })
       .populate("class", "name section")
       .populate("subject", "name code")
       .populate("createdBy", "firstName lastName");
@@ -546,7 +556,10 @@ const updateExam = [
     if (!errors.isEmpty()) {
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
-    const exam = await Exam.findById(req.params.id);
+    const exam = await Exam.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!exam) {
       return errorResponse(res, "Exam not found", 404);
@@ -622,7 +635,10 @@ const deleteExam = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const exam = await Exam.findById(req.params.id);
+    const exam = await Exam.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!exam) {
       return errorResponse(res, "Exam not found", 404);

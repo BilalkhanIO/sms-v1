@@ -14,6 +14,9 @@ const getActivities = [
     const { user, type, startDate, endDate, severity, context } = req.query;
 
     const filter = {};
+    if (req.schoolId) {
+      filter.school = req.schoolId;
+    }
     if (user) filter.user = user;
     if (type) filter.type = type;
     if (severity) filter.severity = severity;
