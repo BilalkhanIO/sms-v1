@@ -59,6 +59,7 @@ const createSubject = [
 
     // Create the subject
     const subject = await Subject.create({
+      school: req.schoolId,
       code,
       name,
       description,
@@ -88,7 +89,7 @@ const getSubjects = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"),
   asyncHandler(async (req, res) => {
-    let query = {};
+    let query = { school: req.schoolId };
 
     if (req.user.role === "TEACHER") {
       const teacher = await Teacher.findOne({ user: req.user._id });
@@ -117,9 +118,15 @@ const getSubjectsByClass = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"),
   asyncHandler(async (req, res) => {
     const { classId } = req.params;
-    const classDoc = await ClassModel.findById(classId);
+    const classDoc = await ClassModel.findOne({
+      _id: classId,
+      school: req.schoolId,
+    });
     if (!classDoc) return errorResponse(res, "Class not found", 404);
-    const subjects = await Subject.find({ assignedClasses: classId })
+    const subjects = await Subject.find({
+      assignedClasses: classId,
+      school: req.schoolId,
+    })
       .populate("assignedTeachers", "firstName lastName")
       .populate("assignedClasses", "name section");
     return successResponse(res, subjects, "Subjects retrieved successfully");
@@ -134,9 +141,15 @@ const getSubjectsByTeacher = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
     const { teacherId } = req.params;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await Teacher.findOne({
+      _id: teacherId,
+      school: req.schoolId,
+    });
     if (!teacher) return errorResponse(res, "Teacher not found", 404);
-    const subjects = await Subject.find({ assignedTeachers: teacherId })
+    const subjects = await Subject.find({
+      assignedTeachers: teacherId,
+      school: req.schoolId,
+    })
       .populate("assignedTeachers", "firstName lastName")
       .populate("assignedClasses", "name section");
     return successResponse(res, subjects, "Subjects retrieved successfully");
@@ -152,9 +165,12 @@ const assignTeacher = [
   asyncHandler(async (req, res) => {
     const { id } = req.params; // subject id
     const { teacherId } = req.body;
-    const subject = await Subject.findById(id);
+    const subject = await Subject.findOne({ _id: id, school: req.schoolId });
     if (!subject) return errorResponse(res, "Subject not found", 404);
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await Teacher.findOne({
+      _id: teacherId,
+      school: req.schoolId,
+    });
     if (!teacher) return errorResponse(res, "Teacher not found", 404);
     if (!subject.assignedTeachers.includes(teacherId)) {
       subject.assignedTeachers.push(teacherId);
@@ -180,7 +196,10 @@ const getSubjectById = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"),
   asyncHandler(async (req, res) => {
     const subjectId = req.params.id;
-    const subject = await Subject.findById(subjectId)
+    const subject = await Subject.findOne({
+      _id: subjectId,
+      school: req.schoolId,
+    })
       .populate("assignedTeachers", "firstName lastName")
       .populate("assignedClasses", "name section");
     if (!subject) {
@@ -254,7 +273,10 @@ const updateSubject = [
       assignedTeachers,
       assignedClasses,
     } = req.body;
-    const subject = await Subject.findById(req.params.id);
+    const subject = await Subject.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!subject) {
       return errorResponse(res, "Subject not found", 404);
@@ -305,7 +327,10 @@ const deleteSubject = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const subject = await Subject.findById(req.params.id);
+    const subject = await Subject.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
     if (!subject) {
       return errorResponse(res, "Subject not found", 404);
     }

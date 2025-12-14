@@ -74,6 +74,7 @@ const getTeacherById = [
 // @desc    Create a teacher
 // @route   POST /api/teachers
 // @access  Private/Admin
+const createTeacher = [
   // Validation rules
   body("firstName").notEmpty().withMessage("First name is required"),
   body("lastName").notEmpty().withMessage("Last name is required"),
@@ -85,7 +86,6 @@ const getTeacherById = [
   body("contactInfo.phone").notEmpty().withMessage("Phone number is required"), // Validate nested fields
   body("dateOfBirth").isISO8601().withMessage("Invalid date of birth format"),
   body("salary").isNumeric().withMessage("Salary must be a number"),
-  body('school').optional().isMongoId().withMessage("Invalid School ID provided"), // Validation for SUPER_ADMIN
 
   asyncHandler(async (req, res) => {
     // Check for validation errors
@@ -106,25 +106,9 @@ const getTeacherById = [
       dateOfBirth,
       salary,
       documents,
-      school: schoolIdFromReqBody, // Extract schoolId if SUPER_ADMIN provides it
     } = req.body;
 
-    let targetSchoolId;
-    if (req.user.role === "SUPER_ADMIN") {
-      // SUPER_ADMIN can specify a school or it should be provided
-      if (!schoolIdFromReqBody) {
-        return errorResponse(res, "School ID is required for SUPER_ADMIN to create a teacher", 400);
-      }
-      targetSchoolId = schoolIdFromReqBody;
-    } else if (req.user.role === "SCHOOL_ADMIN") {
-      // SCHOOL_ADMIN can only create teachers for their own school
-      targetSchoolId = req.user.schoolId;
-      if (!targetSchoolId) {
-        return errorResponse(res, "School Admin is not associated with a school", 403);
-      }
-    } else {
-      return errorResponse(res, "Unauthorized to create teacher without a school context", 403);
-    }
+    const targetSchoolId = req.schoolId;
 
     // Verify the targetSchoolId exists if SUPER_ADMIN provides it
     if (req.user.role === "SUPER_ADMIN") {

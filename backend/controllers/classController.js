@@ -13,10 +13,11 @@ const getClasses = [
     protect, // Protect the route
     authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT'), // Allow admin, teachers and students
     asyncHandler(async (req, res) => {
-      let query = {};
+      let query = { school: req.schoolId };
 
       if (req.user.role === 'TEACHER') {
           query = {
+              school: req.schoolId,
               $or: [
                   { classTeacher: req.user._id },  // Classes where the user is the class teacher
                   { 'subjects': { $in: req.user.assignedSubjects } } // Assuming teachers have an assignedSubjects field
@@ -43,7 +44,10 @@ const getClassById = [
     authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT'),
     asyncHandler(async (req, res) => {
         const classId = req.params.id;
-        const classData = await ClassModel.findById(classId)
+        const classData = await ClassModel.findOne({
+        _id: classId,
+        school: req.schoolId,
+        })
             .populate('classTeacher', 'firstName lastName')
             .populate('subjects', 'name code') // Populate the 'subject' field within the 'subjects' array
             .populate('students', 'firstName lastName admissionNumber');
@@ -101,6 +105,7 @@ const createClass = [
 
     // Create the class
     const classData = await ClassModel.create({
+      school: req.schoolId,
       name,
       section,
       academicYear,
@@ -149,7 +154,10 @@ const updateClass = [
         return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const classData = await ClassModel.findById(req.params.id);
+    const classData = await ClassModel.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!classData) {
         return errorResponse(res, 'Class not found', 404);
@@ -190,7 +198,10 @@ const deleteClass = [
   protect,
   authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
   asyncHandler(async (req, res) => {
-    const classData = await ClassModel.findById(req.params.id);
+    const classData = await ClassModel.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!classData) {
         return errorResponse(res, 'Class not found', 404);

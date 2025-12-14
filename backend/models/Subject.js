@@ -16,6 +16,10 @@ const subjectSchema = new Schema(
       unique: true, // Subject codes MUST be unique
       trim: true,
     },
+    school: {
+      type: Schema.Types.ObjectId,
+      ref: "School",
+    },
     description: {
       type: String,
       trim: true,

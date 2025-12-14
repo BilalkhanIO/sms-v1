@@ -58,6 +58,7 @@ const loginUser = [
         email: user.email,
         role: user.role,
         profilePicture: user.profilePicture,
+        school: user.school,
       };
 
       return res

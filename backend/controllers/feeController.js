@@ -14,7 +14,10 @@ const getFeesByStudent = [
   protect,
   asyncHandler(async (req, res) => {
     const studentId = req.params.studentId;
-    const student = await Student.findById(studentId);
+    const student = await Student.findOne({
+      _id: studentId,
+      school: req.schoolId,
+    });
 
     if (!student) {
       return errorResponse(res, "Student not found", 404);
@@ -237,6 +240,7 @@ const createFee = [
     }
 
     const fee = await Fee.create({
+      school: req.schoolId,
       student,
       amount,
       type,
@@ -308,7 +312,10 @@ const updateFee = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const fee = await Fee.findById(req.params.id);
+    const fee = await Fee.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!fee) {
       return errorResponse(res, "Fee record not found", 404);
@@ -354,7 +361,10 @@ const deleteFee = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const fee = await Fee.findById(req.params.id);
+    const fee = await Fee.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    });
 
     if (!fee) {
       return errorResponse(res, "Fee record not found", 404);
@@ -393,7 +403,7 @@ const getFees = [
   asyncHandler(async (req, res) => {
     const { studentId, classId, status, type } = req.query;
     
-    let query = {};
+    let query = { school: req.schoolId };
     
     if (studentId) query.student = studentId;
     if (classId) query.class = classId;
@@ -428,7 +438,10 @@ export const getFeeById = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const fee = await Fee.findById(req.params.id)
+    const fee = await Fee.findOne({
+      _id: req.params.id,
+      school: req.schoolId,
+    })
       .populate("student", "admissionNumber")
       .lean();
     if (!fee) return errorResponse(res, "Fee record not found", 404);
@@ -444,9 +457,15 @@ export const getFeesByClass = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
     const { classId } = req.params;
-    const students = await Student.find({ class: classId }).select("_id");
+    const students = await Student.find({
+      class: classId,
+      school: req.schoolId,
+    }).select("_id");
     const studentIds = students.map((s) => s._id);
-    const fees = await Fee.find({ student: { $in: studentIds } })
+    const fees = await Fee.find({
+      student: { $in: studentIds },
+      school: req.schoolId,
+    })
       .populate("student", "admissionNumber")
       .lean();
     return successResponse(res, fees, "Fees retrieved successfully");

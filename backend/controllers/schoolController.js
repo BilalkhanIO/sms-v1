@@ -135,12 +135,19 @@ const getSchools = [
 
 // @desc    Get school by ID
 // @route   GET /api/schools/:id
-// @access  Private/SuperAdmin
+// @access  Private/SuperAdmin or SchoolAdmin
 const getSchoolById = [
   protect,
-  authorize('SUPER_ADMIN'),
+  authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
   asyncHandler(async (req, res) => {
-    const school = await School.findById(req.params.id).populate('admin', 'firstName lastName email');
+    const schoolId = req.params.id;
+
+    // School Admins can only view their own school
+    if (req.user.role === 'SCHOOL_ADMIN' && req.user.school.toString() !== schoolId) {
+      return errorResponse(res, 'You are not authorized to view this school', 403);
+    }
+
+    const school = await School.findById(schoolId).populate('admin', 'firstName lastName email');
     if (!school) {
       return errorResponse(res, 'School not found', 404);
     }
@@ -150,10 +157,10 @@ const getSchoolById = [
 
 // @desc    Update school
 // @route   PUT /api/schools/:id
-// @access  Private/SuperAdmin
+// @access  Private/SuperAdmin or SchoolAdmin
 const updateSchool = [
   protect,
-  authorize('SUPER_ADMIN'),
+  authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
   body('name').optional().notEmpty().withMessage('School name is required'),
   body('address').optional().notEmpty().withMessage('Address is required'),
   body('contactInfo.phone').optional().notEmpty().withMessage('Contact phone is required'),
@@ -167,6 +174,12 @@ const updateSchool = [
     }
 
     const { name, address, contactInfo, status } = req.body;
+
+    // School Admins can only update their own school
+    if (req.user.role === 'SCHOOL_ADMIN' && req.user.school.toString() !== req.params.id) {
+      return errorResponse(res, 'You are not authorized to update this school', 403);
+    }
+
     const school = await School.findById(req.params.id);
 
     if (!school) {

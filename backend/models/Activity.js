@@ -10,6 +10,11 @@ const activitySchema = new Schema(
       ref: "User",
       index: true, // Index for user-based queries
     },
+    school: {
+      type: Schema.Types.ObjectId,
+      ref: "School",
+      index: true,
+    },
     type: {
       type: String,
       enum: [
@@ -105,6 +110,7 @@ activitySchema.statics.logActivity = async function (data) {
   try {
     await this.create({
       user: data.userId,
+      school: data.schoolId,
       type: data.type,
       description: data.description,
       metadata: data.metadata,
