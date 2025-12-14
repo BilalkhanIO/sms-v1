@@ -48,8 +48,10 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   let roleStats = {};
   switch (userRole) {
     case "SUPER_ADMIN":
+      roleStats = await getSuperAdminStats();
+      break;
     case "SCHOOL_ADMIN":
-      roleStats = await getAdminStats();
+      roleStats = await getSchoolAdminStats(req.user.school);
       break;
     case "TEACHER":
       roleStats = await getTeacherStats(userId);
@@ -67,9 +69,10 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   res.status(200).json({ ...baseStats, ...roleStats });
 });
 
-// Admin-specific statistics
-const getAdminStats = async () => {
+// Super Admin-specific statistics
+const getSuperAdminStats = async () => {
   const [
+    totalSchools,
     totalStudents,
     totalTeachers,
     totalClasses,
@@ -78,6 +81,7 @@ const getAdminStats = async () => {
     feeSummary,
     recentExams,
   ] = await Promise.all([
+    School.countDocuments(),
     Student.countDocuments(),
     Teacher.countDocuments(),
     ClassModel.countDocuments(),
@@ -122,6 +126,7 @@ const getAdminStats = async () => {
 
   return {
     overview: {
+      totalSchools,
       totalStudents,
       totalTeachers,
       totalClasses,
@@ -381,4 +386,66 @@ const getUserRegistrationTrends = asyncHandler(async (req, res) => {
 });
 
 
-export { getDashboardStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends };
+export { getDashboardStats, getSuperAdminStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends };
+
+const getSchoolAdminStats = async (schoolId) => {
+  const [
+    totalStudents,
+    totalTeachers,
+    totalClasses,
+    activeUsers,
+    todayAttendance,
+    feeSummary,
+    recentExams,
+  ] = await Promise.all([
+    Student.countDocuments({ school: schoolId }),
+    Teacher.countDocuments({ school: schoolId }),
+    ClassModel.countDocuments({ school: schoolId }),
+    User.countDocuments({ school: schoolId, status: "ACTIVE" }),
+    Attendance.aggregate([
+      {
+        $match: {
+          school: schoolId,
+          date: {
+            $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            $lte: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
+    Fee.aggregate([
+      {
+        $match: { school: schoolId },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          totalPaid: { $sum: "$paidAmount" },
+          pending: { $sum: { $subtract: ["$amount", "$paidAmount"] } },
+        },
+      },
+    ]),
+    Exam.find({ school: schoolId, status: { $in: ["SCHEDULED", "UPCOMING"] } })
+      .sort("date")
+      .limit(5)
+      .populate("class subject")
+      .lean(),
+  ]);
+
+  return {
+    overview: {
+      totalStudents,
+      totalTeachers,
+      totalClasses,
+      activeUsers,
+      todayAttendance: todayAttendance.reduce(
+        (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
+        {}
+      ),
+      feeSummary: feeSummary[0] || { totalAmount: 0, totalPaid: 0, pending: 0 },
+    },
+    recentExams,
+  };
+};

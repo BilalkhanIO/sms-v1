@@ -13,9 +13,16 @@ import {
   updateUserStatus,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
+import { setSchoolId } from "../middleware/schoolMiddleware.js";
 
 // GET /api/users - Get all users (Admin only)
-router.get("/", protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), getUsers);
+router.get(
+  "/",
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  setSchoolId,
+  getUsers
+);
 
 // GET /api/users/profile - Get logged-in user's profile
 router.get("/profile", protect, getProfile);
