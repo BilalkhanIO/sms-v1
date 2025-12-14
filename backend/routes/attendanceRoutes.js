@@ -6,6 +6,11 @@ import {
   getAttendanceReport,
   bulkUpdateAttendance,
   getAttendanceById,
+  updateAttendanceById,
+  deleteAttendanceById,
+  getStudentAttendance,
+  getClassAttendance,
+  getAttendanceStats,
 } from "../controllers/attendanceController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
@@ -32,6 +37,13 @@ router
     protect,
     authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
     getAttendanceById
-  );
+  )
+  .put(protect, authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"), updateAttendanceById)
+  .delete(protect, authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"), deleteAttendanceById);
+
+// Additional listings and stats
+router.route("/student/:studentId").get(protect, getStudentAttendance);
+router.route("/class/:classId").get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getClassAttendance);
+router.route("/stats").get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), getAttendanceStats);
 
 export default router;

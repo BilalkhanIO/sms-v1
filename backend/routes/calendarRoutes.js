@@ -11,6 +11,9 @@ import {
   getEventsByDateRange,
   getParticipants,
   updateParticipants,
+  getEventsByDateRange,
+  getEventsByType,
+  getUpcomingEvents,
 } from "../controllers/calendarController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 
@@ -39,5 +42,10 @@ router
   .route("/events/:id/participants")
   .get(protect, getParticipants)
   .put(protect, updateParticipants);
+
+// Convenience endpoints
+router.route("/range").get(protect, getEventsByDateRange);
+router.route("/type/:type").get(protect, getEventsByType);
+router.route("/upcoming").get(protect, getUpcomingEvents);
 
 export default router;

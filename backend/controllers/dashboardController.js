@@ -27,14 +27,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 
   // Base stats for all roles
   const baseStats = {
-    activities: await Activity.find({ userId })
+    activities: await Activity.find({ user: userId })
       .sort("-createdAt")
       .limit(5)
       .lean(),
     upcomingEvents: await Calendar.find({
       start: { $gte: new Date() },
       $or: [
-        { visibility: "public" },
+        { visibility: "PUBLIC" },
         { participants: userId },
         { createdBy: userId },
       ],

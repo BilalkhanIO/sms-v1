@@ -5,7 +5,7 @@ export const dashboardApi = api.injectEndpoints({
     getDashboardStats: builder.query({
       query: () => "/dashboard",
       providesTags: ["Dashboard"],
-      transformResponse: (response) => response, // Pass raw response to UI
+      transformResponse: (response) => response, // raw data used by dashboards
       transformErrorResponse: (response) => ({
         status: response.status,
         message: response.data?.message || "Failed to load dashboard data",
