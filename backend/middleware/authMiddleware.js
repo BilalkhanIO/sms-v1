@@ -14,14 +14,22 @@ export const protect = asyncHandler(async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select('-password').populate('school');
 
     if (!user || user.status !== 'ACTIVE') {
         return errorResponse(res, 'User account inactive or not found', 401);
 
     }
 
-    req.user = user; // Attach user to the request
+    // Attach user to the request
+    req.user = user;
+
+    // If the user has a school associated (e.g., SCHOOL_ADMIN, TEACHER, STUDENT, PARENT)
+    // and it's populated, attach its _id to req.user for easy access in controllers.
+    if (user.school && user.school._id) {
+      req.user.schoolId = user.school._id;
+    }
+    
     next();
   } catch (error) {
       return errorResponse(res, 'Not authorized - token failed', 401);

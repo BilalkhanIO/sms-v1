@@ -14,6 +14,12 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// shadcn/ui components
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
 const StatCard = ({ title, value, icon: Icon, subtitle, color = 'blue' }) => {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-700',
@@ -64,9 +70,13 @@ const TeacherDashboard = () => {
   const teacherOverview = stats?.teacherOverview || {};
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h2>
+      </div>
+
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="My Classes"
           value={teacherOverview.totalClasses || 0}
@@ -93,183 +103,166 @@ const TeacherDashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         {/* Today's Schedule */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Schedule</h3>
-            <div className="space-y-4">
-              {stats?.schedule?.map((daySchedule) => (
-                <div key={daySchedule._id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <Clock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {daySchedule._id} - {daySchedule.periods?.length || 0} periods
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {daySchedule.periods?.map(period => 
-                        `${period.startTime}-${period.endTime}`
-                      ).join(', ')}
-                    </p>
-                  </div>
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Today's Schedule</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stats?.schedule?.map((daySchedule) => (
+              <div key={daySchedule._id} className="flex items-start space-x-3">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <CardDescription className="text-sm font-medium">
+                    {daySchedule._id} - {daySchedule.periods?.length || 0} periods
+                  </CardDescription>
+                  <p className="text-xs text-muted-foreground">
+                    {daySchedule.periods?.map(period =>
+                      `${period.startTime}-${period.endTime}`
+                    ).join(', ')}
+                  </p>
                 </div>
-              ))}
-              {(!stats?.schedule || stats.schedule.length === 0) && (
-                <p className="text-sm text-gray-500">No schedule available</p>
-              )}
-            </div>
-          </div>
-        </div>
+              </div>
+            ))}
+            {(!stats?.schedule || stats.schedule.length === 0) && (
+              <CardDescription>No schedule available</CardDescription>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Recent Submissions */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Submissions</h3>
-            <div className="space-y-4">
-              {stats?.upcomingExams?.map((exam) => (
-                <div key={exam._id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {exam.title}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(exam.date).toLocaleDateString()} - {exam.type}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                      {exam.status}
-                    </span>
-                  </div>
+        {/* Recent Submissions (Using Upcoming Exams for now) */}
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Submissions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stats?.upcomingExams?.map((exam) => (
+              <div key={exam._id} className="flex items-start space-x-3">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <CardDescription className="text-sm font-medium">
+                    {exam.title}
+                  </CardDescription>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(exam.date).toLocaleDateString()} - {exam.type}
+                  </p>
                 </div>
-              ))}
-              {(!stats?.upcomingExams || stats.upcomingExams.length === 0) && (
-                <p className="text-sm text-gray-500">No upcoming exams</p>
-              )}
-            </div>
-          </div>
-        </div>
+                <Badge variant="outline">{exam.status}</Badge>
+              </div>
+            ))}
+            {(!stats?.upcomingExams || stats.upcomingExams.length === 0) && (
+              <CardDescription>No upcoming exams</CardDescription>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Today's Classes */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Classes</h3>
-          <div className="space-y-4">
-            {stats?.schedule?.map((daySchedule) => {
-              const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-              if (daySchedule._id === today) {
-                return (
-                  <div key={daySchedule._id} className="space-y-3">
-                    {daySchedule.periods?.map((period, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Clock className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {period.startTime} - {period.endTime}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {period.subject?.label || 'Subject'} - Class {period.class?.label || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Link
-                            to="/dashboard/attendance/create"
-                            className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200"
-                          >
-                            Attendance
-                          </Link>
+      <Card>
+        <CardHeader>
+          <CardTitle>Today's Classes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {stats?.schedule?.map((daySchedule) => {
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            if (daySchedule._id === today) {
+              return (
+                <div key={daySchedule._id} className="space-y-3">
+                  {(daySchedule.periods || []).map((period, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <Clock className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <CardDescription className="font-medium">
+                            {period.startTime} - {period.endTime}
+                          </CardDescription>
+                          <p className="text-sm text-muted-foreground">
+                            {period.subject?.label || 'Subject'} - Class {period.class?.label || 'N/A'}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                );
-              }
-              return null;
-            })}
-            {(!stats?.schedule || stats.schedule.length === 0) && (
-              <p className="text-sm text-gray-500">No classes scheduled for today</p>
-            )}
-          </div>
-        </div>
-      </div>
+                      <Link to="/dashboard/attendance/create" className="text-sm">
+                        <Button variant="outline" size="sm">Attendance</Button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          })}
+          {(!stats?.schedule || stats.schedule.length === 0) && (
+            <CardDescription>No classes scheduled for today</CardDescription>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              to="/dashboard/attendance/create"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              <span>Take Attendance</span>
-            </Link>
-            <Link
-              to="/dashboard/exams/create"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <FileText className="w-5 h-5 mr-2" />
-              <span>Create Exam</span>
-            </Link>
-            <Link
-              to="/dashboard/students"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <BookOpen className="w-5 h-5 mr-2" />
-              <span>View Students</span>
-            </Link>
-            <Link
-              to="/dashboard/calendar/create"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <Calendar className="w-5 h-5 mr-2" />
-              <span>Add Event</span>
-            </Link>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/attendance/create">
+                <CheckCircle className="w-5 h-5 text-blue-500 mb-2" />
+                <CardDescription className="text-sm font-medium">Take Attendance</CardDescription>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/exams/create">
+                <FileText className="w-5 h-5 text-green-500 mb-2" />
+                <CardDescription className="text-sm font-medium">Create Exam</CardDescription>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/students">
+                <BookOpen className="w-5 h-5 text-purple-500 mb-2" />
+                <CardDescription className="text-sm font-medium">View Students</CardDescription>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/calendar/create">
+                <Calendar className="w-5 h-5 text-orange-500 mb-2" />
+                <CardDescription className="text-sm font-medium">Add Event</CardDescription>
+              </Link>
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Upcoming Exams */}
       {stats?.upcomingExams && stats.upcomingExams.length > 0 && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Exams</h3>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Exams</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {stats.upcomingExams.map((exam) => (
-                <div key={exam._id} className="p-4 bg-gray-50 rounded-lg">
+                <Card key={exam._id} className="p-4 bg-muted">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-900">
-                      {exam.title}
-                    </h4>
-                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                      {exam.type}
-                    </span>
+                    <CardTitle className="text-sm">{exam.title}</CardTitle>
+                    <Badge variant="outline">{exam.type}</Badge>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500">
+                    <CardDescription>
                       Date: {new Date(exam.date).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-500">
+                    </CardDescription>
+                    <CardDescription>
                       Duration: {exam.duration} minutes
-                    </p>
-                    <p className="text-sm text-gray-500">
+                    </CardDescription>
+                    <CardDescription>
                       Total Marks: {exam.totalMarks}
-                    </p>
+                    </CardDescription>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

@@ -1,227 +1,90 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { useGetSchoolByIdQuery, useGetSchoolStatsQuery } from '@/api/schoolsApi';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Building2,
-  Users,
-  GraduationCap,
-  Phone,
-  Mail,
-  Globe,
-  MapPin,
-} from 'lucide-react';
+import { useGetSchoolByIdQuery } from '../../api/schoolsApi';
+import Spinner from '../../components/common/Spinner';
+import ErrorMessage from '../../components/common/ErrorMessage';
+import PageHeader from '../../components/common/PageHeader';
+import { Edit } from 'lucide-react';
 
 const SchoolDetails = () => {
-  const { id } = useParams();
+  const { id: schoolId } = useParams();
+  const { data: school, isLoading, isError, error } = useGetSchoolByIdQuery(schoolId);
 
-  const { data: schoolData, isLoading, error } = useGetSchoolByIdQuery(id);
-  const { data: stats, isLoading: statsLoading } = useGetSchoolStatsQuery(id);
+  if (isLoading) {
+    return <Spinner size="large" />;
+  }
 
-  if (isLoading || statsLoading) {
+  if (isError) {
     return (
-      <div className="container mx-auto p-6 flex justify-center items-center">
-        <LoadingSpinner />
-      </div>
+      <ErrorMessage>
+        Error: {error.data?.message || error.error || 'Failed to load school details'}
+      </ErrorMessage>
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error.message || 'Failed to fetch school details. Please try again.'}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!school) {
+    return <ErrorMessage>School not found.</ErrorMessage>;
   }
-
-  if (!schoolData) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>School not found.</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const StatCard = ({ icon: Icon, title, value, description }) => (
-    <Card>
-      <CardContent className="flex items-center p-6">
-        <div className="rounded-full bg-primary/10 p-3 mr-4">
-          <Icon className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <p className="text-sm font-medium">{title}</p>
-          <h4 className="text-2xl font-bold">{value}</h4>
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{schoolData.name}</h1>
-          <div className="mt-2 flex items-center gap-2">
-            <Badge variant={schoolData.status === 'active' ? 'success' : 'destructive'}>
-              {schoolData.status}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              ID: {schoolData.id}
-            </span>
+    <div className="container mx-auto px-4 py-6">
+      <PageHeader title={school.name} backUrl="/dashboard/schools">
+        <Link to={`/dashboard/schools/${school._id}/edit`}>
+          <Edit className="inline-block mr-2" size={18} /> Edit School
+        </Link>
+      </PageHeader>
+
+      <div className="bg-white shadow-md rounded-lg overflow-hidden p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">School Information</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-medium text-gray-600">School Name</p>
+            <p className="text-lg text-gray-900">{school.name}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Address</p>
+            <p className="text-lg text-gray-900">{school.address}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Contact Phone</p>
+            <p className="text-lg text-gray-900">{school.contactInfo?.phone || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Contact Email</p>
+            <p className="text-lg text-gray-900">{school.contactInfo?.email || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Status</p>
+            <p className="text-lg text-gray-900">
+              <span
+                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                  school.status === 'ACTIVE'
+                    ? 'bg-green-100 text-green-800'
+                    : school.status === 'PENDING_APPROVAL'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                }`}
+              >
+                {school.status}
+              </span>
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Admin</p>
+            <p className="text-lg text-gray-900">
+              {school.admin ? `${school.admin.firstName} ${school.admin.lastName} (${school.admin.email})` : 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Created At</p>
+            <p className="text-lg text-gray-900">{new Date(school.createdAt).toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Last Updated</p>
+            <p className="text-lg text-gray-900">{new Date(school.updatedAt).toLocaleString()}</p>
           </div>
         </div>
-        <Link to={`/dashboard/schools/edit/${id}`}>
-          <Button>Edit School</Button>
-        </Link>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <StatCard
-          icon={Users}
-          title="Total Students"
-          value={schoolData.stats.totalStudents}
-          description={`${schoolData.stats.activeStudents} active`}
-        />
-        <StatCard
-          icon={GraduationCap}
-          title="Total Teachers"
-          value={schoolData.stats.totalTeachers}
-          description={`${schoolData.stats.activeTeachers} active`}
-        />
-        <StatCard
-          icon={Building2}
-          title="Total Classes"
-          value={schoolData.stats.totalClasses}
-        />
-      </div>
-
-      <Tabs defaultValue="details" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="stats">Statistics</TabsTrigger>
-          <TabsTrigger value="activities">Recent Activities</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details">
-          <Card>
-            <CardHeader>
-              <CardTitle>School Information</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {schoolData.address}, {schoolData.city}, {schoolData.state}, {schoolData.country}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{schoolData.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{schoolData.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a href={schoolData.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    {schoolData.website}
-                  </a>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-muted-foreground">
-                  {schoolData.description}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="stats">
-          <Card>
-            <CardHeader>
-              <CardTitle>School Statistics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <h4 className="font-semibold mb-4">Academic Statistics</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Average Attendance</span>
-                      <span className="font-medium">{schoolData.stats.averageAttendance}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Fees Collection</span>
-                      <span className="font-medium">{schoolData.stats.feesCollection}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="activities">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activities</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Activity</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {schoolData.recentActivities.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell>{activity.date}</TableCell>
-                      <TableCell>{activity.activity}</TableCell>
-                      <TableCell>{activity.details}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

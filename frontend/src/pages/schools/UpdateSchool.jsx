@@ -1,302 +1,179 @@
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { useGetSchoolByIdQuery, useUpdateSchoolMutation } from '@/api/schoolsApi';
-import * as z from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { toast } from '@/components/ui/use-toast';
-
-const schoolFormSchema = z.object({
-  name: z.string().min(2, 'School name must be at least 2 characters'),
-  address: z.string().min(5, 'Address must be at least 5 characters'),
-  city: z.string().min(2, 'City must be at least 2 characters'),
-  state: z.string().min(2, 'State must be at least 2 characters'),
-  country: z.string().min(2, 'Country must be at least 2 characters'),
-  phone: z.string().min(10, 'Phone number must be at least 10 characters'),
-  email: z.string().email('Invalid email address'),
-  website: z.string().url('Invalid website URL').optional(),
-  description: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
-});
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import PageHeader from '../../components/common/PageHeader';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import Spinner from '../../components/common/Spinner';
+import ErrorMessage from '../../components/common/ErrorMessage';
+import { useGetSchoolByIdQuery, useUpdateSchoolMutation } from '../../api/schoolsApi';
 
 const UpdateSchool = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
+  const { id: schoolId } = useParams();
+  const { data: school, isLoading: isSchoolLoading, isError: isSchoolError, error: schoolError } = useGetSchoolByIdQuery(schoolId);
+  const [updateSchool, { isLoading: isUpdating }] = useUpdateSchoolMutation();
 
-  const { data: schoolData, isLoading: fetchLoading } = useGetSchoolByIdQuery(id);
-  const [updateSchool, { isLoading: updateLoading }] = useUpdateSchoolMutation();
-
-  if (fetchLoading) {
-    return (
-      <div className="container mx-auto p-6 flex justify-center items-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (!schoolData) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>School not found.</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const form = useForm({
-    resolver: zodResolver(schoolFormSchema),
-    defaultValues: {
-      name: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    contactInfo: {
       phone: '',
       email: '',
-      website: '',
-      description: '',
-      status: 'active',
     },
+    status: '',
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // Load school data into form
-    if (schoolData) {
-      Object.keys(schoolData).forEach((key) => {
-        if (form.getValues(key) !== undefined) {
-          form.setValue(key, schoolData[key]);
-        }
+    if (school) {
+      setFormData({
+        name: school.name || '',
+        address: school.address || '',
+        contactInfo: {
+          phone: school.contactInfo?.phone || '',
+          email: school.contactInfo?.email || '',
+        },
+        status: school.status || '',
       });
     }
-  }, [schoolData, form]);
+  }, [school]);
 
-  const onSubmit = async (data) => {
-    try {
-      await updateSchool({ id, ...data }).unwrap();
-      
-      toast({
-        title: 'Success',
-        description: 'School updated successfully.',
-      });
-      
-      navigate('/dashboard/schools');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to update school. Please try again.',
-        variant: 'destructive',
-      });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name.startsWith('contactInfo.')) {
+      const field = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        contactInfo: {
+          ...prev.contactInfo,
+          [field]: value,
+        },
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await updateSchool({ id: schoolId, ...formData }).unwrap();
+      navigate('/dashboard/schools');
+    } catch (err) {
+      const validationErrors = {};
+      if (err.data?.errors) {
+        err.data.errors.forEach(error => {
+          if (error.path.includes('.')) {
+            validationErrors[error.path] = error.msg;
+          } else {
+            validationErrors[error.path] = error.msg;
+          }
+        });
+      } else if (err.data?.message) {
+        validationErrors.general = err.data.message;
+      }
+      setErrors(validationErrors);
+    }
+  };
+
+  if (isSchoolLoading) {
+    return <Spinner size="large" />;
+  }
+
+  if (isSchoolError) {
+    return (
+      <ErrorMessage>
+        Error: {schoolError.data?.message || schoolError.error || 'Failed to load school for editing'}
+      </ErrorMessage>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Update School</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>School Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter school name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    <div className="container mx-auto px-4 py-6">
+      <PageHeader title={`Edit School: ${school?.name}`} backUrl="/dashboard/schools" />
+      
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+        <Input
+          label="School Name"
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          error={errors.name}
+          required
+        />
+        <Input
+          label="Address"
+          id="address"
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          error={errors.address}
+          required
+        />
+        <Input
+          label="Contact Phone"
+          id="contactInfo.phone"
+          name="contactInfo.phone"
+          value={formData.contactInfo.phone}
+          onChange={handleChange}
+          error={errors['contactInfo.phone']}
+          required
+        />
+        <Input
+          label="Contact Email"
+          type="email"
+          id="contactInfo.email"
+          name="contactInfo.email"
+          value={formData.contactInfo.email}
+          onChange={handleChange}
+          error={errors['contactInfo.email']}
+          required
+        />
 
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <div>
+          <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+            Status
+          </label>
+          <select
+            id="status"
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+          >
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="PENDING_APPROVAL">Pending Approval</option>
+          </select>
+          {errors.status && (
+            <p className="mt-2 text-sm text-red-600">{errors.status}</p>
+          )}
+        </div>
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" placeholder="school@example.com" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        {errors.general && (
+          <div className="text-red-500 text-sm mt-2">{errors.general}</div>
+        )}
 
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter phone number" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://www.example.com" />
-                      </FormControl>
-                      <FormDescription>Optional</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="Enter school address" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="City" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>State</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="State" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Country</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Country" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Enter school description"
-                          className="h-32"
-                        />
-                      </FormControl>
-                      <FormDescription>Optional</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/dashboard/schools')}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Update School</Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+        <div className="flex justify-end space-x-4">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate('/dashboard/schools')}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            isLoading={isUpdating}
+          >
+            Update School
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

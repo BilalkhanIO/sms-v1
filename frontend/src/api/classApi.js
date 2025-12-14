@@ -5,7 +5,7 @@ export const classApiSlice = api.injectEndpoints({
     endpoints: builder => ({
         getClasses: builder.query({
             query: () => '/classes',
-            providesTags: (result, error, arg) =>
+            providesTags: (result) =>
                 result
                     ? [...result.map(({ id }) => ({ type: 'Class', id })), 'Class']
                     : ['Class'],

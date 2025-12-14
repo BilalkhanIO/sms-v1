@@ -11,9 +11,6 @@ import {
   getEventsByDateRange,
   getParticipants,
   updateParticipants,
-  getEventsByDateRange,
-  getEventsByType,
-  getUpcomingEvents,
 } from "../controllers/calendarController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 

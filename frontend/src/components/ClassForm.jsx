@@ -1,13 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchClasses,
-  createClass,
-  updateClass,
-  fetchClassById,
-} from "../store/classSlice"; // Import fetchClassById
+import { useEffect } from "react";
+import { useGetClassByIdQuery, useCreateClassMutation, useUpdateClassMutation } from "../api/classesApi";
 import { useNavigate, useParams } from "react-router-dom";
-import * as api from "../api"; // Your API functions
 import AsyncSelect from "react-select/async";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
@@ -66,24 +59,18 @@ const ClassForm = () => {
     "SUNDAY",
   ];
   const { id } = useParams(); // Get class ID from URL params
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const {
-    data: classItem,
-    status,
-    isError,
-    error,
-  } = useSelector((state) => state.classes); // Get the whole class state
+
+  const { data: classItem, isLoading: isClassLoading, isError: isClassError, error: classError } = useGetClassByIdQuery(id, {
+    skip: !id, // Skip fetching if no ID is present (for new class creation)
+  });
+  const [createClassMutation] = useCreateClassMutation();
+  const [updateClassMutation] = useUpdateClassMutation();
+
   const { data: teachers, isLoading: isTeachersLoading } =
     useGetTeachersQuery(); // Fetch teachers using RTK Query
   const { data: subjects, isLoading: isSubjectsLoading } =
     useGetSubjectsQuery(); // Fetch subjects using RTK Query
-
-  useEffect(() => {
-    if (id) {
-      dispatch(fetchClassById(id)); // Dispatch the action to fetch class by ID
-    }
-  }, [id, dispatch]);
 
   const initialValues = {
     name: classItem?.name || "",
@@ -111,7 +98,7 @@ const ClassForm = () => {
   };
 
   // Use RTK Query's data directly for options
-  const loadTeachers = async (inputValue) => {
+  const loadTeachers = async () => {
     if (isTeachersLoading) {
       return [];
     }
@@ -121,7 +108,7 @@ const ClassForm = () => {
     }));
   };
 
-  const loadSubjects = async (inputValue) => {
+  const loadSubjects = async () => {
     if (isSubjectsLoading) {
       return [];
     }
@@ -149,9 +136,9 @@ const ClassForm = () => {
       };
 
       if (id) {
-        await dispatch(updateClass({ id, classData })).unwrap(); // Pass id and data
+        await updateClassMutation({ id, ...classData }).unwrap();
       } else {
-        await dispatch(createClass(classData)).unwrap();
+        await createClassMutation(classData).unwrap();
       }
       navigate("/dashboard/classes");
     } catch (error) {
@@ -162,11 +149,11 @@ const ClassForm = () => {
     }
   };
 
-  if (id && status === "loading") {
+  if (id && isClassLoading) {
     return <div>Loading...</div>;
   }
-  if (isError) {
-    return <div>Error: {error.message}</div>; // Display error message
+  if (isClassError) {
+    return <div>Error: {classError.message}</div>; // Display error message
   }
 
   return (
@@ -176,7 +163,7 @@ const ClassForm = () => {
       onSubmit={handleSubmit}
       enableReinitialize // Important for updating form with fetched data
     >
-      {({ isSubmitting, values, setFieldValue, errors, touched }) => (
+      {({ isSubmitting, values, setFieldValue }) => (
         <Form className="space-y-4">
           <div>
             <label
@@ -295,7 +282,7 @@ const ClassForm = () => {
           <div>
             <label className="block text-sm font-medium mb-1">Schedule</label>
             <FieldArray name="schedule">
-              {({ push, remove }) => (
+              {() => (
                 <div>
                   {values.schedule.map((daySchedule, dayIndex) => (
                     <div key={dayIndex} className="mb-4 border p-4 rounded-md">

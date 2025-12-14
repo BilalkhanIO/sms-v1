@@ -11,6 +11,19 @@ import Activity from "../models/Activity.js";
 import cloudinary from "../utils/cloudinary.js"; // Import Cloudinary
 import upload from "../utils/multer.js"; // Import Multer
 
+// Helper function to get the base filter for teacher queries
+const _getTeacherFilter = (req) => {
+  if (req.user.role === "SUPER_ADMIN") {
+    return {}; // Super Admin sees all
+  } else if (req.user.schoolId) {
+    return { school: req.user.schoolId }; // School Admin, Teacher, Student, Parent see only their school's data
+  } else {
+    // This case should ideally not happen for school-specific roles without a schoolId
+    // or if a SUPER_ADMIN is trying to access data without a school context.
+    return { _id: null }; // Return an impossible filter to prevent data leakage
+  }
+};
+
 // @desc    Get all teachers
 // @route   GET /api/teachers
 // @access  Private/Admin
@@ -18,7 +31,9 @@ const getTeachers = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const teachers = await Teacher.find()
+    const filter = _getTeacherFilter(req); // Get school-based filter
+
+    const teachers = await Teacher.find(filter) // Apply filter
       .populate("user", "firstName lastName email") // Populate user details
       .populate("assignedClasses", "name section") // Populate assigned classes
       .populate("assignedSubjects", "name code"); // Populate assigned subjects
@@ -32,30 +47,24 @@ const getTeachers = [
 // @access  Private (Admin, the teacher themselves)
 const getTeacherById = [
   protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), // Allow teacher to see their own profile
   asyncHandler(async (req, res) => {
     const teacherId = req.params.id;
+    const baseFilter = _getTeacherFilter(req);
+    let filter = { _id: teacherId, ...baseFilter };
 
-    // Find the teacher and populate necessary fields
-    const teacher = await Teacher.findById(teacherId)
-      .populate("user", "firstName lastName email profilePicture") // Populate the user document
-      .populate("assignedClasses", "name section") // Populate assigned classes
-      .populate("assignedSubjects", "name code"); // Populate assigned subjects
+    // If a teacher is trying to access their own profile, ensure it's their ID
+    if (req.user.role === "TEACHER" && req.user._id.toString() !== teacherId) {
+      return errorResponse(res, "Not authorized to access this teacher's data", 403);
+    }
+
+    const teacher = await Teacher.findOne(filter)
+      .populate("user", "firstName lastName email profilePicture")
+      .populate("assignedClasses", "name section")
+      .populate("assignedSubjects", "name code");
 
     if (!teacher) {
       return errorResponse(res, "Teacher not found", 404);
-    }
-
-    // Authorization check: Allow access to admins or the teacher themselves
-    if (
-      req.user.role !== "SUPER_ADMIN" &&
-      req.user.role !== "SCHOOL_ADMIN" &&
-      req.user._id.toString() !== teacher.user._id.toString()
-    ) {
-      return errorResponse(
-        res,
-        "Not authorized to access this teacher's data",
-        403
-      );
     }
 
     return successResponse(res, teacher, "Teacher retrieved successfully");
@@ -65,11 +74,6 @@ const getTeacherById = [
 // @desc    Create a teacher
 // @route   POST /api/teachers
 // @access  Private/Admin
-const createTeacher = [
-  protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
-  upload.single("profilePicture"), // Handle profile picture upload
-
   // Validation rules
   body("firstName").notEmpty().withMessage("First name is required"),
   body("lastName").notEmpty().withMessage("Last name is required"),
@@ -81,6 +85,7 @@ const createTeacher = [
   body("contactInfo.phone").notEmpty().withMessage("Phone number is required"), // Validate nested fields
   body("dateOfBirth").isISO8601().withMessage("Invalid date of birth format"),
   body("salary").isNumeric().withMessage("Salary must be a number"),
+  body('school').optional().isMongoId().withMessage("Invalid School ID provided"), // Validation for SUPER_ADMIN
 
   asyncHandler(async (req, res) => {
     // Check for validation errors
@@ -101,14 +106,40 @@ const createTeacher = [
       dateOfBirth,
       salary,
       documents,
+      school: schoolIdFromReqBody, // Extract schoolId if SUPER_ADMIN provides it
     } = req.body;
 
-    // Check if teacher with the same employee ID already exists
-    const teacherExists = await Teacher.findOne({ employeeId });
+    let targetSchoolId;
+    if (req.user.role === "SUPER_ADMIN") {
+      // SUPER_ADMIN can specify a school or it should be provided
+      if (!schoolIdFromReqBody) {
+        return errorResponse(res, "School ID is required for SUPER_ADMIN to create a teacher", 400);
+      }
+      targetSchoolId = schoolIdFromReqBody;
+    } else if (req.user.role === "SCHOOL_ADMIN") {
+      // SCHOOL_ADMIN can only create teachers for their own school
+      targetSchoolId = req.user.schoolId;
+      if (!targetSchoolId) {
+        return errorResponse(res, "School Admin is not associated with a school", 403);
+      }
+    } else {
+      return errorResponse(res, "Unauthorized to create teacher without a school context", 403);
+    }
+
+    // Verify the targetSchoolId exists if SUPER_ADMIN provides it
+    if (req.user.role === "SUPER_ADMIN") {
+      const schoolExists = await School.findById(targetSchoolId);
+      if (!schoolExists) {
+        return errorResponse(res, "Specified school not found", 404);
+      }
+    }
+    
+    // Check if teacher with the same employee ID already exists within the target school
+    const teacherExists = await Teacher.findOne({ employeeId, school: targetSchoolId });
     if (teacherExists) {
       return errorResponse(
         res,
-        "Teacher with this employee ID already exists",
+        "Teacher with this employee ID already exists in this school",
         400
       );
     }
@@ -122,8 +153,8 @@ const createTeacher = [
       // Handle profile picture upload
       if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.buffer, {
-          folder: "teacher_profile_pictures", // Optional: Organize uploads in folders
-          public_id: `${employeeId}_profile`, // Use a predictable public ID
+          folder: "teacher_profile_pictures",
+          public_id: `${employeeId}_profile`,
         });
         profilePictureUrl = result.secure_url;
       }
@@ -131,14 +162,14 @@ const createTeacher = [
       const user = await User.create(
         [
           {
-            // Wrap user creation in an array for transaction
             firstName,
             lastName,
             email,
-            password: generateRandomPassword(), // Generate a random password
+            password: generateRandomPassword(),
             role: "TEACHER",
             status: "ACTIVE",
             profilePicture: profilePictureUrl,
+            school: targetSchoolId, // Assign school to user
           },
         ],
         { session }
@@ -148,8 +179,7 @@ const createTeacher = [
       const teacher = await Teacher.create(
         [
           {
-            // Wrap teacher creation in an array for transaction
-            user: user[0]._id, // Use the newly created user's ID
+            user: user[0]._id,
             employeeId,
             qualification,
             specialization,
@@ -158,6 +188,7 @@ const createTeacher = [
             dateOfBirth,
             salary,
             documents,
+            school: targetSchoolId, // Assign school to teacher
           },
         ],
         { session }
@@ -171,7 +202,7 @@ const createTeacher = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_CREATED",
-        description: `Created teacher ${firstName} ${lastName} (${employeeId})`,
+        description: `Created teacher ${firstName} ${lastName} (${employeeId}) in school ${targetSchoolId}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -196,7 +227,9 @@ const createTeacher = [
       );
     } catch (error) {
       // Abort the transaction if any error occurs
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error(error);
       return errorResponse(res, "Failed to create teacher", 500, error.message);
@@ -242,6 +275,7 @@ const updateTeacher = [
     .isISO8601()
     .withMessage("Invalid date of birth format"),
   body("salary").optional().isNumeric().withMessage("Salary must be a number"),
+  body('school').optional().isMongoId().withMessage("Invalid School ID provided"), // Validation for SUPER_ADMIN
 
   asyncHandler(async (req, res) => {
     // Check for validation errors
@@ -264,12 +298,33 @@ const updateTeacher = [
       assignedClasses,
       assignedSubjects,
       documents,
+      school: schoolIdFromReqBody, // Allow SUPER_ADMIN to potentially move teacher to another school
     } = req.body;
 
-    const teacher = await Teacher.findById(req.params.id).populate("user");
+    const teacherId = req.params.id;
+    const baseFilter = _getTeacherFilter(req); // Get school-based filter
+    let teacherFilter = { _id: teacherId, ...baseFilter };
+
+    const teacher = await Teacher.findOne(teacherFilter).populate("user");
 
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to access", 404);
+    }
+
+    let targetSchoolId = teacher.school; // Default to existing school
+
+    if (req.user.role === "SUPER_ADMIN" && schoolIdFromReqBody) {
+        // SUPER_ADMIN can change the school for a teacher
+        const schoolExists = await School.findById(schoolIdFromReqBody);
+        if (!schoolExists) {
+            return errorResponse(res, "Specified school not found", 404);
+        }
+        targetSchoolId = schoolIdFromReqBody;
+    } else if (req.user.role === "SCHOOL_ADMIN") {
+        // SCHOOL_ADMIN can only update teachers within their own school
+        if (teacher.school.toString() !== req.user.schoolId.toString()) {
+            return errorResponse(res, "Not authorized to update teachers outside your school", 403);
+        }
     }
 
     const session = await mongoose.startSession();
@@ -308,6 +363,7 @@ const updateTeacher = [
           lastName: lastName || teacher.user.lastName,
           email: email || teacher.user.email,
           profilePicture: profilePictureUrl,
+          school: targetSchoolId, // Update school on user also
         },
         { new: true, runValidators: true, session }
       );
@@ -323,10 +379,11 @@ const updateTeacher = [
         assignedClasses: assignedClasses || teacher.assignedClasses, // Update assigned classes
         assignedSubjects: assignedSubjects || teacher.assignedSubjects, // Update assigned subjects,
         documents: documents || teacher.documents,
+        school: targetSchoolId, // Update school on teacher also
       };
       // Find and update the teacher
       const updatedTeacher = await Teacher.findOneAndUpdate(
-        { _id: req.params.id },
+        { _id: teacherId }, // Use teacherId without baseFilter here, as filter was applied on findOne
         updateData,
         { new: true, runValidators: true, session }
       );
@@ -337,7 +394,7 @@ const updateTeacher = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_UPDATED",
-        description: `Updated teacher ${updatedTeacher.user.firstName} ${updatedTeacher.user.lastName} (${updatedTeacher.employeeId})`,
+        description: `Updated teacher ${updatedTeacher.user.firstName} ${updatedTeacher.user.lastName} (${updatedTeacher.employeeId}) in school ${updatedTeacher.school}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -361,7 +418,9 @@ const updateTeacher = [
         "Teacher updated successfully"
       );
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error(error); // Log for debugging
       return errorResponse(res, "Failed to update teacher", 500);
@@ -376,14 +435,18 @@ const deleteTeacher = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const teacher = await Teacher.findById(req.params.id).populate("user");
+    const teacherId = req.params.id;
+    const baseFilter = _getTeacherFilter(req);
+    let teacherFilter = { _id: teacherId, ...baseFilter };
+
+    const teacher = await Teacher.findOne(teacherFilter).populate("user");
 
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to delete", 404);
     }
 
     // Start a session for transaction
-    const session = await User.startSession();
+    const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
@@ -398,12 +461,20 @@ const deleteTeacher = [
         );
       }
 
-      // Delete the associated user
-      await User.deleteOne({ _id: teacher.user._id }, { session });
+      // Delete the associated user, ensuring it's scoped by school for SCHOOL_ADMIN
+      const userFilter = req.user.role === "SUPER_ADMIN" ? { _id: teacher.user._id } : { _id: teacher.user._id, school: req.user.schoolId };
+      const userDeleteResult = await User.deleteOne(userFilter, { session });
+
+      if (userDeleteResult.deletedCount === 0 && req.user.role !== "SUPER_ADMIN") {
+        throw new Error("User not found or not authorized for deletion within school scope.");
+      }
 
       // Delete the teacher
-      await Teacher.deleteOne({ _id: req.params.id }, { session });
-
+      const teacherDeleteResult = await Teacher.deleteOne({ _id: teacherId, ...baseFilter }, { session });
+      if (teacherDeleteResult.deletedCount === 0 && req.user.role !== "SUPER_ADMIN") {
+        throw new Error("Teacher not found or not authorized for deletion within school scope.");
+      }
+      
       // Commit the transaction
       await session.commitTransaction();
       session.endSession();
@@ -412,7 +483,7 @@ const deleteTeacher = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_DELETED",
-        description: `Deleted teacher ${teacher.user.firstName} ${teacher.user.lastName} (${teacher.employeeId})`,
+        description: `Deleted teacher ${teacher.user.firstName} ${teacher.user.lastName} (${teacher.employeeId}) from school ${teacher.school}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -420,10 +491,12 @@ const deleteTeacher = [
       return successResponse(res, null, "Teacher and associated user removed");
     } catch (error) {
       // Abort the transaction
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error(error); // Log for debugging
-      return errorResponse(res, "Failed to delete teacher", 500);
+      return errorResponse(res, "Failed to delete teacher", 500, error.message);
     }
   }),
 ];
@@ -445,11 +518,15 @@ const updateTeacherStatus = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
+    const teacherId = req.params.id;
+    const baseFilter = _getTeacherFilter(req);
+    let teacherFilter = { _id: teacherId, ...baseFilter };
+
     const { status } = req.body;
-    const teacher = await Teacher.findById(req.params.id);
+    const teacher = await Teacher.findOne(teacherFilter); // Use findOne with filter
 
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to update status", 404);
     }
 
     teacher.status = status;
@@ -458,7 +535,7 @@ const updateTeacherStatus = [
     await Activity.logActivity({
       userId: req.user._id,
       type: "TEACHER_STATUS_UPDATED",
-      description: `Updated teacher status to ${status} for ${teacher.employeeId}`,
+      description: `Updated teacher status to ${status} for ${teacher.employeeId} in school ${teacher.school}`,
       context: "teacher-management",
       ip: req.ip,
       userAgent: req.headers["user-agent"],
@@ -477,31 +554,31 @@ const updateTeacherStatus = [
 // @access  Private (Admin, the teacher themselves)
 const getTeacherClasses = [
   protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"), // Authorize Teacher to view their own classes
   asyncHandler(async (req, res) => {
     const teacherId = req.params.id;
+    const baseFilter = _getTeacherFilter(req);
+    let teacherFilter = { _id: teacherId, ...baseFilter };
 
-    // Check if the requesting user is an admin or the teacher themselves
-    if (
-      req.user.role !== "SUPER_ADMIN" &&
-      req.user.role !== "SCHOOL_ADMIN" &&
-      req.user._id.toString() !== teacherId
-    ) {
-      return errorResponse(
-        res,
-        "Not authorized to access this teacher's classes",
-        403
-      );
-    }
-
-    const teacher = await Teacher.findById(teacherId);
+    // Find the teacher within the authorized school scope
+    const teacher = await Teacher.findOne(teacherFilter);
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to access", 404);
     }
+
+    // Explicit check for teacher accessing their own data if not an admin
+    if (req.user.role === "TEACHER" && req.user._id.toString() !== teacher.user.toString()) {
+      return errorResponse(res, "Not authorized to access this teacher's classes", 403);
+    }
+
+    // Ensure classes are also filtered by school if not SUPER_ADMIN
+    const classBaseFilter = req.user.role === "SUPER_ADMIN" ? {} : { school: req.user.schoolId };
 
     const classes = await ClassModel.find({
+      ...classBaseFilter, // Apply school filter to classes
       $or: [
-        { classTeacher: teacherId }, // Classes where the teacher is the class teacher
-        { subjects: { $in: teacher.assignedSubjects } }, // Classes where the teacher teaches a subject
+        { classTeacher: teacherId },
+        { subjects: { $in: teacher.assignedSubjects } },
       ],
     }).populate("subjects", "name code");
 
@@ -580,14 +657,22 @@ const assignTeacherToClass = [
     }
 
     const { classId } = req.body;
-    const teacher = await Teacher.findById(req.params.id);
-    const classToAssign = await ClassModel.findById(classId);
+    const teacherId = req.params.id;
 
+    const baseFilter = _getTeacherFilter(req);
+    let teacherFilter = { _id: teacherId, ...baseFilter };
+
+    const teacher = await Teacher.findOne(teacherFilter); // Find teacher within school scope
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to assign", 404);
     }
+
+    // Filter for the class based on user's school context
+    const classBaseFilter = req.user.role === "SUPER_ADMIN" ? {} : { school: req.user.schoolId };
+    const classToAssign = await ClassModel.findOne({ _id: classId, ...classBaseFilter });
+
     if (!classToAssign) {
-      return errorResponse(res, "Class not found", 404);
+      return errorResponse(res, "Class not found or not authorized to assign", 404);
     }
 
     // Start a session for transaction
@@ -599,7 +684,7 @@ const assignTeacherToClass = [
       if (!teacher.assignedClasses.includes(classId)) {
         teacher.assignedClasses.push(classId);
         await Teacher.findByIdAndUpdate(
-          req.params.id,
+          teacherId, // Use teacherId
           { assignedClasses: teacher.assignedClasses },
           { session }
         );
@@ -608,7 +693,7 @@ const assignTeacherToClass = [
       // Set the teacher as the class teacher
       await ClassModel.findByIdAndUpdate(
         classId,
-        { classTeacher: req.params.id },
+        { classTeacher: teacherId }, // Use teacherId
         { session }
       );
 
@@ -619,7 +704,7 @@ const assignTeacherToClass = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_ASSIGNED_TO_CLASS",
-        description: `Assigned teacher ${teacher.user.firstName} to class ${classToAssign.name} as class teacher`,
+        description: `Assigned teacher ${teacher.user.firstName} to class ${classToAssign.name} as class teacher in school ${teacher.school}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -632,10 +717,12 @@ const assignTeacherToClass = [
       );
     } catch (error) {
       // Abort the transaction
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error(error); // Log error
-      return errorResponse(res, "Failed to assign teacher to class", 500);
+      return errorResponse(res, "Failed to assign teacher to class", 500, error.message);
     }
   }),
 ];
@@ -657,19 +744,28 @@ const assignSubjectToTeacher = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const { subjectId, classId } = req.body; // classId is now required
-    const teacher = await Teacher.findById(req.params.id);
-    const subject = await Subject.findById(subjectId);
-    const classToAssign = await ClassModel.findById(classId); // Fetch the class
+    const { subjectId, classId } = req.body;
+    const teacherId = req.params.id;
 
+    const baseFilter = _getTeacherFilter(req);
+    let teacherFilter = { _id: teacherId, ...baseFilter };
+
+    const teacher = await Teacher.findOne(teacherFilter); // Find teacher within school scope
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to assign subject", 404);
     }
+
+    // Filter for subject and class based on user's school context
+    const schoolFilter = req.user.role === "SUPER_ADMIN" ? {} : { school: req.user.schoolId };
+
+    const subject = await Subject.findOne({ _id: subjectId, ...schoolFilter });
     if (!subject) {
-      return errorResponse(res, "Subject not found", 404);
+      return errorResponse(res, "Subject not found or not authorized to assign", 404);
     }
+
+    const classToAssign = await ClassModel.findOne({ _id: classId, ...schoolFilter });
     if (!classToAssign) {
-      return errorResponse(res, "Class not found", 404); // Class not found
+      return errorResponse(res, "Class not found or not authorized to assign", 404);
     }
 
     // Start a session
@@ -681,7 +777,7 @@ const assignSubjectToTeacher = [
       if (!teacher.assignedSubjects.includes(subjectId)) {
         teacher.assignedSubjects.push(subjectId);
         await Teacher.updateOne(
-          { _id: req.params.id },
+          { _id: teacherId }, // Use teacherId
           { $set: { assignedSubjects: teacher.assignedSubjects } },
           { session }
         );
@@ -697,8 +793,8 @@ const assignSubjectToTeacher = [
       }
 
       // Add the teacher to the subject's assignedTeachers array, if not already present
-      if (!subject.assignedTeachers.includes(req.params.id)) {
-        subject.assignedTeachers.push(req.params.id);
+      if (!subject.assignedTeachers.includes(teacherId)) {
+        subject.assignedTeachers.push(teacherId);
         await Subject.updateOne(
           { _id: subjectId },
           { $set: { assignedTeachers: subject.assignedTeachers } },
@@ -713,7 +809,7 @@ const assignSubjectToTeacher = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_ASSIGNED_SUBJECT",
-        description: `Assigned teacher ${teacher.user.firstName} to subject ${subject.name} for class ${classToAssign.name}`, // Include class name
+        description: `Assigned teacher ${teacher.user.firstName} to subject ${subject.name} for class ${classToAssign.name} in school ${teacher.school}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -725,10 +821,12 @@ const assignSubjectToTeacher = [
       );
     } catch (error) {
       // Abort transaction on error
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error(error);
-      return errorResponse(res, "Failed to assign subject to teacher", 500);
+      return errorResponse(res, "Failed to assign subject to teacher", 500, error.message);
     }
   }),
 ];
@@ -750,19 +848,28 @@ const unassignSubjectFromTeacher = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const { subjectId, classId } = req.body; // classId is now required
-    const teacher = await Teacher.findById(req.params.id);
-    const subject = await Subject.findById(subjectId);
-    const classToUnassign = await ClassModel.findById(classId); // Fetch the class
+    const { subjectId, classId } = req.body;
+    const teacherId = req.params.id;
 
+    const baseFilter = _getTeacherFilter(req);
+    let teacherFilter = { _id: teacherId, ...baseFilter };
+
+    const teacher = await Teacher.findOne(teacherFilter); // Find teacher within school scope
     if (!teacher) {
-      return errorResponse(res, "Teacher not found", 404);
+      return errorResponse(res, "Teacher not found or not authorized to unassign subject", 404);
     }
+
+    // Filter for subject and class based on user's school context
+    const schoolFilter = req.user.role === "SUPER_ADMIN" ? {} : { school: req.user.schoolId };
+
+    const subject = await Subject.findOne({ _id: subjectId, ...schoolFilter });
     if (!subject) {
-      return errorResponse(res, "Subject not found", 404);
+      return errorResponse(res, "Subject not found or not authorized to unassign", 404);
     }
+
+    const classToUnassign = await ClassModel.findOne({ _id: classId, ...schoolFilter });
     if (!classToUnassign) {
-      return errorResponse(res, "Class not found", 404);
+      return errorResponse(res, "Class not found or not authorized to unassign", 404);
     }
 
     // Start a session
@@ -776,7 +883,7 @@ const unassignSubjectFromTeacher = [
           (subId) => subId.toString() !== subjectId
         );
         await Teacher.findByIdAndUpdate(
-          req.params.id,
+          teacherId,
           { assignedSubjects: updatedAssignedSubjects },
           { session }
         );
@@ -795,9 +902,9 @@ const unassignSubjectFromTeacher = [
       }
 
       // Remove the teacher from the subject's assignedTeachers array
-      if (subject.assignedTeachers.includes(req.params.id)) {
+      if (subject.assignedTeachers.includes(teacherId)) {
         const updatedAssignedTeachers = subject.assignedTeachers.filter(
-          (tId) => tId.toString() !== req.params.id
+          (tId) => tId.toString() !== teacherId
         );
         await Subject.findByIdAndUpdate(
           subjectId,
@@ -813,7 +920,7 @@ const unassignSubjectFromTeacher = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_UNASSIGNED_SUBJECT",
-        description: `Unassigned teacher ${teacher.user.firstName} from subject ${subject.name} for class ${classToUnassign.name}`,
+        description: `Unassigned teacher ${teacher.user.firstName} from subject ${subject.name} for class ${classToUnassign.name} in school ${teacher.school}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -826,10 +933,12 @@ const unassignSubjectFromTeacher = [
       );
     } catch (error) {
       // Abort transaction on error
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       session.endSession();
       console.error(error); // Log for debugging
-      return errorResponse(res, "Failed to unassign subject from teacher", 500);
+      return errorResponse(res, "Failed to unassign subject from teacher", 500, error.message);
     }
   }),
 ];

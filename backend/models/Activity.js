@@ -53,6 +53,7 @@ const activitySchema = new Schema(
         "EVENT_CREATED",
         "EVENT_UPDATED",
         "EVENT_DELETED",
+        "SCHOOL_CREATED", // New: Added for school creation activity
       ],
       required: true,
       index: true, // Index for type-based queries

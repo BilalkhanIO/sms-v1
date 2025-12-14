@@ -1,13 +1,11 @@
 // src/components/CreateUserForm.jsx (Formik Version)
 
-import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useCreateUserMutation } from "../api/usersApi"; // Import RTK Query hook
-import { Formik, Form as FormikForm, Field, ErrorMessage } from "formik"; // Import Formik components
+import { Formik, Form, Field, ErrorMessage } from "formik"; // Import Formik components
 import * as Yup from "yup";
 import InputField from "./forms/InputField";
-import SelectField from "./forms/SelectField";
 import PageHeader from "./common/PageHeader";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 
@@ -54,7 +52,6 @@ const validationSchema = Yup.object().shape({
 });
 
 const CreateUserForm = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [createUser, { isLoading, isSuccess, isError, error, reset }] =
     useCreateUserMutation(); // Use the RTK Query hook
@@ -212,8 +209,6 @@ const CreateUserForm = () => {
                   <option value="STUDENT">Student</option>
                   <option value="TEACHER">Teacher</option>
                   <option value="PARENT">Parent</option>
-                  <option value="SCHOOL_ADMIN">School Admin</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
                 </Field>
                 <ErrorMessage
                   name="role"

@@ -61,6 +61,11 @@ const userSchema = new Schema(
       ],
       default: "PENDING_EMAIL_VERIFICATION",
     },
+    school: { // New: Reference to the School model, optional for SUPER_ADMIN
+      type: Schema.Types.ObjectId,
+      ref: 'School',
+      required: false, // Not required for SUPER_ADMIN, will be required by logic for others
+    },
     profilePicture: {
       type: String,
       default: null, // Or a default image URL
@@ -86,6 +91,7 @@ const userSchema = new Schema(
 
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
+userSchema.index({ school: 1 }); // New index for school
 
 // Pre-save hook to encrypt password and update passwordChangedAt
 userSchema.pre("save", async function (next) {

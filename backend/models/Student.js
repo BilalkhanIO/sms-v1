@@ -10,6 +10,11 @@ const studentSchema = new Schema(
       ref: "User",
       required: true,
     },
+    school: { // New: Reference to the School model
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'School',
+      required: true,
+    },
     admissionNumber: {
       type: String,
       required: true,

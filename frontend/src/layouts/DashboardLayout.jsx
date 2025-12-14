@@ -1,19 +1,34 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLogoutMutation } from "../api/authApi";
 import {
   Menu,
-  X,
   User,
   Users,
-  UserPlus,
   Home,
   School,
   GraduationCap,
   LogOut,
-} from "lucide-react"; // Added icons
+  Settings,
+  FileText
+} from "lucide-react";
 
+// shadcn/ui components
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+
+// This component is no longer used but was kept as a remnant, removing it for clarity.
+/*
 const UserWelcome = ({ user }) => (
   <div className="flex items-center space-x-2">
     <span className="text-sm text-gray-600">
@@ -22,13 +37,13 @@ const UserWelcome = ({ user }) => (
     <span className="text-xs text-gray-400">({user.role})</span>
   </div>
 );
+*/
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const [logout, { isLoading }] = useLogoutMutation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -45,100 +60,174 @@ export default function DashboardLayout() {
 
   const isActive = (path) => location.pathname.startsWith(`/dashboard${path}`);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const navLinks = [];
 
-  const navLinks = [
-    { to: "/dashboard/profile", label: "Profile", icon: User },
-    ...(user?.role === "SUPER_ADMIN" || user?.role === "SCHOOL_ADMIN"
-      ? [
-          { to: "/dashboard/users", label: "Users", icon: Users },
-          { to: "/dashboard/users/create", label: "Create User", icon: UserPlus },
-          { to: "/dashboard/admin-dashboard", label: "Admin Dashboard", icon: Home },
-        ]
-      : []),
-    ...(user?.role === "TEACHER"
-      ? [{ to: "/dashboard/teacher-dashboard", label: "Teacher Dashboard", icon: Home }]
-      : []),
-    ...(user?.role === "STUDENT"
-      ? [{ to: "/dashboard/student-dashboard", label: "Student Dashboard", icon: Home }]
-      : []),
-    { to: "/dashboard/teachers", label: "Teachers", icon: Users },
-    { to: "/dashboard/students", label: "Students", icon: GraduationCap },
-    { to: "/dashboard/classes", label: "Classes", icon: School },
-  ];
+  // Common links for all authenticated users
+  navLinks.push({ to: "/dashboard", label: "Dashboard", icon: Home });
+  // Profile link moved to dropdown and not in sidebar anymore
+
+  // Super Admin specific links
+  if (user?.role === "SUPER_ADMIN") {
+    navLinks.push({ to: "/dashboard/schools", label: "Schools", icon: School });
+    navLinks.push({ to: "/dashboard/users", label: "Users", icon: Users });
+    navLinks.push({ to: "/dashboard/teachers", label: "Teachers", icon: Users });
+    navLinks.push({ to: "/dashboard/students", label: "Students", icon: GraduationCap });
+    navLinks.push({ to: "/dashboard/classes", label: "Classes", icon: School });
+    navLinks.push({ to: "/dashboard/settings", label: "Settings", icon: Settings });
+    navLinks.push({ to: "/dashboard/activity-logs", label: "Activity Logs", icon: FileText });
+  }
+
+  // School Admin specific links
+  if (user?.role === "SCHOOL_ADMIN") {
+    navLinks.push({ to: "/dashboard/admin-dashboard", label: "Admin Dashboard", icon: Home });
+    navLinks.push({ to: "/dashboard/users", label: "Users", icon: Users });
+    navLinks.push({ to: "/dashboard/teachers", label: "Teachers", icon: Users });
+    navLinks.push({ to: "/dashboard/students", label: "Students", icon: GraduationCap });
+    navLinks.push({ to: "/dashboard/classes", label: "Classes", icon: School });
+    navLinks.push({ to: "/dashboard/activity-logs", label: "Activity Logs", icon: FileText });
+  }
+
+  // Teacher specific links
+  if (user?.role === "TEACHER") {
+    navLinks.push({ to: "/dashboard/teacher-dashboard", label: "Teacher Dashboard", icon: Home });
+    navLinks.push({ to: "/dashboard/students", label: "My Students", icon: GraduationCap });
+    navLinks.push({ to: "/dashboard/classes", label: "My Classes", icon: School });
+    // Add other teacher-specific links like attendance, exams, subjects
+  }
+
+  // Student specific links
+  if (user?.role === "STUDENT") {
+    navLinks.push({ to: "/dashboard/student-dashboard", label: "Student Dashboard", icon: Home });
+    // Add other student-specific links like grades, schedule, fees
+  }
+
+  // Parent specific links
+  if (user?.role === "PARENT") {
+    navLinks.push({ to: "/dashboard/parent-dashboard", label: "Parent Dashboard", icon: Home });
+    // Add other parent-specific links like wards' progress, communication
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex min-h-screen w-full flex-col">
       {/* Navbar - Top */}
-      <nav className="bg-gray-800 text-white p-4 flex justify-between items-center shadow-md">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={toggleSidebar}
-            className="md:hidden p-2 focus:outline-none hover:bg-gray-700 rounded"
-          >
-            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-          <Link to="/dashboard" className="text-xl font-bold">
-            School Management
-          </Link>
-        </div>
-        <div className="flex items-center space-x-4">
-          {user && <UserWelcome user={user} />}
-          <button
-            onClick={handleLogout}
-            disabled={isLoading}
-            className={`px-4 py-2 rounded text-sm font-medium flex items-center space-x-2 ${
-              isLoading
-                ? "bg-gray-600 cursor-not-allowed opacity-50"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-          >
-            <LogOut size={16} />
-            <span>{isLoading ? "Logging out..." : "Logout"}</span>
-          </button>
-        </div>
-      </nav>
+      <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+        {/* Mobile sidebar trigger */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="flex flex-col">
+            <nav className="grid gap-2 text-lg font-medium">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 text-lg font-semibold"
+              >
+                <Home className="h-6 w-6" />
+                <span className="sr-only">School Management</span>
+              </Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={cn(
+                    "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
+                    isActive(link.to) && "text-foreground bg-muted"
+                  )}
+                  // The Sheet component itself handles closing when a link inside it is clicked
+                >
+                  <link.icon className="h-5 w-5" />
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="lg" className="w-full justify-start">
+                    <User className="h-5 w-5 mr-2" /> {user?.firstName} {user?.lastName}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>{user?.firstName} {user?.lastName}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>Profile</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} disabled={isLoading}>
+                    <LogOut className="h-4 w-4 mr-2" /> {isLoading ? "Logging out..." : "Logout"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </SheetContent>
+        </Sheet>
+        {/* Desktop Header Content */}
+        <Link to="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
+          <Home className="h-6 w-6" />
+          <span className="sr-only">School Management</span>
+        </Link>
+        <div className="w-full flex-1" /> {/* Spacer */}
+        {/* User Dropdown */}
+        {user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user.firstName} {user.lastName}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>Profile</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} disabled={isLoading}>
+                <LogOut className="h-4 w-4 mr-2" /> {isLoading ? "Logging out..." : "Logout"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </header>
 
       {/* Main Content Area with Sidebar */}
       <div className="flex flex-1">
-        {/* Sidebar - Left */}
-        <aside
-          className={`bg-gray-800 text-white w-64 p-4 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static fixed inset-y-0 left-0 z-50 ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold">Navigation</h3>
-          </div>
-          <nav className="space-y-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`flex items-center space-x-3 p-3 rounded text-sm font-medium transition-colors ${
-                  isActive(link.to)
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
-                }`}
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <link.icon size={18} />
-                <span>{link.label}</span>
+        {/* Sidebar - Left (Desktop) */}
+        <aside className="hidden border-r bg-muted/40 md:block w-64">
+          <div className="flex h-full max-h-screen flex-col gap-2">
+            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+              <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
+                <Home className="h-6 w-6" />
+                <span className="">School Management</span>
               </Link>
-            ))}
-          </nav>
+            </div>
+            <div className="flex-1">
+              <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                      isActive(link.to) && "text-primary bg-muted"
+                    )}
+                  >
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </div>
         </aside>
 
-        {/* Overlay for mobile sidebar */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black opacity-50 md:hidden"
-            onClick={toggleSidebar}
-          />
-        )}
-
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <Outlet />
         </main>
       </div>

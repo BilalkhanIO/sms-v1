@@ -8,7 +8,8 @@ import Exam from "../models/Exam.js";
 import Calendar from "../models/Calendar.js";
 import Teacher from "../models/Teacher.js";
 import User from "../models/User.js";
-import Parent from "../models/Parent.js"; // Added missing import
+import Parent from "../models/Parent.js";
+import School from "../models/School.js";
 
 // @desc    Get dashboard statistics based on user role
 // @route   GET /api/dashboard
@@ -108,6 +109,16 @@ const getAdminStats = async () => {
       .populate("class subject")
       .lean(),
   ]);
+
+  console.log("Admin Stats Data:");
+  console.log("  Total Students:", totalStudents);
+  console.log("  Total Teachers:", totalTeachers);
+  console.log("  Total Classes:", totalClasses);
+  console.log("  Active Users:", activeUsers);
+  console.log("  Today Attendance:", todayAttendance);
+  console.log("  Fee Summary:", feeSummary);
+  console.log("  Recent Exams:", recentExams);
+
 
   return {
     overview: {
@@ -281,4 +292,93 @@ const getParentStats = async (userId) => {
   };
 };
 
-export { getDashboardStats };
+// @desc    Get school-specific dashboard statistics for Super Admin
+// @route   GET /api/dashboard/school-stats
+// @access  Private (Super Admin)
+const getSchoolStats = asyncHandler(async (req, res) => {
+  const totalSchools = await User.countDocuments({ role: "SCHOOL_ADMIN" }); // Proxy for total schools
+  const totalStudents = await Student.countDocuments();
+  const activeUsers = await User.countDocuments({ status: "ACTIVE" });
+  const pendingApprovals = await User.countDocuments({ status: "PENDING" });
+
+  res.status(200).json({
+    totalSchools,
+    totalStudents,
+    activeUsers,
+    pendingApprovals,
+  });
+});
+
+
+// @desc    Get user role distribution
+// @route   GET /api/dashboard/user-role-distribution
+// @access  Private/SuperAdmin
+const getUserRoleDistribution = asyncHandler(async (req, res) => {
+  const roleDistribution = await User.aggregate([
+    {
+      $group: {
+        _id: "$role",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+  return res.status(200).json(roleDistribution);
+});
+
+// @desc    Get user status distribution
+// @route   GET /api/dashboard/user-status-distribution
+// @access  Private/SuperAdmin
+const getUserStatusDistribution = asyncHandler(async (req, res) => {
+  const statusDistribution = await User.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+  return res.status(200).json(statusDistribution);
+});
+
+// @desc    Get school status distribution
+// @route   GET /api/dashboard/school-status-distribution
+// @access  Private/SuperAdmin
+const getSchoolStatusDistribution = asyncHandler(async (req, res) => {
+  const schoolStatusDistribution = await School.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+  return res.status(200).json(schoolStatusDistribution);
+});
+
+// @desc    Get user registration trends
+// @route   GET /api/dashboard/user-registration-trends
+// @access  Private/SuperAdmin
+const getUserRegistrationTrends = asyncHandler(async (req, res) => {
+  // Example: Get registrations per month for the last 12 months
+  const registrationTrends = await User.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+    {
+        $limit: 12 // Limit to last 12 months
+    }
+  ]);
+  return res.status(200).json(registrationTrends);
+});
+
+
+export { getDashboardStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends };

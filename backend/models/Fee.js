@@ -10,6 +10,11 @@ const feeSchema = new Schema(
       ref: "Student",
       required: true,
     },
+    school: { // New: Reference to the School model
+      type: Schema.Types.ObjectId,
+      ref: 'School',
+      required: true,
+    },
     amount: {
       type: Number,
       required: true,

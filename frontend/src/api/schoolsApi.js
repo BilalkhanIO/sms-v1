@@ -1,56 +1,37 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { api } from './api';
 
-export const schoolsApi = createApi({
-  reducerPath: 'schoolsApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: '/api',
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['School'],
+export const schoolsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getSchools: builder.query({
       query: () => '/schools',
-      providesTags: ['School'],
+      providesTags: ['Schools'],
     }),
     getSchoolById: builder.query({
       query: (id) => `/schools/${id}`,
-      providesTags: (result, error, id) => [{ type: 'School', id }],
+      providesTags: (result, error, id) => [{ type: 'Schools', id }],
     }),
     createSchool: builder.mutation({
-      query: (data) => ({
+      query: (newSchool) => ({
         url: '/schools',
         method: 'POST',
-        body: data,
+        body: newSchool,
       }),
-      invalidatesTags: ['School'],
+      invalidatesTags: ['Schools'],
     }),
     updateSchool: builder.mutation({
-      query: ({ id, ...data }) => ({
+      query: ({ id, ...patch }) => ({
         url: `/schools/${id}`,
         method: 'PUT',
-        body: data,
+        body: patch,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'School', id },
-        'School',
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Schools', id }],
     }),
     deleteSchool: builder.mutation({
       query: (id) => ({
         url: `/schools/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['School'],
-    }),
-    getSchoolStats: builder.query({
-      query: (id) => `/schools/${id}/stats`,
-      providesTags: (result, error, id) => [{ type: 'School', id }],
+      invalidatesTags: ['Schools'],
     }),
   }),
 });
@@ -61,5 +42,4 @@ export const {
   useCreateSchoolMutation,
   useUpdateSchoolMutation,
   useDeleteSchoolMutation,
-  useGetSchoolStatsQuery,
 } = schoolsApi;

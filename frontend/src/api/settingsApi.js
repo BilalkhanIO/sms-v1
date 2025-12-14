@@ -1,40 +1,35 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { api } from './api';
 
-export const settingsApi = createApi({
-  reducerPath: 'settingsApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: '/api',
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['Settings'],
+export const settingsApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getSystemSettings: builder.query({
-      query: () => '/settings/system',
+    getSettings: builder.query({
+      query: () => '/settings',
       providesTags: ['Settings'],
     }),
-    updateSystemSettings: builder.mutation({
-      query: (data) => ({
-        url: '/settings/system',
-        method: 'PUT',
-        body: data,
+    getSettingByName: builder.query({
+      query: (settingName) => `/settings/${settingName}`,
+      providesTags: (result, error, settingName) => [{ type: 'Settings', settingName }],
+    }),
+    createSetting: builder.mutation({
+      query: (newSetting) => ({
+        url: '/settings',
+        method: 'POST',
+        body: newSetting,
       }),
       invalidatesTags: ['Settings'],
     }),
-    getSecuritySettings: builder.query({
-      query: () => '/settings/security',
-      providesTags: ['Settings'],
-    }),
-    updateSecuritySettings: builder.mutation({
-      query: (data) => ({
-        url: '/settings/security',
+    updateSettingByName: builder.mutation({
+      query: ({ settingName, ...patch }) => ({
+        url: `/settings/${settingName}`,
         method: 'PUT',
-        body: data,
+        body: patch,
+      }),
+      invalidatesTags: (result, error, { settingName }) => [{ type: 'Settings', settingName }],
+    }),
+    deleteSettingByName: builder.mutation({
+      query: (settingName) => ({
+        url: `/settings/${settingName}`,
+        method: 'DELETE',
       }),
       invalidatesTags: ['Settings'],
     }),
@@ -42,8 +37,9 @@ export const settingsApi = createApi({
 });
 
 export const {
-  useGetSystemSettingsQuery,
-  useUpdateSystemSettingsMutation,
-  useGetSecuritySettingsQuery,
-  useUpdateSecuritySettingsMutation,
+  useGetSettingsQuery,
+  useGetSettingByNameQuery,
+  useCreateSettingMutation,
+  useUpdateSettingByNameMutation,
+  useDeleteSettingByNameMutation,
 } = settingsApi;

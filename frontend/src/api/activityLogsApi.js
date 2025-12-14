@@ -1,42 +1,33 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { api } from './api';
 
-export const activityLogsApi = createApi({
-  reducerPath: 'activityLogsApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: '/api',
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['ActivityLog'],
+export const activityLogsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getActivityLogs: builder.query({
       query: (params) => ({
-        url: '/activity-logs',
+        url: '/activities', // Backend route is /api/activities
         params: {
           page: params?.page || 1,
           limit: params?.limit || 10,
           type: params?.type,
-          dateRange: params?.dateRange,
-          search: params?.search,
+          startDate: params?.startDate, // Use startDate
+          endDate: params?.endDate,     // Use endDate
+          severity: params?.severity,
+          context: params?.context,
         },
       }),
-      providesTags: ['ActivityLog'],
+      providesTags: ['Activities'], // Use 'Activities' tag type from base API
     }),
     getActivityLogById: builder.query({
-      query: (id) => `/activity-logs/${id}`,
-      providesTags: (result, error, id) => [{ type: 'ActivityLog', id }],
+      query: (id) => `/activities/${id}`, // Backend route is /api/activities/:id
+      providesTags: (result, error, id) => [{ type: 'Activities', id }],
     }),
     exportActivityLogs: builder.query({
       query: (params) => ({
-        url: '/activity-logs/export',
+        url: '/activities/export', // Assuming a backend export route for activities
         params,
         responseHandler: (response) => response.blob(),
       }),
+      providesTags: ['Activities'],
     }),
   }),
 });

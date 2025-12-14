@@ -1,234 +1,165 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { useCreateSchoolMutation } from '@/api/schoolsApi';
-import { useGetDashboardStatsQuery } from '../../api/dashboardApi';
-import * as z from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
-
-const schoolFormSchema = z.object({
-  name: z.string().min(2, 'School name must be at least 2 characters'),
-  address: z.string().min(5, 'Address must be at least 5 characters'),
-  city: z.string().min(2, 'City must be at least 2 characters'),
-  state: z.string().min(2, 'State must be at least 2 characters'),
-  country: z.string().min(2, 'Country must be at least 2 characters'),
-  phone: z.string().min(10, 'Phone number must be at least 10 characters'),
-  email: z.string().email('Invalid email address'),
-  website: z.string().url('Invalid website URL').optional(),
-  description: z.string().optional(),
-});
+import PageHeader from '../../components/common/PageHeader';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import { useCreateSchoolMutation } from '../../api/schoolsApi';
 
 const CreateSchool = () => {
   const navigate = useNavigate();
-  const form = useForm({
-    resolver: zodResolver(schoolFormSchema),
-    defaultValues: {
-      name: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
+  const [createSchool, { isLoading }] = useCreateSchoolMutation();
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    contactInfo: {
       phone: '',
       email: '',
-      website: '',
-      description: '',
     },
+    adminFirstName: '',
+    adminLastName: '',
+    adminEmail: '',
   });
+  const [errors, setErrors] = useState({});
 
-    const [createSchool, { isLoading }] = useCreateSchoolMutation();
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name.startsWith('contactInfo.')) {
+      const field = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        contactInfo: {
+          ...prev.contactInfo,
+          [field]: value,
+        },
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await createSchool(data).unwrap();
-      
-      toast({
-        title: 'Success',
-        description: 'School created successfully.',
-      });
-      
+      await createSchool(formData).unwrap();
       navigate('/dashboard/schools');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to create school. Please try again.',
-        variant: 'destructive',
-      });
+    } catch (err) {
+      const validationErrors = {};
+      if (err.data?.errors) {
+        err.data.errors.forEach(error => {
+          // This assumes `err.data.errors` is an array of objects like { path: 'fieldName', msg: 'message' }
+          // Adjust 'path' to match your backend's error structure if different
+          // For nested fields like contactInfo.email, the path might be 'contactInfo.email'
+          if (error.path.includes('.')) {
+            validationErrors[error.path] = error.msg;
+          } else {
+            validationErrors[error.path] = error.msg;
+          }
+        });
+      } else if (err.data?.message) {
+        // Handle generic backend error messages not tied to specific fields
+        validationErrors.general = err.data.message;
+      }
+      setErrors(validationErrors);
     }
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New School</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>School Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter school name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    <div className="container mx-auto px-4 py-6">
+      <PageHeader title="Create New School" backUrl="/dashboard/schools" />
+      
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+        <h3 className="text-xl font-semibold mb-4 border-b pb-2">School Details</h3>
+        <Input
+          label="School Name"
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          error={errors.name}
+          required
+        />
+        <Input
+          label="Address"
+          id="address"
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          error={errors.address}
+          required
+        />
+        <Input
+          label="Contact Phone"
+          id="contactInfo.phone"
+          name="contactInfo.phone"
+          value={formData.contactInfo.phone}
+          onChange={handleChange}
+          error={errors['contactInfo.phone']}
+          required
+        />
+        <Input
+          label="Contact Email"
+          type="email"
+          id="contactInfo.email"
+          name="contactInfo.email"
+          value={formData.contactInfo.email}
+          onChange={handleChange}
+          error={errors['contactInfo.email']}
+          required
+        />
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" placeholder="school@example.com" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <h3 className="text-xl font-semibold mb-4 border-b pb-2 mt-8">Admin User Details</h3>
+        <Input
+          label="Admin First Name"
+          id="adminFirstName"
+          name="adminFirstName"
+          value={formData.adminFirstName}
+          onChange={handleChange}
+          error={errors.adminFirstName}
+          required
+        />
+        <Input
+          label="Admin Last Name"
+          id="adminLastName"
+          name="adminLastName"
+          value={formData.adminLastName}
+          onChange={handleChange}
+          error={errors.adminLastName}
+          required
+        />
+        <Input
+          label="Admin Email"
+          type="email"
+          id="adminEmail"
+          name="adminEmail"
+          value={formData.adminEmail}
+          onChange={handleChange}
+          error={errors.adminEmail}
+          required
+        />
 
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter phone number" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        {errors.general && (
+          <div className="text-red-500 text-sm mt-2">{errors.general}</div>
+        )}
 
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://www.example.com" />
-                      </FormControl>
-                      <FormDescription>Optional</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="Enter school address" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="City" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>State</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="State" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Country</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Country" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Enter school description"
-                          className="h-32"
-                        />
-                      </FormControl>
-                      <FormDescription>Optional</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/dashboard/schools')}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Create School</Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+        <div className="flex justify-end space-x-4">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate('/dashboard/schools')}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            isLoading={isLoading}
+          >
+            Create School
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

@@ -14,29 +14,24 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const StatCard = ({ title, value, icon: Icon, subtitle, color = "blue" }) => {
-  const colorClasses = {
-    blue: "bg-blue-50 text-blue-700",
-    green: "bg-green-50 text-green-700",
-    purple: "bg-purple-50 text-purple-700",
-    orange: "bg-orange-50 text-orange-700",
-  };
+// shadcn/ui components
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
+const StatCard = ({ title, value, icon: Icon, subtitle, color }) => {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {value ?? "N/A"}
-          </p>
-          {subtitle && <p className="mt-2 text-sm text-gray-500">{subtitle}</p>}
-        </div>
-        <div className={`p-3 rounded-full ${colorClasses[color]}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-      </div>
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className={cn("h-4 w-4 text-muted-foreground", `text-${color}-500`)} />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value ?? "N/A"}</div>
+        {subtitle && <CardDescription className="text-sm">{subtitle}</CardDescription>}
+      </CardContent>
+    </Card>
   );
 };
 
@@ -63,9 +58,13 @@ const ParentDashboard = () => {
   const parentOverview = stats?.parentOverview || {};
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold mb-4">Parent Dashboard</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Wards"
           value={parentOverview.totalWards}
@@ -93,23 +92,23 @@ const ParentDashboard = () => {
         {/* Placeholder - backend doesn't provide this */}
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Wards Overview
-          </h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>Wards Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {parentOverview.wards?.length > 0 ? (
               parentOverview.wards.map((ward) => (
-                <div key={ward._id} className="p-4 bg-gray-50 rounded-lg">
+                <Card key={ward._id} className="p-4 bg-muted">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h4 className="text-sm font-medium text-gray-900">
                         {ward.user?.firstName} {ward.user?.lastName}
                       </h4>
-                      <p className="text-sm text-gray-500">
+                      <CardDescription>
                         Admission: {ward.admissionNumber} | Class {ward.class?.name || "N/A"}
-                      </p>
+                      </CardDescription>
                     </div>
                     <Link
                       to={`/dashboard/students/${ward._id}`}
@@ -120,160 +119,150 @@ const ParentDashboard = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                      <p className="text-xs text-gray-500">Attendance</p>
+                      <CardDescription>Attendance</CardDescription>
                       <p className="text-sm font-medium text-green-600">
                         {ward.attendanceRate || 0}%
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Average Grade</p>
+                      <CardDescription>Average Grade</CardDescription>
                       <p className="text-sm font-medium text-blue-600">
                         {ward.averageGrade || 'N/A'}
                       </p>
                     </div>
                   </div>
+                </Card>
+              ))
+            ) : (
+              <CardDescription>No wards assigned</CardDescription>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Events</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stats.upcomingEvents?.length > 0 ? (
+              stats.upcomingEvents.map((event) => (
+                <div key={event._id} className="flex items-start space-x-3">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <CardDescription className="font-medium">
+                      {event.title}
+                    </CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(event.start).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-gray-500">No wards assigned</p>
+              <CardDescription>No upcoming events</CardDescription>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Grades</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stats.recentGrades && stats.recentGrades.length > 0 ? (
+              stats.recentGrades.map((grade) => (
+                <div key={grade._id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Award className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <CardDescription className="font-medium">
+                        {grade.exam?.title || 'Exam'}
+                      </CardDescription>
+                      <CardDescription className="text-sm text-muted-foreground">
+                        {grade.subject?.name || 'Subject'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <CardDescription className="text-sm font-bold text-gray-900">
+                      {grade.marksObtained}/{grade.totalMarks}
+                    </CardDescription>
+                    <CardDescription className="text-xs text-muted-foreground">
+                      {grade.grade || 'N/A'}
+                    </CardDescription>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <CardDescription>No recent grades</CardDescription>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activities</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {stats.activities?.length > 0 ? (
+              stats.activities.map((activity) => (
+                <div
+                  key={activity._id}
+                  className="flex items-start space-x-3"
+                >
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <CardDescription className="font-medium">
+                      {activity.description}
+                    </CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(activity.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <CardDescription>No recent activities</CardDescription>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Upcoming Events
-            </h3>
-            <div className="space-y-4">
-              {stats.upcomingEvents?.length > 0 ? (
-                stats.upcomingEvents.map((event) => (
-                  <div key={event._id} className="flex items-start space-x-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {event.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(event.start).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No upcoming events</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Recent Grades
-            </h3>
-            <div className="space-y-4">
-              {stats.recentGrades?.length > 0 ? (
-                stats.recentGrades.map((grade) => (
-                  <div key={grade._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Award className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {grade.exam?.title || 'Exam'}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {grade.subject?.name || 'Subject'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-gray-900">
-                        {grade.marksObtained}/{grade.totalMarks}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {grade.grade || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No recent grades</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Recent Activities
-            </h3>
-            <div className="space-y-4">
-              {stats.activities?.length > 0 ? (
-                stats.activities.map((activity) => (
-                  <div
-                    key={activity._id}
-                    className="flex items-start space-x-3"
-                  >
-                    <Clock className="h-5 w-5 text-gray-400" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {activity.description}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(activity.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No recent activities</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Quick Actions
-          </h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              to="/dashboard/messages"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5 mr-2" />
-              <span>Contact Teacher</span>
-            </Link>
-            <Link
-              to="/dashboard/attendance"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <CheckCircle className="w-5 h-5 mr-2" />
-              <span>View Attendance</span>
-            </Link>
-            <Link
-              to="/dashboard/grades"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <FileText className="w-5 h-5 mr-2" />
-              <span>View Grades</span>
-            </Link>
-            <Link
-              to="/dashboard/calendar"
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors"
-            >
-              <Calendar className="w-5 h-5 mr-2" />
-              <span>School Calendar</span>
-            </Link>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/messages">
+                <MessageCircle className="w-5 h-5 text-blue-500 mb-2" />
+                <CardDescription className="text-sm font-medium">Contact Teacher</CardDescription>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/attendance">
+                <CheckCircle className="w-5 h-5 text-green-500 mb-2" />
+                <CardDescription className="text-sm font-medium">View Attendance</CardDescription>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/grades">
+                <FileText className="w-5 h-5 text-orange-500 mb-2" />
+                <CardDescription className="text-sm font-medium">View Grades</CardDescription>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
+              <Link to="/dashboard/calendar">
+                <Calendar className="w-5 h-5 text-purple-500 mb-2" />
+                <CardDescription className="text-sm font-medium">School Calendar</CardDescription>
+              </Link>
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

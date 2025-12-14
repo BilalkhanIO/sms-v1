@@ -36,10 +36,8 @@ export const classesApi = api.injectEndpoints({
   }),
 });
 
-export const {
-  useGetClassesQuery,
-  useGetClassByIdQuery,
-  useCreateClassMutation,
-  useUpdateClassMutation,
-  useDeleteClassMutation,
-} = classesApi;
+export const useGetClassesQuery = classesApi.useGetClassesQuery;
+export const useGetClassByIdQuery = classesApi.useGetClassByIdQuery;
+export const useCreateClassMutation = classesApi.useCreateClassMutation;
+export const useUpdateClassMutation = classesApi.useUpdateClassMutation;
+export const useDeleteClassMutation = classesApi.useDeleteClassMutation;

@@ -12,15 +12,33 @@ const CreateTeacher = () => {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    subject: '',
+    employeeId: '',
+    qualification: '',
+    specialization: '',
+    address: '',
+    contactInfo: {
+      phone: '',
+    },
+    dateOfBirth: '', // Assuming ISO8601 string for date input type 'date'
+    salary: '',
   });
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
+    // Handle nested contactInfo
+    if (name.startsWith('contactInfo.')) {
+      const field = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        contactInfo: {
+          ...prev.contactInfo,
+          [field]: value,
+        },
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -77,23 +95,76 @@ const CreateTeacher = () => {
           error={errors.email}
           required
         />
-
+        
         <Input
-          label="Phone"
-          id="phone"
-          name="phone"
-          value={formData.phone}
+          label="Employee ID"
+          id="employeeId"
+          name="employeeId"
+          value={formData.employeeId}
           onChange={handleChange}
-          error={errors.phone}
+          error={errors.employeeId}
+          required
         />
 
         <Input
-          label="Subject"
-          id="subject"
-          name="subject"
-          value={formData.subject}
+          label="Qualification"
+          id="qualification"
+          name="qualification"
+          value={formData.qualification}
           onChange={handleChange}
-          error={errors.subject}
+          error={errors.qualification}
+          required
+        />
+
+        <Input
+          label="Specialization"
+          id="specialization"
+          name="specialization"
+          value={formData.specialization}
+          onChange={handleChange}
+          error={errors.specialization}
+          required
+        />
+
+        <Input
+          label="Address"
+          id="address"
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          error={errors.address}
+          required
+        />
+
+        <Input
+          label="Phone Number"
+          id="contactInfo.phone"
+          name="contactInfo.phone"
+          value={formData.contactInfo.phone}
+          onChange={handleChange}
+          error={errors['contactInfo.phone']} // Access error for nested field
+          required
+        />
+
+        <Input
+          label="Date of Birth"
+          type="date"
+          id="dateOfBirth"
+          name="dateOfBirth"
+          value={formData.dateOfBirth}
+          onChange={handleChange}
+          error={errors.dateOfBirth}
+          required
+        />
+
+        <Input
+          label="Salary"
+          type="number"
+          id="salary"
+          name="salary"
+          value={formData.salary}
+          onChange={handleChange}
+          error={errors.salary}
           required
         />
 

@@ -15,6 +15,11 @@ const examSchema = new Schema(
       enum: ["MIDTERM", "FINAL", "QUIZ", "ASSIGNMENT", "PRACTICAL"],
       required: true,
     },
+    school: { // New: Reference to the School model
+      type: Schema.Types.ObjectId,
+      ref: 'School',
+      required: true,
+    },
     class: {
       type: Schema.Types.ObjectId,
       ref: "Class",

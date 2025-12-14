@@ -8,6 +8,11 @@ const classSchema = new Schema(
     name: { type: String, required: true, trim: true },
     section: { type: String, required: true, trim: true },
     academicYear: { type: String, required: true },
+    school: { // New: Reference to the School model
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'School',
+      required: true,
+    },
     classTeacher: {
       type: Schema.Types.ObjectId,
       ref: "Teacher",

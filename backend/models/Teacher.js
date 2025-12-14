@@ -10,6 +10,11 @@ const teacherSchema = new Schema(
       ref: "User",
       required: true,
     },
+    school: { // New: Reference to the School model
+      type: Schema.Types.ObjectId,
+      ref: 'School',
+      required: true,
+    },
     employeeId: {
       type: String,
       required: true,

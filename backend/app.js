@@ -16,6 +16,8 @@ import calendarRoutes from "./routes/calendarRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import schoolRoutes from "./routes/schoolRoutes.js";
+import settingRoutes from "./routes/settingRoutes.js";
 
 const app = express();
 
@@ -57,6 +59,8 @@ app.use("/api/calendar", calendarRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/schools", schoolRoutes);
+app.use("/api/settings", settingRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

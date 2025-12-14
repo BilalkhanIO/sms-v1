@@ -827,4 +827,9 @@ export {
   updateExam,
   deleteExam,
   updateExamResult,
+  generateReportCard,
+  getExamsByClass,
+  getExamsBySubject,
+  getStudentExamResult,
+  submitResults,
 };

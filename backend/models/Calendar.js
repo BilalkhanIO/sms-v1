@@ -16,6 +16,12 @@ const eventSchema = new Schema(
       trim: true,
       maxlength: [500, "Description cannot exceed 500 characters"],
     },
+    schools: [ // New: Array of references to the School model
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'School',
+      },
+    ],
     start: {
       type: Date,
       required: [true, "Start date is required"],

@@ -1,152 +1,125 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { useGetSchoolsQuery } from '@/api/schoolsApi';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreVertical, Plus, Search } from 'lucide-react';
+import { useGetSchoolsQuery, useDeleteSchoolMutation } from '../../api/schoolsApi';
+import Button from '../../components/common/Button';
+import Spinner from '../../components/common/Spinner';
+import PageHeader from '../../components/common/PageHeader';
+import ErrorMessage from '../../components/common/ErrorMessage';
+import { Trash2, Eye, Edit } from 'lucide-react';
 
 const SchoolList = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const { data: schools, isLoading, isError, error } = useGetSchoolsQuery();
+  const [deleteSchool, { isLoading: isDeleting }] = useDeleteSchoolMutation();
 
-  const { data: schools = [], isLoading, error } = useGetSchoolsQuery();
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 flex justify-center items-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error.message || 'Failed to fetch schools. Please try again.'}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const getStatusBadgeClass = (status) => {
-    return status === 'active'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800';
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this school? This will also delete the associated admin user.')) {
+      try {
+        await deleteSchool(id).unwrap();
+      } catch (err) {
+        console.error('Failed to delete school:', err);
+        alert(`Failed to delete school: ${err.data?.message || err.error}`);
+      }
+    }
   };
 
+  if (isLoading) {
+    return <Spinner size="large" />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorMessage>
+        Error: {error.data?.message || error.error || 'Failed to load schools'}
+      </ErrorMessage>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-2xl font-bold">Schools</CardTitle>
-          <Link to="/dashboard/schools/create">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add School
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 flex justify-between items-center">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search schools..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-6">
+      <PageHeader title="Schools">
+        <Link to="/dashboard/schools/create">
+          <Button>Add School</Button>
+        </Link>
+      </PageHeader>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>School Name</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>Students</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {schools.map((school) => (
-                  <TableRow key={school.id}>
-                    <TableCell className="font-medium">{school.name}</TableCell>
-                    <TableCell>{school.location}</TableCell>
-                    <TableCell>{school.adminName}</TableCell>
-                    <TableCell>{school.studentCount}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                          school.status
-                        )}`}
-                      >
-                        {school.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Link to={`/dashboard/schools/${school.id}`}>
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Link to={`/dashboard/schools/edit/${school.id}`}>
-                              Edit School
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            Deactivate
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {schools.length} schools
-            </div>
-            <div className="space-x-2">
-              <Button variant="outline" size="sm">Previous</Button>
-              <Button variant="outline" size="sm">Next</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Address
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Contact Email
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Admin
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {(schools?.data || []).map((school) => (
+              <tr key={school._id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {school.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.address}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.contactInfo.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {school.admin ? `${school.admin.firstName} ${school.admin.lastName}` : 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      school.status === 'ACTIVE'
+                        ? 'bg-green-100 text-green-800'
+                        : school.status === 'PENDING_APPROVAL'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {school.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <Link
+                    to={`/dashboard/schools/${school._id}`}
+                    className="text-blue-600 hover:text-blue-900 mr-4"
+                  >
+                    <Eye size={18} />
+                  </Link>
+                  <Link
+                    to={`/dashboard/schools/${school._id}/edit`}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  >
+                    <Edit size={18} />
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(school._id)}
+                    className="text-red-600 hover:text-red-900"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
