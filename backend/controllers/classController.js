@@ -13,7 +13,10 @@ const getClasses = [
     protect, // Protect the route
     authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT'), // Allow admin, teachers and students
     asyncHandler(async (req, res) => {
-      let query = { school: req.schoolId };
+      let query = {};
+      if (req.schoolId) {
+        query.school = req.schoolId;
+      }
 
       if (req.user.role === 'TEACHER') {
           query = {
@@ -44,10 +47,11 @@ const getClassById = [
     authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT'),
     asyncHandler(async (req, res) => {
         const classId = req.params.id;
-        const classData = await ClassModel.findOne({
-        _id: classId,
-        school: req.schoolId,
-        })
+        const filter = { _id: classId };
+        if (req.schoolId) {
+          filter.school = req.schoolId;
+        }
+        const classData = await ClassModel.findOne(filter)
             .populate('classTeacher', 'firstName lastName')
             .populate('subjects', 'name code') // Populate the 'subject' field within the 'subjects' array
             .populate('students', 'firstName lastName admissionNumber');

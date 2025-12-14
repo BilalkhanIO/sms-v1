@@ -49,6 +49,7 @@ import SchoolList from "../pages/schools/SchoolList";
 import CreateSchool from "../pages/schools/CreateSchool";
 import UpdateSchool from "../pages/schools/UpdateSchool";
 import SchoolDetails from "../pages/schools/SchoolDetails";
+import SchoolDetailsDashboard from "../pages/schools/SchoolDetailsDashboard";
 import SystemSettings from "../pages/settings/SystemSettings";
 import ActivityLogsList from "../pages/activity-logs/ActivityLogsList";
 
@@ -87,7 +88,7 @@ const Router = () => {
 
         <Route path="schools" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolList /></PrivateRoute>} />
         <Route path="schools/create" element={<PrivateRoute roles={["SUPER_ADMIN"]}><CreateSchool /></PrivateRoute>} />
-        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolDetails /></PrivateRoute>} />
+        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
         <Route path="schools/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UpdateSchool /></PrivateRoute>} />
         <Route path="settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
         <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><ActivityLogsList /></PrivateRoute>} />

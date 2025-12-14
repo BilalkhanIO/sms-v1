@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useCreateUserMutation } from "../api/usersApi"; // Import RTK Query hook
+import { useGetSchoolsQuery } from "../api/schoolsApi";
 import { Formik, Form, Field, ErrorMessage } from "formik"; // Import Formik components
 import * as Yup from "yup";
 import InputField from "./forms/InputField";
@@ -21,10 +22,25 @@ const validationSchema = Yup.object().shape({
     .required("Password is required"),
   role: Yup.string()
     .oneOf(
-      ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"],
+      [
+        "SUPER_ADMIN",
+        "SCHOOL_ADMIN",
+        "MULTI_SCHOOL_ADMIN",
+        "TEACHER",
+        "STUDENT",
+        "PARENT",
+      ],
       "Invalid role"
     )
     .required("Role is required"),
+  managedSchools: Yup.array().when("role", {
+    is: "MULTI_SCHOOL_ADMIN",
+    then: () =>
+      Yup.array()
+        .min(1, "At least one school must be selected")
+        .required("Managed schools are required"),
+    otherwise: () => Yup.array().notRequired(),
+  }),
   status: Yup.string()
     .oneOf(
       [
@@ -55,6 +71,7 @@ const CreateUserForm = () => {
   const navigate = useNavigate();
   const [createUser, { isLoading, isSuccess, isError, error, reset }] =
     useCreateUserMutation(); // Use the RTK Query hook
+  const { data: schools } = useGetSchoolsQuery();
 
   // Initial form values
   const initialValues = {
@@ -73,6 +90,7 @@ const CreateUserForm = () => {
     gender: "", // Student
     dateOfBirth: "", // Student
     contactNumber: "", // Parent
+    managedSchools: [],
   };
 
   useEffect(() => {
@@ -209,6 +227,8 @@ const CreateUserForm = () => {
                   <option value="STUDENT">Student</option>
                   <option value="TEACHER">Teacher</option>
                   <option value="PARENT">Parent</option>
+                  <option value="SCHOOL_ADMIN">School Admin</option>
+                  <option value="MULTI_SCHOOL_ADMIN">Multi-School Admin</option>
                 </Field>
                 <ErrorMessage
                   name="role"
@@ -237,6 +257,31 @@ const CreateUserForm = () => {
                   className="text-red-500 text-xs italic"
                 />
               </div>
+
+              {values.role === "MULTI_SCHOOL_ADMIN" && (
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Managed Schools:
+                  </label>
+                  <Field
+                    as="select"
+                    name="managedSchools"
+                    multiple
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  >
+                    {schools?.data.map((school) => (
+                      <option key={school._id} value={school._id}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </Field>
+                  <ErrorMessage
+                    name="managedSchools"
+                    component="div"
+                    className="text-red-500 text-xs italic"
+                  />
+                </div>
+              )}
 
               {roleSpecificFields(values.role)}
 

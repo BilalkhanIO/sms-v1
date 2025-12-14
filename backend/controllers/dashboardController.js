@@ -386,7 +386,7 @@ const getUserRegistrationTrends = asyncHandler(async (req, res) => {
 });
 
 
-export { getDashboardStats, getSuperAdminStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends };
+export { getDashboardStats, getSuperAdminStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends, getSchoolDetails };
 
 const getSchoolAdminStats = async (schoolId) => {
   const [
@@ -449,3 +449,74 @@ const getSchoolAdminStats = async (schoolId) => {
     recentExams,
   };
 };
+
+const getSchoolDetails = asyncHandler(async (req, res) => {
+  const schoolId = req.params.schoolId;
+
+  const [
+    school,
+    totalStudents,
+    totalTeachers,
+    totalClasses,
+    activeUsers,
+    todayAttendance,
+    feeSummary,
+    recentExams,
+  ] = await Promise.all([
+    School.findById(schoolId),
+    Student.countDocuments({ school: schoolId }),
+    Teacher.countDocuments({ school: schoolId }),
+    ClassModel.countDocuments({ school: schoolId }),
+    User.countDocuments({ school: schoolId, status: "ACTIVE" }),
+    Attendance.aggregate([
+      {
+        $match: {
+          school: new mongoose.Types.ObjectId(schoolId),
+          date: {
+            $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            $lte: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
+    Fee.aggregate([
+      {
+        $match: { school: new mongoose.Types.ObjectId(schoolId) },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          totalPaid: { $sum: "$paidAmount" },
+          pending: { $sum: { $subtract: ["$amount", "$paidAmount"] } },
+        },
+      },
+    ]),
+    Exam.find({ school: schoolId, status: { $in: ["SCHEDULED", "UPCOMING"] } })
+      .sort("date")
+      .limit(5)
+      .populate("class subject")
+      .lean(),
+  ]);
+
+  if (!school) {
+    return errorResponse(res, "School not found", 404);
+  }
+
+  res.status(200).json({
+    school,
+    overview: {
+      totalStudents,
+      totalTeachers,
+      totalClasses,
+      activeUsers,
+      todayAttendance: todayAttendance.reduce(
+        (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
+        {}
+      ),
+      feeSummary: feeSummary[0] || { totalAmount: 0, totalPaid: 0, pending: 0 },
+    },
+    recentExams,
+  });
+});

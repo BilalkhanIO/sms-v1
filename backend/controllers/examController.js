@@ -241,7 +241,10 @@ const getExams = [
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
   asyncHandler(async (req, res) => {
-    let query = { school: req.schoolId };
+    let query = {};
+    if (req.schoolId) {
+      query.school = req.schoolId;
+    }
 
     // If the user is a teacher, only return exams they created or that are for their assigned classes/subjects
     if (req.user.role === "TEACHER") {

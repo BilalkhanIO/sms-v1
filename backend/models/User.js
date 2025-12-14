@@ -46,9 +46,22 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"],
+      enum: [
+        "SUPER_ADMIN",
+        "SCHOOL_ADMIN",
+        "MULTI_SCHOOL_ADMIN",
+        "TEACHER",
+        "STUDENT",
+        "PARENT",
+      ],
       default: "STUDENT",
     },
+    managedSchools: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "School",
+      },
+    ],
     status: {
       type: String,
       enum: [
