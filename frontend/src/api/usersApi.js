@@ -70,12 +70,17 @@ export const usersApi = api.injectEndpoints({
                 { type: 'Users', id },
             ],
         }),
+        getMyProfile: builder.query({
+            query: () => '/users/my-profile',
+            providesTags: ['Users'],
+        }),
     }),
 });
 
 export const {
     useGetUsersQuery,
     useGetUserByIdQuery,
+    useGetMyProfileQuery,
     useCreateUserMutation,
     useUpdateUserMutation,
     useDeleteUserMutation,

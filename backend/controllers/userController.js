@@ -643,4 +643,39 @@ export {
   updateUser,
   deleteUser,
   getUserById,
+  getMyProfile,
 };
+
+const getMyProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const user = await User.findById(userId).select("-password");
+
+  if (!user) {
+    return errorResponse(res, "User not found", 404);
+  }
+
+  let userData = { ...user.toObject() };
+
+  switch (user.role) {
+    case "TEACHER":
+      const teacherData = await Teacher.findOne({ user: userId })
+        .populate("assignedClasses", "name section")
+        .populate("assignedSubjects", "name code");
+      userData = { ...userData, teacherDetails: teacherData };
+      break;
+    case "STUDENT":
+      const studentData = await Student.findOne({ user: userId })
+        .populate("class", "name section");
+      userData = { ...userData, studentDetails: studentData };
+      break;
+    case "PARENT":
+      const parentData = await Parent.findOne({ user: userId })
+        .populate("wards", "firstName lastName");
+      userData = { ...userData, parentDetails: parentData };
+      break;
+    default:
+      break;
+  }
+
+  return successResponse(res, userData, "User profile retrieved successfully");
+});
