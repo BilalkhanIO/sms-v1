@@ -3,10 +3,15 @@ import { useGetSuperAdminStatsQuery, useGetUserRoleDistributionQuery } from '../
 import { useGetActivityLogsQuery } from '../../api/activityLogsApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
-import { ResponsiveContainer, PieChart, Pie, Tooltip } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Tooltip, Cell } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+const COLORS = ['#0049B7', '#00DDFF', '#ff1d58', '#f75990', '#fff685'];
 
 const SuperAdminDashboard = () => {
   const { data, isLoading, isError, error } = useGetSuperAdminStatsQuery();
+  const { data: userRoleDistribution } = useGetUserRoleDistributionQuery();
+  const { data: recentActivities } = useGetActivityLogsQuery({ limit: 5 });
 
   if (isLoading) {
     return <Spinner size="large" />;
@@ -25,48 +30,51 @@ const SuperAdminDashboard = () => {
     totalStudents,
     totalTeachers,
     totalClasses,
-    activeUsers,
-    todayAttendance,
-    feeSummary,
   } = data?.overview || {};
-
-  const {
-    totalSchools,
-    totalStudents,
-    totalTeachers,
-    totalClasses,
-    activeUsers,
-    todayAttendance,
-    feeSummary,
-  } = data?.overview || {};
-  const { data: userRoleDistribution } = useGetUserRoleDistributionQuery();
-  const { data: recentActivities } = useGetActivityLogsQuery({ limit: 5 });
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Super Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-4 text-brutal-blue">Super Admin Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-gray-600">Total Schools</h2>
-          <p className="text-3xl font-bold">{totalSchools}</p>
-        </div>
-        <div className="p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-gray-600">Total Students</h2>
-          <p className="text-3xl font-bold">{totalStudents}</p>
-        </div>
-        <div className="p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-gray-600">Total Teachers</h2>
-          <p className="text-3xl font-bold">{totalTeachers}</p>
-        </div>
-        <div className="p-4 bg-white rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-gray-600">Total Classes</h2>
-          <p className="text-3xl font-bold">{totalClasses}</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sister-sister">Total Schools</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{totalSchools}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sister-sister">Total Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{totalStudents}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sister-sister">Total Teachers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{totalTeachers}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sister-sister">Total Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{totalClasses}</p>
+          </CardContent>
+        </Card>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
-          <h2 className="text-xl font-bold mb-4">User Role Distribution</h2>
-          <div className="p-4 bg-white rounded-lg shadow h-80">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-brutal-blue">User Role Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -78,15 +86,21 @@ const SuperAdminDashboard = () => {
                   outerRadius={100}
                   fill="#8884d8"
                   label
-                />
+                >
+                  {userRoleDistribution?.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-        <div>
-          <h2 className="text-xl font-bold mb-4">Recent Activities</h2>
-          <div className="p-4 bg-white rounded-lg shadow">
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-brutal-blue">Recent Activities</CardTitle>
+          </CardHeader>
+          <CardContent>
             <ul>
               {recentActivities?.data.map((activity) => (
                 <li key={activity._id} className="border-b last:border-b-0 py-2">
@@ -97,8 +111,8 @@ const SuperAdminDashboard = () => {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

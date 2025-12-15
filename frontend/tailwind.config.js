@@ -46,6 +46,11 @@ export default {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+			'yass-queen': '#ff1d58',
+			'sister-sister': '#f75990',
+			'crown-yellow': '#fff685',
+			'blue-light': '#00DDFF',
+			'brutal-blue': '#0049B7',
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

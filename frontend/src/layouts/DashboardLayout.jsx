@@ -123,7 +123,7 @@ export default function DashboardLayout() {
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="flex flex-col">
+          <SheetContent side="left" className="flex flex-col bg-brutal-blue text-white">
             <nav className="grid gap-2 text-lg font-medium">
               <Link
                 to="/dashboard"
@@ -137,8 +137,8 @@ export default function DashboardLayout() {
                   key={link.to}
                   to={link.to}
                   className={cn(
-                    "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
-                    isActive(link.to) && "text-foreground bg-muted"
+                    "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-blue-light hover:text-white",
+                    isActive(link.to) && "text-white bg-blue-light"
                   )}
                   // The Sheet component itself handles closing when a link inside it is clicked
                 >
@@ -198,9 +198,9 @@ export default function DashboardLayout() {
       {/* Main Content Area with Sidebar */}
       <div className="flex flex-1">
         {/* Sidebar - Left (Desktop) */}
-        <aside className="hidden border-r bg-muted/40 md:block w-64">
+        <aside className="hidden border-r bg-brutal-blue text-white md:block w-64">
           <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <div className="flex h-14 items-center border-b border-blue-light px-4 lg:h-[60px] lg:px-6">
               <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
                 <Home className="h-6 w-6" />
                 <span className="">School Management</span>
@@ -213,8 +213,8 @@ export default function DashboardLayout() {
                     key={link.to}
                     to={link.to}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                      isActive(link.to) && "text-primary bg-muted"
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-blue-light transition-all hover:text-white",
+                      isActive(link.to) && "text-white bg-blue-light"
                     )}
                   >
                     <link.icon className="h-4 w-4" />
