@@ -29,16 +29,6 @@ const SuperAdminDashboard = () => {
     todayAttendance,
     feeSummary,
   } = data?.overview || {};
-
-  const {
-    totalSchools,
-    totalStudents,
-    totalTeachers,
-    totalClasses,
-    activeUsers,
-    todayAttendance,
-    feeSummary,
-  } = data?.overview || {};
   const { data: userRoleDistribution } = useGetUserRoleDistributionQuery();
   const { data: recentActivities } = useGetActivityLogsQuery({ limit: 5 });
 
