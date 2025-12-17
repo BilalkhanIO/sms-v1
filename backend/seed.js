@@ -1,7 +1,18 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const User = require('./models/User');
-require('dotenv').config({ path: './.env' });
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import User from './models/User.js';
+import School from './models/School.js';
+import Teacher from './models/Teacher.js';
+import Parent from './models/Parent.js';
+import Subject from './models/Subject.js';
+import Class from './models/Class.js';
+import Student from './models/Student.js';
+import Attendance from './models/Attendance.js';
+import Exam from './models/Exam.js';
+import Result from './models/Result.js';
+import Fee from './models/Fee.js';
+import Assignment from './models/Assignment.js';
+import connectDB from './config/db.js';
 
 const seedUsers = async () => {
   console.log("Seeding users...");
@@ -21,6 +32,14 @@ const seedUsers = async () => {
       password: await hashPassword("admin123"),
       role: "SCHOOL_ADMIN",
       status: "ACTIVE",
+    },
+    {
+        firstName: "MultiSchool",
+        lastName: "Admin",
+        email: "multischooladmin@school.com",
+        password: await hashPassword("admin123"),
+        role: "MULTI_SCHOOL_ADMIN",
+        status: "ACTIVE",
     },
   ];
 
@@ -65,7 +84,49 @@ const seedUsers = async () => {
   return createdUsers;
 };
 
-const seedTeachers = async (users) => {
+const hashPassword = async (password) => {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+};
+
+const seedSchools = async () => {
+    console.log("Seeding schools...");
+    const schools = [
+        {
+            name: "School A",
+            address: "123 Main St",
+            contactInfo: {
+                phone: "123-456-7890",
+                email: "schoola@test.com",
+            },
+            status: "ACTIVE",
+        },
+        {
+            name: "School B",
+            address: "456 Oak Ave",
+            contactInfo: {
+                phone: "098-765-4321",
+                email: "schoolb@test.com",
+            },
+            status: "ACTIVE",
+        },
+    ];
+
+    const createdSchools = await School.insertMany(schools);
+    console.log(`Created ${createdSchools.length} schools`);
+    return createdSchools;
+};
+
+const clearAllCollections = async () => {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+        const collection = collections[key];
+        await collection.deleteMany();
+    }
+    console.log("All collections cleared");
+};
+
+const seedTeachers = async (users, schools) => {
   console.log("Seeding teachers...");
   const teachers = [];
   const teacherUsers = users.filter(user => user.role === "TEACHER");
@@ -73,6 +134,7 @@ const seedTeachers = async (users) => {
   for (let i = 0; i < teacherUsers.length; i++) {
     teachers.push({
       user: teacherUsers[i]._id,
+      school: schools[i % schools.length]._id,
       employeeId: `EMP${2024}${i + 1}`,
       qualification: "Master's in Education",
       specialization: ["Mathematics", "Science", "English", "History", "Geography"][i],
@@ -136,7 +198,7 @@ const seedSubjects = async () => {
   return createdSubjects;
 };
 
-const seedClasses = async (teachers, subjects) => {
+const seedClasses = async (teachers, subjects, schools) => {
   console.log("Seeding classes...");
   const classes = [
     { name: "Class 6", section: "A", academicYear: "2024-2025" },
@@ -150,6 +212,7 @@ const seedClasses = async (teachers, subjects) => {
   for (let i = 0; i < classes.length; i++) {
     const classObj = {
       ...classes[i],
+      school: schools[i % schools.length]._id,
       classTeacher: teachers[i]._id,
       subjects: subjects.map(subject => subject._id),
       schedule: generateClassSchedule(teachers, subjects)
@@ -183,7 +246,7 @@ const generateClassSchedule = (teachers, subjects) => {
   return schedule;
 };
 
-const seedStudents = async (users, classes, parents) => {
+const seedStudents = async (users, classes, parents, schools) => {
   console.log("Seeding students...");
   const students = [];
   const studentUsers = users.filter(user => user.role === "STUDENT");
@@ -191,6 +254,7 @@ const seedStudents = async (users, classes, parents) => {
   for (let i = 0; i < studentUsers.length; i++) {
     students.push({
       user: studentUsers[i]._id,
+      school: schools[i % schools.length]._id,
       admissionNumber: `2024${String(i + 1).padStart(3, '0')}`,
       class: classes[i % classes.length]._id,
       rollNumber: String(i + 1).padStart(2, '0'),
@@ -258,6 +322,7 @@ const seedAttendance = async (students) => {
       const status = statuses[Math.floor(Math.random() * statuses.length)];
       attendance.push({
         student: student._id,
+        school: student.school,
         class: student.class,
         date,
         status,
@@ -286,6 +351,7 @@ const seedExamsAndResults = async (classes, subjects, students, users) => {
         const exam = await Exam.create({
           title: `${type} - ${subject.name}`,
           type,
+          school: cls.school,
           class: cls._id,
           subject: subject._id,
           date: new Date(),
@@ -329,6 +395,7 @@ const seedFees = async (students) => {
     for (const type of feeTypes) {
       fees.push({
         student: student._id,
+        school: student.school,
         amount: type === "TUITION" ? 5000 : 1000,
         type,
         dueDate: new Date(2024, 8, 30), // September 30, 2024
@@ -369,39 +436,35 @@ const seedAssignments = async (classes, subjects, teachers) => {
 };
 
 const seedDatabase = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    try {
+        await connectDB();
+        await clearAllCollections();
 
-    console.log("Connected to MongoDB");
+        const schools = await seedSchools();
+        const users = await seedUsers();
+        const multiSchoolAdmin = users.find(user => user.role === "MULTI_SCHOOL_ADMIN");
+        multiSchoolAdmin.managedSchools = schools.map(school => school._id);
+        await multiSchoolAdmin.save();
 
-    // Clear all existing data
-    await clearAllCollections();
+        const teachers = await seedTeachers(users, schools);
+        const parents = await seedParents(users);
+        const subjects = await seedSubjects();
+        const classes = await seedClasses(teachers, subjects, schools);
+        const students = await seedStudents(users, classes, parents, schools);
 
-    // Seed data in order of dependencies
-    const users = await seedUsers();
-    const teachers = await seedTeachers(users);
-    const parents = await seedParents(users);
-    const subjects = await seedSubjects();
-    const classes = await seedClasses(teachers, subjects);
-    const students = await seedStudents(users, classes, parents);
-    
-    // Seed related data
-    await Promise.all([
-      seedAttendance(students),
-      seedExamsAndResults(classes, subjects, students, users),
-      seedFees(students),
-      seedAssignments(classes, subjects, teachers)
-    ]);
+        await Promise.all([
+            seedAttendance(students),
+            seedExamsAndResults(classes, subjects, students, users),
+            seedFees(students),
+            seedAssignments(classes, subjects, teachers)
+        ]);
 
-    console.log("Database seeded successfully!");
-    process.exit(0);
-  } catch (error) {
-    console.error("Error seeding database:", error);
-    process.exit(1);
-  }
+        console.log("Database seeded successfully!");
+        process.exit(0);
+    } catch (error) {
+        console.error("Error seeding database:", error);
+        process.exit(1);
+    }
 };
 
 seedDatabase();
