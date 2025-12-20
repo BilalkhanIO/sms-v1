@@ -547,12 +547,14 @@ const getUserById = [
       return errorResponse(res, "User not found", 404);
     }
 
-    // Authorization check: Admin or the user themselves
-    if (
-      req.user.role !== "SUPER_ADMIN" &&
-      req.user.role !== "SCHOOL_ADMIN" &&
-      req.user._id.toString() !== userId
-    ) {
+    // Authorization check:
+    const isOwner = req.user._id.toString() === userId;
+    const isSuperAdmin = req.user.role === "SUPER_ADMIN";
+    const isSchoolAdminInSameSchool =
+      req.user.role === "SCHOOL_ADMIN" &&
+      user.school?.toString() === req.user.school?.toString();
+
+    if (!isOwner && !isSuperAdmin && !isSchoolAdminInSameSchool) {
       return errorResponse(
         res,
         "Not authorized to access this user's data",

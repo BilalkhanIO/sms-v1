@@ -25,7 +25,7 @@ import {
 const SystemSettings = () => {
   const { data: settings, isLoading, isError, error, refetch } = useGetSettingsQuery();
   const [updateSetting, { isLoading: isUpdating }] = useUpdateSettingByNameMutation();
-  const [createSetting, { isLoading: isCreating }] = useCreateSettingByNameMutation();
+  const [createSetting, { isLoading: isCreating }] = useCreateSettingMutation();
   const [deleteSetting, { isLoading: isDeleting }] = useDeleteSettingByNameMutation();
 
   const [localSettings, setLocalSettings] = useState([]);
