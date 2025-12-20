@@ -147,11 +147,19 @@ const getSchoolById = [
       return errorResponse(res, 'You are not authorized to view this school', 403);
     }
 
-    const school = await School.findById(schoolId).populate('admin', 'firstName lastName email');
+    const school = await School.findById(schoolId).populate('admin', 'firstName lastName email').lean();
     if (!school) {
       return errorResponse(res, 'School not found', 404);
     }
-    return successResponse(res, school, 'School retrieved successfully');
+
+    // Aggregation for overview data
+    const overview = {
+      students: await User.countDocuments({ school: schoolId, role: 'STUDENT' }),
+      teachers: await User.countDocuments({ school: schoolId, role: 'TEACHER' }),
+      classes: await mongoose.model('Class').countDocuments({ school: schoolId }),
+    };
+
+    return successResponse(res, { school, overview }, 'School retrieved successfully');
   })
 ];
 
