@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import { useLogoutMutation } from "../api/authApi";
+import { Toaster } from "@/components/ui/toaster";
 import {
   Menu,
   User,
@@ -106,9 +107,14 @@ export default function DashboardLayout() {
     navLinks.push({ to: "/dashboard/parent-dashboard", label: "Parent Dashboard", icon: Home });
     // Add other parent-specific links like wards' progress, communication
   }
+  // Multi-School Admin specific links
+  if (user?.role === "MULTI_SCHOOL_ADMIN") {
+    navLinks.push({ to: "/dashboard", label: "Dashboard", icon: Home });
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
+      <Toaster />
       {/* Navbar - Top */}
       <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
         {/* Mobile sidebar trigger */}
