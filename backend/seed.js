@@ -13,6 +13,9 @@ import Result from './models/Result.js';
 import Fee from './models/Fee.js';
 import Assignment from './models/Assignment.js';
 import connectDB from './config/db.js';
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(process.cwd(), 'backend', '.env') });
 
 const seedUsers = async () => {
   console.log("Seeding users...");
