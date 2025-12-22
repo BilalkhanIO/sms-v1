@@ -123,31 +123,65 @@ const createSchool = [
 
 // @desc    Get all schools
 // @route   GET /api/schools
-// @access  Private/SuperAdmin
+// @access  Private/SuperAdmin or MultiSchoolAdmin
 const getSchools = [
   protect,
-  authorize('SUPER_ADMIN'),
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const schools = await School.find().populate('admin', 'firstName lastName email');
-    return successResponse(res, schools, 'Schools retrieved successfully');
-  })
+    let query = {};
+
+    // If the user is a multi-school admin, filter by their managed schools
+    if (req.user.role === "MULTI_SCHOOL_ADMIN") {
+      query = { _id: { $in: req.user.managedSchools } };
+    }
+
+    const schools = await School.find(query).populate(
+      "admin",
+      "firstName lastName email"
+    );
+    return successResponse(res, schools, "Schools retrieved successfully");
+  }),
 ];
 
 // @desc    Get school by ID
 // @route   GET /api/schools/:id
-// @access  Private/SuperAdmin or SchoolAdmin
+// @access  Private/SuperAdmin, MultiSchoolAdmin, or SchoolAdmin
 const getSchoolById = [
   protect,
-  authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
     const schoolId = req.params.id;
 
     // School Admins can only view their own school
-    if (req.user.role === 'SCHOOL_ADMIN' && req.user.school.toString() !== schoolId) {
-      return errorResponse(res, 'You are not authorized to view this school', 403);
+    if (
+      req.user.role === "SCHOOL_ADMIN" &&
+      req.user.school.toString() !== schoolId
+    ) {
+      return errorResponse(
+        res,
+        "You are not authorized to view this school",
+        403
+      );
     }
 
-    const school = await School.findById(schoolId).populate('admin', 'firstName lastName email');
+    // Multi-School Admins can only view schools they manage
+    if (req.user.role === "MULTI_SCHOOL_ADMIN") {
+      const isManaged = req.user.managedSchools.some(
+        (managedSchoolId) => managedSchoolId.toString() === schoolId
+      );
+      if (!isManaged) {
+        return errorResponse(
+          res,
+          "You are not authorized to view this school",
+          403
+        );
+      }
+    }
+
+    const school = await School.findById(schoolId).populate(
+      "admin",
+      "firstName lastName email"
+    );
     if (!school) {
       return errorResponse(res, 'School not found', 404);
     }

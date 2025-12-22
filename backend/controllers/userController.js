@@ -65,7 +65,7 @@ const updateUserTypeData = async (role, userId, userData, session) => {
 // @access     Private/Admin
 const getUsers = [
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
     const { role, status, search } = req.query;
 
@@ -199,10 +199,16 @@ const updateUserProfile = [
 // @access      Private/Admin
 const updateUserRole = [
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
-  // Validate role
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   body("role")
-    .isIn(["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"])
+    .isIn([
+      "SUPER_ADMIN",
+      "SCHOOL_ADMIN",
+      "MULTI_SCHOOL_ADMIN",
+      "TEACHER",
+      "STUDENT",
+      "PARENT",
+    ])
     .withMessage("Invalid role"),
 
   asyncHandler(async (req, res) => {
@@ -211,14 +217,38 @@ const updateUserRole = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
     const { role } = req.body;
-    const user = await User.findById(req.params.id);
+    const userToUpdate = await User.findById(req.params.id);
 
-    if (!user) {
+    if (!userToUpdate) {
       return errorResponse(res, "User not found", 404);
     }
 
-    user.role = role;
-    const updatedUser = await user.save();
+    // MULTI_SCHOOL_ADMIN can only manage roles within their managed schools
+    if (req.user.role === "MULTI_SCHOOL_ADMIN") {
+      const isManaged = req.user.managedSchools.some(
+        (managedSchoolId) =>
+          userToUpdate.school &&
+          userToUpdate.school.toString() === managedSchoolId.toString()
+      );
+      if (!isManaged) {
+        return errorResponse(
+          res,
+          "You can only manage users in your managed schools",
+          403
+        );
+      }
+      // Prevent MULTI_SCHOOL_ADMIN from creating SUPER_ADMIN or MULTI_SCHOOL_ADMIN
+      if (role === "SUPER_ADMIN" || role === "MULTI_SCHOOL_ADMIN") {
+        return errorResponse(
+          res,
+          "You are not authorized to assign this role",
+          403
+        );
+      }
+    }
+
+    userToUpdate.role = role;
+    const updatedUser = await userToUpdate.save();
 
     // Log activity
     await Activity.logActivity({
@@ -547,11 +577,26 @@ const getUserById = [
       return errorResponse(res, "User not found", 404);
     }
 
-    // Authorization check: Admin or the user themselves
+    // Authorization check
+    const isOwner = req.user._id.toString() === userId;
+    const isSuperAdmin = req.user.role === "SUPER_ADMIN";
+    const isSchoolAdminInSameSchool =
+      req.user.role === "SCHOOL_ADMIN" &&
+      user.school &&
+      user.school.toString() === req.user.school.toString();
+    const isMultiSchoolAdminManagingUserSchool =
+      req.user.role === "MULTI_SCHOOL_ADMIN" &&
+      user.school &&
+      req.user.managedSchools.some(
+        (managedSchoolId) =>
+          managedSchoolId.toString() === user.school.toString()
+      );
+
     if (
-      req.user.role !== "SUPER_ADMIN" &&
-      req.user.role !== "SCHOOL_ADMIN" &&
-      req.user._id.toString() !== userId
+      !isOwner &&
+      !isSuperAdmin &&
+      !isSchoolAdminInSameSchool &&
+      !isMultiSchoolAdminManagingUserSchool
     ) {
       return errorResponse(
         res,

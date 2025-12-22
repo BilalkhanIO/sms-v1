@@ -19,7 +19,7 @@ import { setSchoolId } from "../middleware/schoolMiddleware.js";
 router.get(
   "/",
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   setSchoolId,
   getUsers
 );
@@ -34,7 +34,7 @@ router.put("/profile", protect, updateUserProfile);
 router.put(
   "/:id/role",
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   updateUserRole
 );
 
@@ -42,18 +42,23 @@ router.put(
 router.put(
   "/:id/status",
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   updateUserStatus
 );
 
 // POST /api/users - Create a new user (Admin only)
-router.post("/", protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createUser);
+router.post(
+  "/",
+  protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
+  createUser
+);
 
 // DELETE /api/users/:id - Delete a user (Admin only)
 router.delete(
   "/:id",
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   deleteUser
 );
 
@@ -64,7 +69,7 @@ router.get("/:id", protect, getUserById); // Authorization handled within contro
 router.put(
   "/:id",
   protect,
-  authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   updateUser
 );
 
