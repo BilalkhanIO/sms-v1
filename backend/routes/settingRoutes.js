@@ -11,7 +11,7 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 // Private routes (Super Admin only)
-router.route('/').post(createSetting).get(getSettings);
-router.route('/:settingName').get(getSettingByName).put(updateSettingByName).delete(deleteSettingByName);
+router.route('/').post(protect, authorize('SUPER_ADMIN'), createSetting).get(protect, authorize('SUPER_ADMIN'), getSettings);
+router.route('/:settingName').get(protect, authorize('SUPER_ADMIN'), getSettingByName).put(protect, authorize('SUPER_ADMIN'), updateSettingByName).delete(protect, authorize('SUPER_ADMIN'), deleteSettingByName);
 
 export default router;
