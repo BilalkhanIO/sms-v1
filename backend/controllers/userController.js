@@ -11,6 +11,7 @@ import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import cloudinary from "../utils/cloudinary.js"; // Import Cloudinary
 import upload from "../utils/multer.js"; // Import Multer
 import mongoose from "mongoose";
+import School from "../models/School.js";
 
 // Helper function to create specific user type data
 const createUserTypeData = async (role, userId, userData, session) => {
@@ -633,6 +634,71 @@ const updateUserStatus = [
   }),
 ];
 
+// @desc    Assign a School Admin to a school
+// @route   PUT /api/users/:userId/assign-school/:schoolId
+// @access  Private/SuperAdmin or MultiSchoolAdmin
+const assignSchoolAdmin = [
+  protect,
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const { userId, schoolId } = req.params;
+
+    // Verify the user exists and is a potential admin
+    const user = await User.findById(userId);
+    if (!user) {
+      return errorResponse(res, "User not found", 404);
+    }
+    if (user.role !== "SCHOOL_ADMIN") {
+      return errorResponse(res, "User is not a School Admin", 400);
+    }
+
+    // Verify the school exists
+    const school = await School.findById(schoolId);
+    if (!school) {
+      return errorResponse(res, "School not found", 404);
+    }
+
+    // If the logged-in user is a Multi-School Admin,
+    // ensure they manage this school
+    if (
+      req.user.role === "MULTI_SCHOOL_ADMIN" &&
+      !req.user.managedSchools.includes(schoolId)
+    ) {
+      return errorResponse(
+        res,
+        "You are not authorized to manage this school",
+        403
+      );
+    }
+
+    // Assign the user to the school
+    user.school = schoolId;
+    await user.save();
+
+    // Optionally, update the school's admin field
+    school.admin = userId;
+    await school.save();
+
+    // Log activity
+    await Activity.logActivity({
+      userId: req.user._id,
+      type: "ASSIGN_SCHOOL_ADMIN",
+      description: `Assigned ${user.firstName} ${user.lastName} as admin for ${school.name}`,
+      context: "user-management",
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+
+    return successResponse(
+      res,
+      { user, school },
+      "School Admin assigned successfully"
+    );
+  }),
+];
+
+
 export {
   getUsers,
   getProfile,
@@ -643,4 +709,5 @@ export {
   updateUser,
   deleteUser,
   getUserById,
+  assignSchoolAdmin,
 };
