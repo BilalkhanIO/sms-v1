@@ -12,13 +12,14 @@ const router = express.Router();
 
 // Private routes (Super Admin only)
 router
-  .route('/')
-  .post(protect, authorize('SUPER_ADMIN'), createSchool)
-  .get(protect, authorize('SUPER_ADMIN'), getSchools);
+  .route("/")
+  .post(protect, authorize("SUPER_ADMIN"), createSchool)
+  .get(protect, authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"), getSchools);
+
 router
-  .route('/:id')
-  .get(protect, authorize('SUPER_ADMIN'), getSchoolById)
-  .put(protect, authorize('SUPER_ADMIN'), updateSchool)
-  .delete(protect, authorize('SUPER_ADMIN'), deleteSchool);
+  .route("/:id")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"), getSchoolById)
+  .put(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"), updateSchool)
+  .delete(protect, authorize("SUPER_ADMIN"), deleteSchool);
 
 export default router;

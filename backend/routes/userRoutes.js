@@ -11,6 +11,7 @@ import {
   getUserById,
   updateUser,
   updateUserStatus,
+  assignSchoolAdmin,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { setSchoolId } from "../middleware/schoolMiddleware.js";
@@ -67,5 +68,14 @@ router.put(
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   updateUser
 );
+
+// Assign School Admin route
+router.put(
+  "/:userId/assign-school/:schoolId",
+  protect,
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"),
+  assignSchoolAdmin
+);
+
 
 export default router;

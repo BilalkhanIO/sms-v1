@@ -70,6 +70,13 @@ export const usersApi = api.injectEndpoints({
                 { type: 'Users', id },
             ],
         }),
+        assignSchoolAdmin: builder.mutation({
+            query: ({ userId, schoolId }) => ({
+                url: `/users/${userId}/assign-school/${schoolId}`,
+                method: 'PUT',
+            }),
+            invalidatesTags: ['Users', 'Schools'],
+        }),
     }),
 });
 
@@ -83,4 +90,5 @@ export const {
     useUpdateUserProfileMutation,
     useUpdateUserRoleMutation,
     useUpdateUserStatusMutation,
+    useAssignSchoolAdminMutation,
 } = usersApi;
