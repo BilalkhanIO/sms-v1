@@ -6,7 +6,6 @@ import AdminDashboard from "../../components/dashboard/AdminDashboard";
 import TeacherDashboard from "../../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../../components/dashboard/StudentDashboard";
 import ParentDashboard from "../../components/dashboard/ParentDashboard";
-import MultiSchoolAdminDashboard from "../../components/dashboard/MultiSchoolAdminDashboard";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -29,8 +28,6 @@ const Dashboard = () => {
         return <StudentDashboard />;
       case "PARENT":
         return <ParentDashboard />;
-      case "MULTI_SCHOOL_ADMIN":
-        return <MultiSchoolAdminDashboard />;
       default:
         return (
           <div className="text-center text-red-600">

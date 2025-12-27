@@ -107,6 +107,11 @@ export default function DashboardLayout() {
     // Add other parent-specific links like wards' progress, communication
   }
 
+  // Multi-School Admin specific links
+  if (user?.role === "MULTI_SCHOOL_ADMIN") {
+    navLinks.push({ to: "/dashboard/multi-school-dashboard", label: "Admin Dashboard", icon: Home });
+  }
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       {/* Navbar - Top */}
