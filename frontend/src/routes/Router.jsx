@@ -15,6 +15,7 @@ import ResetPassword from "../pages/auth/ResetPassword";
 
 // Dashboard Components
 import Dashboard from "../pages/dashboard/Dashboard";
+import MultiSchoolDashboard from "../pages/dashboard/MultiSchoolDashboard";
 import SuperAdminDashboard from "../components/dashboard/SuperAdminDashboard";
 import AdminDashboard from "../components/dashboard/AdminDashboard";
 import TeacherDashboard from "../components/dashboard/TeacherDashboard";
@@ -65,6 +66,7 @@ const Router = () => {
       <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
         <Route index element={<Dashboard />} /> {/* Default route for /dashboard */}
         <Route path="profile" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
+        <Route path="multi-school-dashboard" element={<PrivateRoute roles={["MULTI_SCHOOL_ADMIN"]}><MultiSchoolDashboard /></PrivateRoute>} />
         <Route path="admin-dashboard" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><AdminDashboard /></PrivateRoute>} />
         <Route path="teacher-dashboard" element={<PrivateRoute roles={["TEACHER"]}><TeacherDashboard /></PrivateRoute>} />
         <Route path="student-dashboard" element={<PrivateRoute roles={["STUDENT"]}><StudentDashboard /></PrivateRoute>} />
