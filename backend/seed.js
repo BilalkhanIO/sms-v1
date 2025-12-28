@@ -12,7 +12,47 @@ import Exam from './models/Exam.js';
 import Result from './models/Result.js';
 import Fee from './models/Fee.js';
 import Assignment from './models/Assignment.js';
+import SuperAdminPage from './models/SuperAdminPage.js';
 import connectDB from './config/db.js';
+
+const seedSuperAdminPages = async () => {
+  console.log("Seeding super admin pages...");
+  const pages = [
+    {
+      name: "Dashboard",
+      path: "/dashboard/admin",
+      icon: "LayoutDashboard",
+    },
+    {
+      name: "User Management",
+      path: "/dashboard/admin/user-management",
+      icon: "Users",
+    },
+    {
+      name: "System Settings",
+      path: "/dashboard/admin/system-settings",
+      icon: "Settings",
+    },
+    {
+      name: "Reports",
+      path: "/dashboard/admin/reports",
+      icon: "BarChart",
+    },
+    {
+      name: "Audit Logs",
+      path: "/dashboard/admin/audit-logs",
+      icon: "FileText",
+    },
+    {
+      name: "Backup Management",
+      path: "/dashboard/admin/backup-management",
+      icon: "DatabaseBackup",
+    },
+  ];
+
+  await SuperAdminPage.insertMany(pages);
+  console.log(`Created ${pages.length} super admin pages`);
+};
 
 const seedUsers = async () => {
   console.log("Seeding users...");
@@ -440,6 +480,7 @@ const seedDatabase = async () => {
         await connectDB();
         await clearAllCollections();
 
+        await seedSuperAdminPages();
         const schools = await seedSchools();
         const users = await seedUsers();
         const multiSchoolAdmin = users.find(user => user.role === "MULTI_SCHOOL_ADMIN");
