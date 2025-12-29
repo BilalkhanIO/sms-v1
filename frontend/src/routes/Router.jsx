@@ -53,6 +53,13 @@ import SchoolDetailsDashboard from "../pages/schools/SchoolDetailsDashboard";
 import SystemSettings from "../pages/settings/SystemSettings";
 import ActivityLogsList from "../pages/activity-logs/ActivityLogsList";
 
+// Super Admin Pages
+import UserManagement from "../pages/admin/UserManagement";
+import AdminSystemSettings from "../pages/admin/SystemSettings";
+import Reports from "../pages/admin/Reports";
+import AuditLogs from "../pages/admin/AuditLogs";
+import BackupManagement from "../pages/admin/BackupManagement";
+
 const Router = () => {
   return (
     <Routes>
@@ -92,6 +99,11 @@ const Router = () => {
         <Route path="schools/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UpdateSchool /></PrivateRoute>} />
         <Route path="settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
         <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><ActivityLogsList /></PrivateRoute>} />
+        <Route path="admin/user-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UserManagement /></PrivateRoute>} />
+        <Route path="admin/system-settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AdminSystemSettings /></PrivateRoute>} />
+        <Route path="admin/reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
+        <Route path="admin/audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
+        <Route path="admin/backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

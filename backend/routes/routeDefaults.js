@@ -1,6 +1,7 @@
-// routes/routeDefaults.js  (Generally good, but direct usage often clearer)
+// routes/routeDefaults.js
 import express from 'express';
 import { protect, authorize } from '../middleware/authMiddleware.js';
+import { getSuperAdminPages } from "../controllers/defaultController.js";
 
 // Standard route creation with role-based protection (Less frequently used now)
 export const createProtectedRoute = (roles = []) => {
@@ -15,3 +16,14 @@ export const createProtectedRoute = (roles = []) => {
 
 // Standard admin roles for easy reference
 export const ADMIN_ROLES = ["SUPER_ADMIN", "SCHOOL_ADMIN"];
+
+const router = express.Router();
+
+router.get(
+  "/super-admin-pages",
+  protect,
+  authorize("SUPER_ADMIN"),
+  getSuperAdminPages
+);
+
+export default router;
