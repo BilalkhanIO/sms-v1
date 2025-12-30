@@ -13,6 +13,10 @@ const SuperAdminPageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  component: {
+    type: String,
+    required: true,
+  },
 });
 
 const SuperAdminPage = mongoose.model("SuperAdminPage", SuperAdminPageSchema);

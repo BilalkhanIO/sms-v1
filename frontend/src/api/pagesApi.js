@@ -6,7 +6,11 @@ export const pagesApi = api.injectEndpoints({
       query: () => "/defaults/super-admin-pages",
       providesTags: ["Pages"],
     }),
+    getAvailableSuperAdminPages: builder.query({
+        query: () => "/defaults/available-super-admin-pages",
+        providesTags: ["Pages"],
+    }),
   }),
 });
 
-export const { useGetSuperAdminPagesQuery } = pagesApi;
+export const { useGetSuperAdminPagesQuery, useGetAvailableSuperAdminPagesQuery } = pagesApi;
