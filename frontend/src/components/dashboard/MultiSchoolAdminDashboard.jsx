@@ -1,5 +1,5 @@
 import React from 'react';
-import { useGetSchoolsQuery } from '../../api/schoolApi';
+import { useGetSchoolsQuery } from '../../api/schoolsApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import SchoolList from '../../pages/schools/SchoolList';

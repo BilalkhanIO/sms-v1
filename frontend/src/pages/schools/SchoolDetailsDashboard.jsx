@@ -1,14 +1,14 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetSchoolDetailsQuery } from '../../api/dashboardApi';
+import { useGetSchoolByIdQuery } from '../../api/schoolsApi';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 
 const SchoolDetailsDashboard = () => {
-  const { schoolId } = useParams();
-  const { data, isLoading, isError, error } = useGetSchoolDetailsQuery(schoolId);
+  const { id: schoolId } = useParams();
+  const { data: schoolData, isLoading, isError, error } = useGetSchoolByIdQuery(schoolId);
 
   if (isLoading) {
     return <Spinner size="large" />;
@@ -22,7 +22,7 @@ const SchoolDetailsDashboard = () => {
     );
   }
 
-  const { school, overview } = data || {};
+  const { school, overview } = schoolData?.data || {};
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -33,7 +33,7 @@ const SchoolDetailsDashboard = () => {
             <CardTitle>Total Students</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{overview?.totalStudents}</p>
+            <p className="text-3xl font-bold">{overview?.students}</p>
           </CardContent>
         </Card>
         <Card>
@@ -41,7 +41,7 @@ const SchoolDetailsDashboard = () => {
             <CardTitle>Total Teachers</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{overview?.totalTeachers}</p>
+            <p className="text-3xl font-bold">{overview?.teachers}</p>
           </CardContent>
         </Card>
         <Card>
@@ -49,18 +49,19 @@ const SchoolDetailsDashboard = () => {
             <CardTitle>Total Classes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{overview?.totalClasses}</p>
+            <p className="text-3xl font-bold">{overview?.classes}</p>
           </CardContent>
         </Card>
-        <Card>
+         <Card>
           <CardHeader>
-            <CardTitle>Active Users</CardTitle>
+            <CardTitle>School Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{overview?.activeUsers}</p>
+            <p className="text-3xl font-bold">{school?.status}</p>
           </CardContent>
         </Card>
       </div>
+      {/* TODO: Add more detailed components for users, classes, etc. */}
     </div>
   );
 };
