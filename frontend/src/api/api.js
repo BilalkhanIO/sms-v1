@@ -18,6 +18,7 @@ export const api = createApi({
     "Fees",
     "Exams",
     "Dashboard",
+    "Pages",
   ],
 });
 
