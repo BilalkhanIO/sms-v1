@@ -1,12 +1,36 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useGetSuperAdminStatsQuery, useGetUserRoleDistributionQuery } from '../../api/dashboardApi';
 import { useGetActivityLogsQuery } from '../../api/activityLogsApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { ResponsiveContainer, PieChart, Pie, Tooltip } from 'recharts';
 
+// Import Super Admin Pages
+import UserManagement from '../../pages/admin/UserManagement';
+import SystemSettings from '../../pages/admin/SystemSettings';
+import Reports from '../../pages/admin/Reports';
+import AuditLogs from '../../pages/admin/AuditLogs';
+import BackupManagement from '../../pages/admin/BackupManagement';
+import SchoolList from '../../pages/schools/SchoolList';
+
+const pageComponents = {
+  '/dashboard/admin/user-management': UserManagement,
+  '/dashboard/admin/system-settings': SystemSettings,
+  '/dashboard/admin/reports': Reports,
+  '/dashboard/admin/audit-logs': AuditLogs,
+  '/dashboard/admin/backup-management': BackupManagement,
+  '/dashboard/schools': SchoolList,
+};
+
 const SuperAdminDashboard = () => {
+  const location = useLocation();
   const { data, isLoading, isError, error } = useGetSuperAdminStatsQuery();
+
+  const renderPage = () => {
+    const PageComponent = pageComponents[location.pathname];
+    return PageComponent ? <PageComponent /> : <DashboardStats data={data} />;
+  };
 
   if (isLoading) {
     return <Spinner size="large" />;
@@ -20,14 +44,15 @@ const SuperAdminDashboard = () => {
     );
   }
 
+  return <div>{renderPage()}</div>;
+};
+
+const DashboardStats = ({ data }) => {
   const {
     totalSchools,
     totalStudents,
     totalTeachers,
     totalClasses,
-    activeUsers,
-    todayAttendance,
-    feeSummary,
   } = data?.overview || {};
   const { data: userRoleDistribution } = useGetUserRoleDistributionQuery();
   const { data: recentActivities } = useGetActivityLogsQuery({ limit: 5 });
@@ -91,7 +116,7 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default SuperAdminDashboard;

@@ -58,15 +58,6 @@ export default function DashboardLayout() {
   // Common links for all authenticated users
   navLinks.push({ to: "/dashboard", label: "Dashboard", icon: "Home" });
 
-  // Super Admin specific links
-  if (user?.role === "SUPER_ADMIN") {
-    if (superAdminPages) {
-      superAdminPages.forEach((page) => {
-        navLinks.push({ to: page.path, label: page.name, icon: page.icon });
-      });
-    }
-  }
-
   // School Admin specific links
   if (user?.role === "SCHOOL_ADMIN") {
     navLinks.push({
@@ -96,6 +87,52 @@ export default function DashboardLayout() {
       icon: "FileText",
     });
   }
+
+  const renderNavLinks = (isMobile = false) => {
+    if (user?.role === "SUPER_ADMIN") {
+      if (pagesIsLoading) return <Spinner />;
+      if (pagesError) return <div className="text-red-500">Failed to load pages</div>;
+      return (
+        <>
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={cn(
+                isMobile
+                  ? "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                  : "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive(link.to) &&
+                  (isMobile ? "text-foreground bg-muted" : "text-primary bg-muted")
+              )}
+            >
+              <div className={isMobile ? "h-5 w-5" : "h-4 w-4"}>
+                {getIcon(link.icon)}
+              </div>
+              {link.label}
+            </Link>
+          ))}
+          {superAdminPages.map((page) => (
+            <Link
+              key={page.path}
+              to={page.path}
+              className={cn(
+                isMobile
+                  ? "mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                  : "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive(page.path) &&
+                  (isMobile ? "text-foreground bg-muted" : "text-primary bg-muted")
+              )}
+            >
+              <div className={isMobile ? "h-5 w-5" : "h-4 w-4"}>
+                {getIcon(page.icon)}
+              </div>
+              {page.name}
+            </Link>
+          ))}
+        </>
+      );
+    }
 
   // Teacher specific links
   if (user?.role === "TEACHER") {
@@ -134,13 +171,6 @@ export default function DashboardLayout() {
     });
   }
 
-  const renderNavLinks = (isMobile = false) => {
-    if (user?.role === "SUPER_ADMIN" && pagesIsLoading) {
-      return <Spinner />;
-    }
-    if (user?.role === "SUPER_ADMIN" && pagesError) {
-      return <div className="text-red-500">Failed to load pages</div>;
-    }
     return navLinks.map((link) => (
       <Link
         key={link.to}
