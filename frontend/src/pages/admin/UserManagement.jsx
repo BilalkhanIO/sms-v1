@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useGetUsersQuery, useUpdateUserMutation, useDeleteUserMutation } from '../../api/usersApi';
+import { useSelector } from 'react-redux';
+import { useGetAllUsersQuery, useGetUsersQuery, useUpdateUserMutation, useDeleteUserMutation } from '../../api/usersApi';
 import { 
   Users, 
   Search, 
@@ -31,7 +32,18 @@ const UserManagement = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
 
-  const { data: users, isLoading, error, refetch } = useGetUsersQuery();
+  const { user: currentUser } = useSelector((state) => state.auth);
+
+  const isAdmin = currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'MULTI_SCHOOL_ADMIN';
+
+  const { data: allUsers, isLoading: allLoading, error: allError, refetch: allRefetch } = useGetAllUsersQuery(undefined, { skip: !isAdmin });
+  const { data: schoolUsers, isLoading: schoolLoading, error: schoolError, refetch: schoolRefetch } = useGetUsersQuery(undefined, { skip: isAdmin });
+
+  const users = isAdmin ? allUsers : schoolUsers;
+  const isLoading = isAdmin ? allLoading : schoolLoading;
+  const error = isAdmin ? allError : schoolError;
+  const refetch = isAdmin ? allRefetch : schoolRefetch;
+
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
 

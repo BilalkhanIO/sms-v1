@@ -60,6 +60,14 @@ const updateUserTypeData = async (role, userId, userData, session) => {
   }
 };
 
+// @desc    Get all users (for Super Admin)
+// @route   GET /api/users/all
+// @access  Private/SuperAdmin
+const getAllUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({}).populate('school', 'name');
+  res.json(users);
+});
+
 // @desc       Get all users (Admin only)
 // @route      GET /api/users
 // @access     Private/Admin
@@ -634,6 +642,7 @@ const updateUserStatus = [
 ];
 
 export {
+  getAllUsers,
   getUsers,
   getProfile,
   updateUserProfile,
