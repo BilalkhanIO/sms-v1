@@ -633,6 +633,33 @@ const updateUserStatus = [
   }),
 ];
 
+// @desc    Search for users by name or email
+// @route   GET /api/users/search
+// @access  Private/MULTI_SCHOOL_ADMIN
+const searchUsers = [
+  protect,
+  authorize('MULTI_SCHOOL_ADMIN', 'SUPER_ADMIN'),
+  asyncHandler(async (req, res) => {
+    const { query } = req.query;
+
+    if (!query) {
+      return successResponse(res, [], 'No search query provided');
+    }
+
+    const users = await User.find({
+      $or: [
+        { firstName: { $regex: query, $options: 'i' } },
+        { lastName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } },
+      ],
+      // Optionally, you might want to filter out users who are already admins
+      // role: { $ne: 'SCHOOL_ADMIN' }
+    }).select('firstName lastName email');
+
+    return successResponse(res, users, 'Users retrieved successfully');
+  }),
+];
+
 export {
   getUsers,
   getProfile,
@@ -643,4 +670,5 @@ export {
   updateUser,
   deleteUser,
   getUserById,
+  searchUsers,
 };
