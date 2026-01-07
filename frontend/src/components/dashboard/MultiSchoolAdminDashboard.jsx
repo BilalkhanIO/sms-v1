@@ -28,29 +28,38 @@ const MultiSchoolAdminDashboard = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats && stats.map((school) => (
-          <div key={school.schoolId} className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-2">{school.schoolName}</h2>
-            <p>Students: {school.studentCount}</p>
-            <p>Teachers: {school.teacherCount}</p>
+    <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
+    <h1 className="text-4xl font-extrabold mb-8 text-gray-800 border-b-2 pb-2">Multi-School Admin Dashboard</h1>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {stats && stats.map((school) => (
+        <div key={school.schoolId} className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{school.schoolName}</h2>
+            <span className="text-sm font-semibold text-gray-500 bg-gray-200 px-3 py-1 rounded-full">ID: {school.schoolId}</span>
+          </div>
+          <div className="space-y-3 text-gray-700">
+            <p className="flex justify-between"><strong>Students:</strong> <span className="font-mono text-lg">{school.studentCount}</span></p>
+            <p className="flex justify-between"><strong>Teachers:</strong> <span className="font-mono text-lg">{school.teacherCount}</span></p>
+          </div>
+          <div className="mt-6 flex justify-between">
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="mt-4">Manage Admins</Button>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                  Manage Admins
+                </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Admins for {school.schoolName}</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold">Admins for {school.schoolName}</DialogTitle>
                 </DialogHeader>
                 <ManageSchoolAdmins schoolId={school.schoolId} />
               </DialogContent>
             </Dialog>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
+  </div>
   );
 };
 

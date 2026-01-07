@@ -85,3 +85,28 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
 
   res.json({ message: 'Admin removed successfully' });
 });
+
+// @desc    Invite a school admin
+// @route   POST /api/multi-school-admin/invite
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const inviteSchoolAdmin = asyncHandler(async (req, res) => {
+  const { email, schoolId } = req.body;
+
+  if (!req.user.managedSchools.includes(schoolId)) {
+    res.status(403);
+    throw new Error('You are not authorized to manage this school');
+  }
+
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
+    res.status(400);
+    throw new Error('User already exists');
+  }
+
+  // In a real application, you would send an email with a registration link
+  // For this example, we'll just log the invitation
+  console.log(`Sending invitation to ${email} for school ${schoolId}`);
+
+  res.status(201).json({ message: 'Invitation sent successfully' });
+});

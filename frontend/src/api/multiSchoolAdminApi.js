@@ -25,6 +25,13 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { schoolId }) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
+    inviteSchoolAdmin: builder.mutation({
+      query: ({ schoolId, email }) => ({
+        url: 'multi-school-admin/invite',
+        method: 'POST',
+        body: { email, schoolId },
+      }),
+    }),
   }),
 });
 
@@ -33,4 +40,5 @@ export const {
   useGetSchoolAdminsQuery,
   useAssignSchoolAdminMutation,
   useRemoveSchoolAdminMutation,
+  useInviteSchoolAdminMutation,
 } = multiSchoolAdminApi;
