@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Database, 
   Download, 
@@ -20,14 +20,28 @@ import {
   Shield,
   Eye
 } from 'lucide-react';
+import {
+  useGetBackupsQuery,
+  useCreateBackupMutation,
+  useRestoreBackupMutation,
+  useDeleteBackupMutation,
+  useGetBackupSettingsQuery,
+  useUpdateBackupSettingsMutation
+} from '../../api/backupApi';
+import Spinner from '../../components/common/Spinner';
+import { useToast } from '../../hooks/useToast';
 
 const BackupManagement = () => {
-  const [backups, setBackups] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
+  const { toast } = useToast();
+  const { data: backups, isLoading: isLoadingBackups, refetch } = useGetBackupsQuery();
+  const [createBackup, { isLoading: isCreatingBackup }] = useCreateBackupMutation();
+  const [restoreBackup, { isLoading: isRestoring }] = useRestoreBackupMutation();
+  const [deleteBackup] = useDeleteBackupMutation();
+  const { data: backupSettingsData, isLoading: isLoadingSettings } = useGetBackupSettingsQuery();
+  const [updateBackupSettings] = useUpdateBackupSettingsMutation();
+
   const [selectedBackup, setSelectedBackup] = useState(null);
-  const [backupSettings, setBackupSettings] = useState({
+  const [backupSettings, setBackupSettings] = useState(backupSettingsData || {
     autoBackup: true,
     frequency: 'daily',
     time: '02:00',
@@ -38,117 +52,64 @@ const BackupManagement = () => {
     encryption: true
   });
 
-  // Mock data - replace with actual API calls
-  useEffect(() => {
-    const mockBackups = [
-      {
-        id: 1,
-        name: 'Full Backup - 2024-01-15',
-        type: 'FULL',
-        size: '2.3 GB',
-        createdAt: new Date('2024-01-15T02:00:00Z'),
-        status: 'COMPLETED',
-        location: 'LOCAL',
-        description: 'Complete system backup including all databases and files'
-      },
-      {
-        id: 2,
-        name: 'Incremental Backup - 2024-01-14',
-        type: 'INCREMENTAL',
-        size: '156 MB',
-        createdAt: new Date('2024-01-14T02:00:00Z'),
-        status: 'COMPLETED',
-        location: 'LOCAL',
-        description: 'Incremental backup of changes since last full backup'
-      },
-      {
-        id: 3,
-        name: 'Database Only - 2024-01-13',
-        type: 'DATABASE',
-        size: '890 MB',
-        createdAt: new Date('2024-01-13T02:00:00Z'),
-        status: 'COMPLETED',
-        location: 'CLOUD',
-        description: 'Database backup only, stored in cloud storage'
-      },
-      {
-        id: 4,
-        name: 'Full Backup - 2024-01-12',
-        type: 'FULL',
-        size: '2.1 GB',
-        createdAt: new Date('2024-01-12T02:00:00Z'),
-        status: 'COMPLETED',
-        location: 'LOCAL',
-        description: 'Complete system backup'
-      },
-      {
-        id: 5,
-        name: 'Scheduled Backup - 2024-01-11',
-        type: 'SCHEDULED',
-        size: '1.8 GB',
-        createdAt: new Date('2024-01-11T02:00:00Z'),
-        status: 'FAILED',
-        location: 'LOCAL',
-        description: 'Scheduled backup failed due to insufficient disk space'
-      }
-    ];
-    
-    setTimeout(() => {
-      setBackups(mockBackups);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  React.useEffect(() => {
+    if (backupSettingsData) {
+      setBackupSettings(backupSettingsData);
+    }
+  }, [backupSettingsData]);
 
-  const createBackup = async (type = 'FULL') => {
-    setIsCreatingBackup(true);
+  const handleCreateBackup = async (type = 'FULL') => {
     try {
-      // Simulate backup creation
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      const newBackup = {
-        id: Date.now(),
-        name: `${type} Backup - ${new Date().toISOString().split('T')[0]}`,
-        type,
-        size: 'Calculating...',
-        createdAt: new Date(),
-        status: 'IN_PROGRESS',
-        location: 'LOCAL',
-        description: `Manual ${type.toLowerCase()} backup`
-      };
-      
-      setBackups(prev => [newBackup, ...prev]);
-      
-      // Simulate completion
-      setTimeout(() => {
-        setBackups(prev => prev.map(backup => 
-          backup.id === newBackup.id 
-            ? { ...backup, status: 'COMPLETED', size: '2.3 GB' }
-            : backup
-        ));
-      }, 2000);
+      await createBackup(type).unwrap();
+      toast({
+        title: "Success",
+        description: "Backup created successfully.",
+      });
+      refetch();
     } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create backup.",
+        variant: "destructive",
+      });
       console.error('Failed to create backup:', error);
-    } finally {
-      setIsCreatingBackup(false);
     }
   };
 
-  const restoreBackup = async (backupId) => {
-    setIsRestoring(true);
+  const handleRestoreBackup = async (backupId) => {
     try {
-      // Simulate restore process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Backup restored:', backupId);
+      await restoreBackup(backupId).unwrap();
+      toast({
+        title: "Success",
+        description: "Backup restored successfully.",
+      });
     } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to restore backup.",
+        variant: "destructive",
+      });
       console.error('Failed to restore backup:', error);
-    } finally {
-      setIsRestoring(false);
     }
   };
 
-  const deleteBackup = async (backupId) => {
+  const handleDeleteBackup = async (backupId) => {
     if (window.confirm('Are you sure you want to delete this backup? This action cannot be undone.')) {
-      setBackups(prev => prev.filter(backup => backup.id !== backupId));
+      try {
+        await deleteBackup(backupId).unwrap();
+        toast({
+          title: "Success",
+          description: "Backup deleted successfully.",
+        });
+        refetch();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete backup.",
+          variant: "destructive",
+        });
+        console.error('Failed to delete backup:', error);
+      }
     }
   };
 
@@ -189,10 +150,10 @@ const BackupManagement = () => {
     return new Date(date).toLocaleString();
   };
 
-  if (isLoading) {
+  if (isLoadingBackups || isLoadingSettings) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+        <Spinner size="large" />
       </div>
     );
   }
@@ -207,7 +168,7 @@ const BackupManagement = () => {
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => createBackup('FULL')}
+            onClick={() => handleCreateBackup('FULL')}
             disabled={isCreatingBackup}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
           >
@@ -233,7 +194,7 @@ const BackupManagement = () => {
             <Database className="w-8 h-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Backups</p>
-              <p className="text-2xl font-bold text-gray-900">{backups.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{backups?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -243,7 +204,7 @@ const BackupManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Successful</p>
               <p className="text-2xl font-bold text-gray-900">
-                {backups.filter(b => b.status === 'COMPLETED').length}
+                {backups?.filter(b => b.status === 'COMPLETED').length || 0}
               </p>
             </div>
           </div>
@@ -254,7 +215,7 @@ const BackupManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Failed</p>
               <p className="text-2xl font-bold text-gray-900">
-                {backups.filter(b => b.status === 'FAILED').length}
+                {backups?.filter(b => b.status === 'FAILED').length || 0}
               </p>
             </div>
           </div>
@@ -265,10 +226,10 @@ const BackupManagement = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Size</p>
               <p className="text-2xl font-bold text-gray-900">
-                {backups.reduce((total, backup) => {
+                {backups?.reduce((total, backup) => {
                   const size = parseFloat(backup.size);
                   return total + (isNaN(size) ? 0 : size);
-                }, 0).toFixed(1)} GB
+                }, 0).toFixed(1) || 0} GB
               </p>
             </div>
           </div>
@@ -281,28 +242,12 @@ const BackupManagement = () => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <button
-              onClick={() => createBackup('FULL')}
+              onClick={() => handleCreateBackup('FULL')}
               disabled={isCreatingBackup}
               className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors disabled:opacity-50"
             >
               <Database className="w-5 h-5 mr-2" />
               <span>Full Backup</span>
-            </button>
-            <button
-              onClick={() => createBackup('INCREMENTAL')}
-              disabled={isCreatingBackup}
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className="w-5 h-5 mr-2" />
-              <span>Incremental</span>
-            </button>
-            <button
-              onClick={() => createBackup('DATABASE')}
-              disabled={isCreatingBackup}
-              className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors disabled:opacity-50"
-            >
-              <Server className="w-5 h-5 mr-2" />
-              <span>Database Only</span>
             </button>
             <button className="inline-flex items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 transition-colors">
               <Settings className="w-5 h-5 mr-2" />
@@ -413,7 +358,7 @@ const BackupManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {backups.map((backup) => {
+                {backups?.map((backup) => {
                   const TypeIcon = getTypeIcon(backup.type);
                   const LocationIcon = getLocationIcon(backup.location);
                   return (
@@ -461,7 +406,7 @@ const BackupManagement = () => {
                                 <Download className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => restoreBackup(backup.id)}
+                                onClick={() => handleRestoreBackup(backup.id)}
                                 disabled={isRestoring}
                                 className="text-green-600 hover:text-green-900 disabled:opacity-50"
                                 title="Restore"
@@ -478,7 +423,7 @@ const BackupManagement = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => deleteBackup(backup.id)}
+                            onClick={() => handleDeleteBackup(backup.id)}
                             className="text-red-600 hover:text-red-900"
                             title="Delete"
                           >

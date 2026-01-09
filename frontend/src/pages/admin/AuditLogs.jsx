@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Activity, 
   Search, 
@@ -20,153 +20,40 @@ import {
   Plus,
   RefreshCw
 } from 'lucide-react';
+import { useGetActivitiesQuery } from '../../api/activityLogsApi';
+import Spinner from '../../components/common/Spinner';
 
 const AuditLogs = () => {
-  const [logs, setLogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
 
-  // Mock data - replace with actual API call
-  useEffect(() => {
-    const mockLogs = [
-      {
-        id: 1,
-        timestamp: new Date('2024-01-15T10:30:00Z'),
-        type: 'LOGIN',
-        severity: 'INFO',
-        user: 'admin@school.com',
-        userId: 'user123',
-        action: 'User logged in successfully',
-        details: 'Login from IP: 192.168.1.100',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'SUCCESS'
-      },
-      {
-        id: 2,
-        timestamp: new Date('2024-01-15T10:25:00Z'),
-        type: 'USER_CREATE',
-        severity: 'INFO',
-        user: 'admin@school.com',
-        userId: 'user123',
-        action: 'Created new user',
-        details: 'Created student: John Doe (john.doe@student.com)',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'SUCCESS'
-      },
-      {
-        id: 3,
-        timestamp: new Date('2024-01-15T10:20:00Z'),
-        type: 'LOGIN_FAILED',
-        severity: 'WARNING',
-        user: 'unknown@school.com',
-        userId: null,
-        action: 'Failed login attempt',
-        details: 'Invalid password for user: unknown@school.com',
-        ipAddress: '192.168.1.200',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'FAILED'
-      },
-      {
-        id: 4,
-        timestamp: new Date('2024-01-15T10:15:00Z'),
-        type: 'DATA_EXPORT',
-        severity: 'INFO',
-        user: 'admin@school.com',
-        userId: 'user123',
-        action: 'Exported student data',
-        details: 'Exported 150 student records to CSV',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'SUCCESS'
-      },
-      {
-        id: 5,
-        timestamp: new Date('2024-01-15T10:10:00Z'),
-        type: 'PERMISSION_DENIED',
-        severity: 'WARNING',
-        user: 'teacher@school.com',
-        userId: 'user456',
-        action: 'Access denied',
-        details: 'Attempted to access admin panel without permission',
-        ipAddress: '192.168.1.150',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'DENIED'
-      },
-      {
-        id: 6,
-        timestamp: new Date('2024-01-15T10:05:00Z'),
-        type: 'SYSTEM_ERROR',
-        severity: 'ERROR',
-        user: 'system',
-        userId: null,
-        action: 'Database connection error',
-        details: 'Failed to connect to MongoDB cluster',
-        ipAddress: '127.0.0.1',
-        userAgent: 'System',
-        status: 'ERROR'
-      },
-      {
-        id: 7,
-        timestamp: new Date('2024-01-15T10:00:00Z'),
-        type: 'USER_UPDATE',
-        severity: 'INFO',
-        user: 'admin@school.com',
-        userId: 'user123',
-        action: 'Updated user profile',
-        details: 'Updated profile for student: Jane Smith',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'SUCCESS'
-      },
-      {
-        id: 8,
-        timestamp: new Date('2024-01-15T09:55:00Z'),
-        type: 'SECURITY_ALERT',
-        severity: 'CRITICAL',
-        user: 'unknown@school.com',
-        userId: null,
-        action: 'Multiple failed login attempts',
-        details: '5 failed login attempts from IP: 192.168.1.200',
-        ipAddress: '192.168.1.200',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        status: 'ALERT'
-      }
-    ];
-    
-    setTimeout(() => {
-      setLogs(mockLogs);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const { data: logs, isLoading, error, refetch } = useGetActivitiesQuery();
 
-  const logTypes = ['LOGIN', 'LOGOUT', 'USER_CREATE', 'USER_UPDATE', 'USER_DELETE', 'LOGIN_FAILED', 'PERMISSION_DENIED', 'DATA_EXPORT', 'SYSTEM_ERROR', 'SECURITY_ALERT'];
-  const severities = ['INFO', 'WARNING', 'ERROR', 'CRITICAL'];
-  const statuses = ['SUCCESS', 'FAILED', 'DENIED', 'ERROR', 'ALERT'];
+  const logTypes = [...new Set(logs?.map(log => log.action) || [])];
+  const severities = ['INFO', 'WARN', 'ERROR'];
+  const statuses = ['SUCCESS', 'FAILURE'];
 
-  const filteredLogs = logs.filter(log => {
+  const filteredLogs = logs?.filter(log => {
+    const user = log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System';
     const matchesSearch = log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          log.details.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = !typeFilter || log.type === typeFilter;
-    const matchesUser = !userFilter || log.user === userFilter;
-    const matchesSeverity = !severityFilter || log.severity === severityFilter;
-    const matchesDate = !dateFilter || log.timestamp.toDateString() === new Date(dateFilter).toDateString();
+    const matchesType = !typeFilter || log.action === typeFilter;
+    const matchesUser = !userFilter || user === userFilter;
+    const matchesSeverity = !severityFilter || log.level === severityFilter;
+    const matchesDate = !dateFilter || new Date(log.timestamp).toDateString() === new Date(dateFilter).toDateString();
     
     return matchesSearch && matchesType && matchesUser && matchesSeverity && matchesDate;
-  });
+  }) || [];
 
   const getSeverityColor = (severity) => {
     const colors = {
       'INFO': 'bg-blue-100 text-blue-800',
-      'WARNING': 'bg-yellow-100 text-yellow-800',
+      'WARN': 'bg-yellow-100 text-yellow-800',
       'ERROR': 'bg-red-100 text-red-800',
-      'CRITICAL': 'bg-red-200 text-red-900'
     };
     return colors[severity] || 'bg-gray-100 text-gray-800';
   };
@@ -174,22 +61,19 @@ const AuditLogs = () => {
   const getStatusColor = (status) => {
     const colors = {
       'SUCCESS': 'text-green-600',
-      'FAILED': 'text-red-600',
-      'DENIED': 'text-yellow-600',
-      'ERROR': 'text-red-600',
-      'ALERT': 'text-orange-600'
+      'FAILURE': 'text-red-600',
     };
     return colors[status] || 'text-gray-600';
   };
 
   const getTypeIcon = (type) => {
     const icons = {
-      'LOGIN': User,
-      'LOGOUT': User,
+      'USER_LOGIN': User,
+      'USER_LOGOUT': User,
       'USER_CREATE': Plus,
       'USER_UPDATE': Edit,
       'USER_DELETE': Trash2,
-      'LOGIN_FAILED': XCircle,
+      'USER_LOGIN_FAILED': XCircle,
       'PERMISSION_DENIED': Shield,
       'DATA_EXPORT': Download,
       'SYSTEM_ERROR': Database,
@@ -202,10 +86,10 @@ const AuditLogs = () => {
     const csvContent = [
       ['Timestamp', 'Type', 'Severity', 'User', 'Action', 'Details', 'IP Address', 'Status'],
       ...filteredLogs.map(log => [
-        log.timestamp.toISOString(),
-        log.type,
-        log.severity,
-        log.user,
+        new Date(log.timestamp).toISOString(),
+        log.action,
+        log.level,
+        log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System',
         log.action,
         log.details,
         log.ipAddress,
@@ -223,9 +107,13 @@ const AuditLogs = () => {
   };
 
   if (isLoading) {
+    return <Spinner size="large" />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="text-center text-red-600">
+        Error loading audit logs: {error.message}
       </div>
     );
   }
@@ -247,7 +135,7 @@ const AuditLogs = () => {
             Export CSV
           </button>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => refetch()}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -263,7 +151,7 @@ const AuditLogs = () => {
             <Activity className="w-8 h-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Events</p>
-              <p className="text-2xl font-bold text-gray-900">{logs.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{logs?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -273,7 +161,7 @@ const AuditLogs = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Warnings</p>
               <p className="text-2xl font-bold text-gray-900">
-                {logs.filter(log => log.severity === 'WARNING').length}
+                {logs?.filter(log => log.level === 'WARN').length || 0}
               </p>
             </div>
           </div>
@@ -284,7 +172,7 @@ const AuditLogs = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Errors</p>
               <p className="text-2xl font-bold text-gray-900">
-                {logs.filter(log => log.severity === 'ERROR' || log.severity === 'CRITICAL').length}
+                {logs?.filter(log => log.level === 'ERROR').length || 0}
               </p>
             </div>
           </div>
@@ -295,7 +183,7 @@ const AuditLogs = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Security Alerts</p>
               <p className="text-2xl font-bold text-gray-900">
-                {logs.filter(log => log.type === 'SECURITY_ALERT').length}
+                {logs?.filter(log => log.action === 'SECURITY_ALERT').length || 0}
               </p>
             </div>
           </div>
@@ -352,7 +240,7 @@ const AuditLogs = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Users</option>
-              {[...new Set(logs.map(log => log.user))].map(user => (
+              {[...new Set(logs?.map(log => log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System') || [])].map(user => (
                 <option key={user} value={user}>{user}</option>
               ))}
             </select>
@@ -400,28 +288,29 @@ const AuditLogs = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLogs.map((log) => {
-                const TypeIcon = getTypeIcon(log.type);
+                const TypeIcon = getTypeIcon(log.action);
+                const user = log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System';
                 return (
-                  <tr key={log.id} className="hover:bg-gray-50">
+                  <tr key={log._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                        {log.timestamp.toLocaleString()}
+                        {new Date(log.timestamp).toLocaleString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <TypeIcon className="w-4 h-4 mr-2 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">{log.type}</span>
+                        <span className="text-sm font-medium text-gray-900">{log.action}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(log.severity)}`}>
-                        {log.severity}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(log.level)}`}>
+                        {log.level}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {log.user}
+                      {user}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {log.action}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetActivityLogsQuery } from '../../api/activityLogsApi';
+import { useGetActivitiesQuery } from '../../api/activityLogsApi';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import PageHeader from '../../components/common/PageHeader';
@@ -19,7 +19,7 @@ const ActivityLogsList = () => {
   const [severityFilter, setSeverityFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState(''); // For user or description search
 
-  const { data, isLoading, isError, error, refetch } = useGetActivityLogsQuery({
+  const { data, isLoading, isError, error, refetch } = useGetActivitiesQuery({
     page,
     limit,
     type: typeFilter,
