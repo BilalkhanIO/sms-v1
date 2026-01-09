@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGetSuperAdminStatsQuery, useGetUserRoleDistributionQuery } from '../../api/dashboardApi';
-import { useGetActivityLogsQuery } from '../../api/activityLogsApi';
+import { useGetActivitiesQuery } from '../../api/activityLogsApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { ResponsiveContainer, PieChart, Pie, Tooltip } from 'recharts';
@@ -30,7 +30,7 @@ const SuperAdminDashboard = () => {
     feeSummary,
   } = data?.overview || {};
   const { data: userRoleDistribution } = useGetUserRoleDistributionQuery();
-  const { data: recentActivities } = useGetActivityLogsQuery({ limit: 5 });
+  const { data: recentActivities } = useGetActivitiesQuery({ limit: 5 });
 
   return (
     <div>

@@ -20,6 +20,10 @@ export const api = createApi({
     "Dashboard",
     "DashboardStats",
     "SchoolAdmins",
+    "Activities",
+    "Backups",
+    "BackupSettings",
+    "ReportTypes",
   ],
 });
 

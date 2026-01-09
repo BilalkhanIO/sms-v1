@@ -16,9 +16,15 @@ import {
   Mail,
   Share2
 } from 'lucide-react';
+import { useGetReportTypesQuery, useGenerateReportMutation } from '../../api/reportsApi';
+import Spinner from '../../components/common/Spinner';
+import { useToast } from '../../hooks/useToast';
 
 const Reports = () => {
-  const [selectedReport, setSelectedReport] = useState('');
+  const { toast } = useToast();
+  const { data: reportTypes, isLoading: isLoadingReportTypes } = useGetReportTypesQuery();
+  const [generateReport, { isLoading: isGenerating }] = useGenerateReportMutation();
+
   const [dateRange, setDateRange] = useState({
     start: '',
     end: ''
@@ -29,74 +35,21 @@ const Reports = () => {
     status: '',
     userType: ''
   });
-  const [isGenerating, setIsGenerating] = useState(false);
 
-  const reportTypes = [
-    {
-      id: 'student-report',
-      name: 'Student Report',
-      description: 'Comprehensive student information and academic performance',
-      icon: GraduationCap,
-      category: 'Academic'
-    },
-    {
-      id: 'financial-report',
-      name: 'Financial Report',
-      description: 'Fee collection, payments, and financial overview',
-      icon: DollarSign,
-      category: 'Financial'
-    },
-    {
-      id: 'attendance-report',
-      name: 'Attendance Report',
-      description: 'Student and staff attendance statistics',
-      icon: Users,
-      category: 'Academic'
-    },
-    {
-      id: 'exam-report',
-      name: 'Exam Report',
-      description: 'Exam results and performance analysis',
-      icon: FileText,
-      category: 'Academic'
-    },
-    {
-      id: 'user-activity-report',
-      name: 'User Activity Report',
-      description: 'System usage and user activity logs',
-      icon: BarChart3,
-      category: 'System'
-    },
-    {
-      id: 'system-performance-report',
-      name: 'System Performance Report',
-      description: 'System metrics and performance data',
-      icon: TrendingUp,
-      category: 'System'
-    }
-  ];
-
-  const generateReport = async (reportType) => {
-    setIsGenerating(true);
+  const handleGenerateReport = async (reportType) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real application, this would call the backend API
-      console.log('Generating report:', reportType, { dateRange, filters });
-      
-      // Simulate download
-      const blob = new Blob(['Report data would be here'], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${reportType}-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await generateReport({ reportType, filters: { ...filters, ...dateRange } }).unwrap();
+      toast({
+        title: "Success",
+        description: "Report generated successfully.",
+      });
     } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate report.",
+        variant: "destructive",
+      });
       console.error('Failed to generate report:', error);
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -128,6 +81,10 @@ const Reports = () => {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
+  if (isLoadingReportTypes) {
+    return <Spinner size="large" />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,7 +108,7 @@ const Reports = () => {
             <FileText className="w-8 h-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Reports</p>
-              <p className="text-2xl font-bold text-gray-900">{reportTypes.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{reportTypes?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -237,8 +194,8 @@ const Reports = () => {
 
       {/* Report Types */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reportTypes.map((report) => {
-          const Icon = report.icon;
+        {reportTypes?.map((report) => {
+          const Icon = getReportIcon(report.category);
           const CategoryIcon = getReportIcon(report.category);
           return (
             <div key={report.id} className="bg-white rounded-lg shadow p-6">
@@ -275,7 +232,7 @@ const Reports = () => {
                   </button>
                 </div>
                 <button
-                  onClick={() => generateReport(report.id)}
+                  onClick={() => handleGenerateReport(report.id)}
                   disabled={isGenerating}
                   className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                 >
