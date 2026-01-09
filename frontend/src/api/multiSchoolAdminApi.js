@@ -25,6 +25,33 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { schoolId }) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
+    getManagedUsers: builder.query({
+      query: () => 'multi-school-admin/users',
+      providesTags: ['ManagedUsers'],
+    }),
+    createManagedUser: builder.mutation({
+      query: (newUser) => ({
+        url: 'multi-school-admin/users',
+        method: 'POST',
+        body: newUser,
+      }),
+      invalidatesTags: ['ManagedUsers'],
+    }),
+    updateManagedUser: builder.mutation({
+      query: ({ id, ...updatedData }) => ({
+        url: `multi-school-admin/users/${id}`,
+        method: 'PUT',
+        body: updatedData,
+      }),
+      invalidatesTags: ['ManagedUsers'],
+    }),
+    deleteManagedUser: builder.mutation({
+      query: (id) => ({
+        url: `multi-school-admin/users/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['ManagedUsers'],
+    }),
   }),
 });
 
@@ -33,4 +60,8 @@ export const {
   useGetSchoolAdminsQuery,
   useAssignSchoolAdminMutation,
   useRemoveSchoolAdminMutation,
+  useGetManagedUsersQuery,
+  useCreateManagedUserMutation,
+  useUpdateManagedUserMutation,
+  useDeleteManagedUserMutation,
 } = multiSchoolAdminApi;
