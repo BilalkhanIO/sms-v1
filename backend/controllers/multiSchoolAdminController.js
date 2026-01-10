@@ -85,3 +85,40 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
 
   res.json({ message: 'Admin removed successfully' });
 });
+
+// @desc    Get detailed stats for a specific school
+// @route   GET /api/multi-school-admin/schools/:schoolId/details
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getSchoolDetails = asyncHandler(async (req, res) => {
+  const { schoolId } = req.params;
+
+  // Ensure the user is authorized to manage this school
+  if (!req.user.managedSchools.includes(schoolId)) {
+    res.status(403);
+    throw new Error('You are not authorized to manage this school');
+  }
+
+  const school = await School.findById(schoolId);
+  if (!school) {
+    res.status(404);
+    throw new Error('School not found');
+  }
+
+  const studentCount = await User.countDocuments({ school: schoolId, role: 'STUDENT' });
+  const teacherCount = await User.countDocuments({ school: schoolId, role: 'TEACHER' });
+
+  // In a real application, you would fetch more detailed data,
+  // such as class schedules, financial summaries, etc.
+  // For this example, we'll keep it simple.
+  const details = {
+    schoolId: school._id,
+    schoolName: school.name,
+    studentCount,
+    teacherCount,
+    address: school.address,
+    email: school.email,
+    phone: school.phone,
+  };
+
+  res.json(details);
+});

@@ -25,6 +25,10 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { schoolId }) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
+    getSchoolDetails: builder.query({
+      query: (schoolId) => `multi-school-admin/schools/${schoolId}/details`,
+      providesTags: (result, error, schoolId) => [{ type: 'SchoolDetails', id: schoolId }],
+    }),
   }),
 });
 
@@ -33,4 +37,5 @@ export const {
   useGetSchoolAdminsQuery,
   useAssignSchoolAdminMutation,
   useRemoveSchoolAdminMutation,
+  useGetSchoolDetailsQuery,
 } = multiSchoolAdminApi;

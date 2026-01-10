@@ -6,23 +6,19 @@ import Spinner from '../common/Spinner';
 
 const AuthProvider = ({ children }) => {
   const dispatch = useDispatch();
-  const { data: user, isLoading, error } = useGetCurrentUserQuery(undefined, {
-    skip: false, // Always try to fetch user on app load
-  });
+  const { data: user, isLoading, isError, error } = useGetCurrentUserQuery();
 
   useEffect(() => {
     if (user) {
-      dispatch(setCredentials(user));
-    } else if (error && error.status === 401) {
-      // User is not authenticated, clear any existing credentials
+      dispatch(setCredentials({ user, isAuthenticated: true }));
+    } else if (isError && error.status === 401) {
       dispatch(clearCredentials());
     }
-  }, [user, error, dispatch]);
+  }, [user, isError, error, dispatch]);
 
-  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex justify-center items-center h-screen">
         <Spinner />
       </div>
     );
