@@ -59,6 +59,7 @@ import AdminSystemSettings from "../pages/admin/SystemSettings";
 import Reports from "../pages/admin/Reports";
 import AuditLogs from "../pages/admin/AuditLogs";
 import BackupManagement from "../pages/admin/BackupManagement";
+import CentralizedAdminManagement from "../pages/admin/CentralizedAdminManagement";
 
 const Router = () => {
   return (
@@ -104,6 +105,14 @@ const Router = () => {
         <Route path="admin/reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
         <Route path="admin/audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
         <Route path="admin/backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
+        <Route
+          path="admin/manage-admins"
+          element={
+            <PrivateRoute roles={['SUPER_ADMIN', 'MULTI_SCHOOL_ADMIN']}>
+              <CentralizedAdminManagement />
+            </PrivateRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<NotFound />} />
