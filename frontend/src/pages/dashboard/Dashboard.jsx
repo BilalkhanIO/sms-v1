@@ -1,8 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { useSelector } from "react-redux";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import Spinner from "../../components/common/Spinner";
-import { useGetAvailableSuperAdminPagesQuery } from "../../api/pagesApi";
 
 // Lazy load all potential dashboard components
 const SuperAdminDashboard = lazy(() =>
@@ -23,66 +22,26 @@ const ParentDashboard = lazy(() =>
 const MultiSchoolAdminDashboard = lazy(() =>
   import("../../components/dashboard/MultiSchoolAdminDashboard")
 );
-const UserManagement = lazy(() => import("../admin/UserManagement"));
-const SystemSettings = lazy(() => import("../admin/SystemSettings"));
-const Reports = lazy(() => import("../admin/Reports"));
-const AuditLogs = lazy(() => import("../admin/AuditLogs"));
-const BackupManagement = lazy(() => import("../admin/BackupManagement"));
-const SchoolList = lazy(() => import("../schools/SchoolList"));
 
-const componentMap = {
-  SuperAdminDashboard,
-  AdminDashboard,
-  TeacherDashboard,
-  StudentDashboard,
-  ParentDashboard,
-  MultiSchoolAdminDashboard,
-  UserManagement,
-  SystemSettings,
-  Reports,
-  AuditLogs,
-  BackupManagement,
-  SchoolList,
+const roleToComponentMap = {
+  SUPER_ADMIN: SuperAdminDashboard,
+  SCHOOL_ADMIN: AdminDashboard,
+  TEACHER: TeacherDashboard,
+  STUDENT: StudentDashboard,
+  PARENT: ParentDashboard,
+  MULTI_SCHOOL_ADMIN: MultiSchoolAdminDashboard,
 };
+
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  const location = useLocation();
-  const {
-    data: superAdminPages,
-    isLoading: pagesIsLoading,
-    error: pagesError,
-  } = useGetAvailableSuperAdminPagesQuery(undefined, {
-    skip: user?.role !== "SUPER_ADMIN",
-  });
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   const renderDashboard = () => {
-    if (user.role === "SUPER_ADMIN") {
-      if (pagesIsLoading) return <Spinner />;
-      if (pagesError) return <div>Error loading pages.</div>;
-
-      const currentPage = location.pathname;
-      const pageConfig = superAdminPages?.find((p) => p.path === currentPage);
-      const Component = pageConfig
-        ? componentMap[pageConfig.component]
-        : componentMap["SuperAdminDashboard"]; // Default to SuperAdminDashboard
-      return Component ? <Component /> : <div>Component not found</div>;
-    }
-
-    // Correctly handle other roles
-    const roleToComponentMap = {
-      SCHOOL_ADMIN: "AdminDashboard",
-      TEACHER: "TeacherDashboard",
-      STUDENT: "StudentDashboard",
-      PARENT: "ParentDashboard",
-      MULTI_SCHOOL_ADMIN: "MultiSchoolAdminDashboard",
-    };
-    const componentName = roleToComponentMap[user.role];
-    const Component = componentName ? componentMap[componentName] : null;
+    const Component = roleToComponentMap[user.role];
 
     return Component ? (
       <Component />
