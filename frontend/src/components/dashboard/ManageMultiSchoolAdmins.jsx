@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useGetSchoolAdminsQuery, useAssignSchoolAdminMutation, useRemoveSchoolAdminMutation } from '../../api/multiSchoolAdminApi';
+import { useGetMultiSchoolAdminsQuery, useAssignMultiSchoolAdminMutation, useRemoveMultiSchoolAdminMutation } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { Button } from '../ui/button';
@@ -8,11 +8,11 @@ import { useToast } from '../ui/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '../ui/dialog';
 
-const ManageSchoolAdmins = ({ schoolId }) => {
+const ManageMultiSchoolAdmins = () => {
   const { toast } = useToast();
-  const { data: admins, isLoading, isError, error } = useGetSchoolAdminsQuery(schoolId);
-  const [assignAdmin, { isLoading: isAssigning }] = useAssignSchoolAdminMutation();
-  const [removeAdmin, { isLoading: isRemoving }] = useRemoveSchoolAdminMutation();
+  const { data: admins, isLoading, isError, error } = useGetMultiSchoolAdminsQuery();
+  const [assignAdmin, { isLoading: isAssigning }] = useAssignMultiSchoolAdminMutation();
+  const [removeAdmin, { isLoading: isRemoving }] = useRemoveMultiSchoolAdminMutation();
   const [email, setEmail] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,20 +22,20 @@ const ManageSchoolAdmins = ({ schoolId }) => {
     e.preventDefault();
     if (!email) return;
     try {
-      await assignAdmin({ schoolId, email }).unwrap();
-      toast({ title: 'Success', description: 'Admin assigned successfully.' });
+      await assignAdmin({ email }).unwrap();
+      toast({ title: 'Success', description: 'Multi-school admin assigned successfully.' });
       setEmail('');
     } catch (err) {
-      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to assign admin.' });
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to assign multi-school admin.' });
     }
   };
 
   const handleRemoveAdmin = async (adminId) => {
     try {
-      await removeAdmin({ schoolId, adminId }).unwrap();
-      toast({ title: 'Success', description: 'Admin removed successfully.' });
+      await removeAdmin(adminId).unwrap();
+      toast({ title: 'Success', description: 'Multi-school admin removed successfully.' });
     } catch (err) {
-      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to remove admin.' });
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to remove multi-school admin.' });
     }
   };
 
@@ -54,7 +54,7 @@ const ManageSchoolAdmins = ({ schoolId }) => {
   const totalPages = Math.ceil(filteredAdmins.length / adminsPerPage);
 
   if (isLoading) return <Spinner />;
-  if (isError) return <ErrorMessage>{error.data?.message || 'Failed to load admins'}</ErrorMessage>;
+  if (isError) return <ErrorMessage>{error.data?.message || 'Failed to load multi-school admins'}</ErrorMessage>;
 
   return (
     <div>
@@ -105,7 +105,7 @@ const ManageSchoolAdmins = ({ schoolId }) => {
                     <DialogHeader>
                       <DialogTitle>Are you sure?</DialogTitle>
                       <DialogDescription>
-                        This will permanently remove {admin.name} as an admin for this school.
+                        This will permanently remove {admin.name} as a multi-school admin.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -145,4 +145,4 @@ const ManageSchoolAdmins = ({ schoolId }) => {
   );
 };
 
-export default ManageSchoolAdmins;
+export default ManageMultiSchoolAdmins;
