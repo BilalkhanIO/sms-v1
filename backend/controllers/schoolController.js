@@ -98,6 +98,8 @@ const createSchool = [
       await session.commitTransaction();
       session.endSession(); // End session here
 
+      res.locals.entityId = school[0]._id;
+
       // Log activity only after successful transaction commit and session end
       await Activity.logActivity({
         userId: req.user._id,

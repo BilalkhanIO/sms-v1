@@ -20,6 +20,7 @@ import schoolRoutes from "./routes/schoolRoutes.js";
 import settingRoutes from "./routes/settingRoutes.js";
 import defaultRoutes from "./routes/routeDefaults.js";
 import multiSchoolAdminRoutes from "./routes/multiSchoolAdminRoutes.js";
+import auditLogRoutes from './routes/auditLogRoutes.js';
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use("/api/schools", schoolRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/defaults", defaultRoutes);
 app.use("/api/multi-school-admin", multiSchoolAdminRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

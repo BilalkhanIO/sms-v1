@@ -315,6 +315,8 @@ const createUser = [
       await session.commitTransaction();
       session.endSession();
 
+      res.locals.entityId = user[0]._id;
+
       // Log activity
       await Activity.logActivity({
         userId: req.user._id,
