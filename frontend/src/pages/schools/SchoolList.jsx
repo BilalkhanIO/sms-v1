@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useGetSchoolsQuery, useDeleteSchoolMutation } from '../../api/schoolsApi';
+import { useGetSchoolsQuery, useDeleteSchoolMutation } from '../../api/schoolApi';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../store/authSlice';
 import Button from '../../components/common/Button';
