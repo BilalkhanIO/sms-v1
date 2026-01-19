@@ -13,8 +13,8 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       dispatch(setCredentials(user));
-    } else if (error && error.status === 401) {
-      // User is not authenticated, clear any existing credentials
+    } else if (error) {
+      // On any error, clear credentials
       dispatch(clearCredentials());
     }
   }, [user, error, dispatch]);
