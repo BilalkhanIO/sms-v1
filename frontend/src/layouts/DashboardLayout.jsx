@@ -38,9 +38,10 @@ export default function DashboardLayout() {
     skip: user?.role !== "SUPER_ADMIN",
   });
 
+  const { isLoading: isAuthLoading } = useSelector((state) => state.auth);
   useEffect(() => {
-    if (!user) navigate("/login");
-  }, [user, navigate]);
+    if (!isAuthLoading && !user) navigate("/login");
+  }, [user, isAuthLoading, navigate]);
 
   const handleLogout = async () => {
     try {

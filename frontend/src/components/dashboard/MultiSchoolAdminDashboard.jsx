@@ -3,6 +3,7 @@ import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import ManageSchoolAdmins from './ManageSchoolAdmins';
+import ManageMultiSchoolAdmins from './ManageMultiSchoolAdmins';
 import { Button } from '../ui/button';
 import {
   Dialog,
@@ -29,7 +30,20 @@ const MultiSchoolAdminDashboard = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Multi-School Admin Dashboard</h1>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>Manage System Admins</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Manage Multi-School Admins</DialogTitle>
+            </DialogHeader>
+            <ManageMultiSchoolAdmins />
+          </DialogContent>
+        </Dialog>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats && stats.map((school) => (
           <div key={school.schoolId} className="bg-white p-4 rounded-lg shadow">
