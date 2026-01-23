@@ -66,6 +66,7 @@ function Login() {
             <input
               type="email"
               id="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
@@ -83,6 +84,7 @@ function Login() {
             <input
               type="password"
               id="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"

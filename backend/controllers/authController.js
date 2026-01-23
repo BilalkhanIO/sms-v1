@@ -167,4 +167,15 @@ const resetPassword = [
   }),
 ];
 
-export { loginUser, logoutUser, forgotPassword, resetPassword };
+// @desc    Get user profile
+// @route   GET /api/auth/me
+// @access  Private
+const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password");
+  res.status(200).json({
+    data: user,
+    message: "User profile retrieved successfully",
+  });
+});
+
+export { loginUser, logoutUser, forgotPassword, resetPassword, getMe };
