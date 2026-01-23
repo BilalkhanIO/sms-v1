@@ -95,7 +95,8 @@ const Router = () => {
 
         <Route path="schools" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolList /></PrivateRoute>} />
         <Route path="schools/create" element={<PrivateRoute roles={["SUPER_ADMIN"]}><CreateSchool /></PrivateRoute>} />
-        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
+        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolDetails /></PrivateRoute>} />
+        <Route path="schools/:schoolId/dashboard" element={<PrivateRoute roles={["MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
         <Route path="schools/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UpdateSchool /></PrivateRoute>} />
         <Route path="settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
         <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><ActivityLogsList /></PrivateRoute>} />

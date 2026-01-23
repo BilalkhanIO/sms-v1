@@ -1,10 +1,11 @@
-import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetSchoolDetailsQuery } from '../../api/dashboardApi';
+import { useGetSchoolDetailsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import UserDataGrid from '../../components/users/UserDataGrid';
+import StudentEnrollmentChart from '../../components/dashboard/charts/StudentEnrollmentChart';
 
 const SchoolDetailsDashboard = () => {
   const { schoolId } = useParams();
@@ -22,11 +23,11 @@ const SchoolDetailsDashboard = () => {
     );
   }
 
-  const { school, overview } = data || {};
+  const { school, overview, students, teachers, classEnrollments } = data || {};
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader title={school?.name || 'School Details'} backUrl="/dashboard/schools" />
+      <PageHeader title={school?.name || 'School Details'} backUrl="/dashboard" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader>
@@ -60,6 +61,24 @@ const SchoolDetailsDashboard = () => {
             <p className="text-3xl font-bold">{overview?.activeUsers}</p>
           </CardContent>
         </Card>
+      </div>
+      <div className="mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Student Enrollment by Class</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StudentEnrollmentChart data={classEnrollments} />
+          </CardContent>
+        </Card>
+      </div>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Students</h2>
+        <UserDataGrid data={students} />
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Teachers</h2>
+        <UserDataGrid data={teachers} />
       </div>
     </div>
   );
