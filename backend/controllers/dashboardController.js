@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import Activity from "../models/Activity.js";
 import ClassModel from "../models/Class.js";
@@ -482,7 +483,9 @@ const getSchoolDetails = asyncHandler(async (req, res) => {
     ]),
     Fee.aggregate([
       {
-        $match: { school: new mongoose.Types.ObjectId(schoolId) },
+        $match: {
+          school: new mongoose.Types.ObjectId(schoolId),
+        },
       },
       {
         $group: {
