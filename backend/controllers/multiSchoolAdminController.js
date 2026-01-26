@@ -85,3 +85,69 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
 
   res.json({ message: 'Admin removed successfully' });
 });
+
+// @desc    Get all multi-school admins
+// @route   GET /api/multi-school-admin/admins
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getMultiSchoolAdmins = asyncHandler(async (req, res) => {
+  const admins = await User.find({ role: 'MULTI_SCHOOL_ADMIN' });
+  res.json(admins);
+});
+
+// @desc    Assign a user as a multi-school admin
+// @route   POST /api/multi-school-admin/admins
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const assignMultiSchoolAdmin = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.role = 'MULTI_SCHOOL_ADMIN';
+  await user.save();
+  res.status(201).json({ message: 'Multi-school admin assigned successfully' });
+});
+
+// @desc    Remove a multi-school admin
+// @route   DELETE /api/multi-school-admin/admins/:adminId
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const removeMultiSchoolAdmin = asyncHandler(async (req, res) => {
+  const { adminId } = req.params;
+
+  if (req.user._id.toString() === adminId) {
+    res.status(400);
+    throw new Error('You cannot remove yourself as a multi-school admin');
+  }
+
+  const user = await User.findById(adminId);
+
+  if (!user || user.role !== 'MULTI_SCHOOL_ADMIN') {
+    res.status(404);
+    throw new Error('Multi-school admin not found');
+  }
+
+  user.role = 'USER'; // or some other default role
+  await user.save();
+  res.json({ message: 'Multi-school admin removed successfully' });
+});
+
+// @desc    Get all schools managed by a multi-school admin
+// @route   GET /api/multi-school-admin/schools
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getManagedSchools = asyncHandler(async (req, res) => {
+  const managedSchools = req.user.managedSchools;
+  const schools = await School.find({ _id: { $in: managedSchools } });
+  res.json(schools);
+});
+
+// @desc    Get all users from all schools managed by a multi-school admin
+// @route   GET /api/multi-school-admin/users
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getAllManagedUsers = asyncHandler(async (req, res) => {
+  const managedSchools = req.user.managedSchools;
+  const users = await User.find({ school: { $in: managedSchools } });
+  res.json(users);
+});
