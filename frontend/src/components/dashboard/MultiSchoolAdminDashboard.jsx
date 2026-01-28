@@ -1,8 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import ManageSchoolAdmins from './ManageSchoolAdmins';
+import ManageMultiSchoolAdmins from './ManageMultiSchoolAdmins';
 import { Button } from '../ui/button';
 import {
   Dialog,
@@ -11,6 +13,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
 
 const MultiSchoolAdminDashboard = () => {
   const { data: stats, isLoading, isError, error } = useGetDashboardStatsQuery();
@@ -28,27 +38,61 @@ const MultiSchoolAdminDashboard = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats && stats.map((school) => (
-          <div key={school.schoolId} className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-2">{school.schoolName}</h2>
-            <p>Students: {school.studentCount}</p>
-            <p>Teachers: {school.teacherCount}</p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="mt-4">Manage Admins</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Admins for {school.schoolName}</DialogTitle>
-                </DialogHeader>
-                <ManageSchoolAdmins schoolId={school.schoolId} />
-              </DialogContent>
-            </Dialog>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Multi-School Admin Dashboard</h1>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>Manage System Admins</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Manage Multi-School System Admins</DialogTitle>
+            </DialogHeader>
+            <ManageMultiSchoolAdmins />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-3">Managed Schools Overview</h2>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>School Name</TableHead>
+                <TableHead className="text-center">Students</TableHead>
+                <TableHead className="text-center">Teachers</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stats && stats.map((school) => (
+                <TableRow key={school.schoolId}>
+                  <TableCell className="font-medium">{school.schoolName}</TableCell>
+                  <TableCell className="text-center">{school.studentCount}</TableCell>
+                  <TableCell className="text-center">{school.teacherCount}</TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">Manage Admins</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Admins for {school.schoolName}</DialogTitle>
+                        </DialogHeader>
+                        <ManageSchoolAdmins schoolId={school.schoolId} />
+                      </DialogContent>
+                    </Dialog>
+                    <Button asChild size="sm">
+                      <Link to={`/schools/${school.schoolId}`}>View Details</Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
