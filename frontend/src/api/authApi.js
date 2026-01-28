@@ -4,9 +4,8 @@ import { setCredentials, clearCredentials, setError } from "../store/authSlice";
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getCurrentUser: builder.query({
-      query: () => "/users/profile",
+      query: () => "/auth/me",
       providesTags: ["Auth"],
-      transformResponse: (response) => response.data,
     }),
     login: builder.mutation({
       query: (credentials) => ({
