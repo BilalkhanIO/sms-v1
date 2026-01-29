@@ -85,3 +85,57 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
 
   res.json({ message: 'Admin removed successfully' });
 });
+
+// @desc    List all multi-school admins
+// @route   GET /api/multi-school-admin/admins
+// @access  Private/SUPER_ADMIN, Private/MULTI_SCHOOL_ADMIN
+export const listMultiSchoolAdmins = asyncHandler(async (req, res) => {
+  const admins = await User.find({ role: 'MULTI_SCHOOL_ADMIN' });
+  res.json(admins);
+});
+
+// @desc    Assign a user as a multi-school admin
+// @route   POST /api/multi-school-admin/admins
+// @access  Private/SUPER_ADMIN, Private/MULTI_SCHOOL_ADMIN
+export const assignMultiSchoolAdmin = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.role = 'MULTI_SCHOOL_ADMIN';
+  if (req.user.managedSchools && req.user.managedSchools.length > 0) {
+      user.managedSchools = req.user.managedSchools;
+  }
+
+  await user.save();
+  res.status(201).json({ message: 'Multi-school admin assigned successfully' });
+});
+
+// @desc    Remove a multi-school admin
+// @route   DELETE /api/multi-school-admin/admins/:adminId
+// @access  Private/SUPER_ADMIN, Private/MULTI_SCHOOL_ADMIN
+export const removeMultiSchoolAdmin = asyncHandler(async (req, res) => {
+  const { adminId } = req.params;
+
+  if (req.user._id.toString() === adminId) {
+    res.status(400);
+    throw new Error('You cannot remove your own admin privileges.');
+  }
+
+  const user = await User.findById(adminId);
+
+  if (!user || user.role !== 'MULTI_SCHOOL_ADMIN') {
+    res.status(404);
+    throw new Error('Multi-school admin not found');
+  }
+
+  user.role = 'USER';
+  user.managedSchools = [];
+  await user.save();
+
+  res.json({ message: 'Multi-school admin removed successfully' });
+});

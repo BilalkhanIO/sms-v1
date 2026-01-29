@@ -39,8 +39,8 @@ export default function DashboardLayout() {
   });
 
   useEffect(() => {
-    if (!user) navigate("/login");
-  }, [user, navigate]);
+    if (!isLoading && !pagesIsLoading && !user) navigate("/login");
+  }, [user, isLoading, pagesIsLoading, navigate]);
 
   const handleLogout = async () => {
     try {
@@ -140,6 +140,9 @@ export default function DashboardLayout() {
     }
     if (user?.role === "SUPER_ADMIN" && pagesError) {
       return <div className="text-red-500">Failed to load pages</div>;
+    }
+    if (user?.role === "SUPER_ADMIN" && !superAdminPages) {
+      return null; // or some other placeholder
     }
     return navLinks.map((link) => (
       <Link
@@ -282,7 +285,7 @@ export default function DashboardLayout() {
 
         {/* Main Content */}
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          <Outlet />
+          {user && <Outlet />}
         </main>
       </div>
     </div>
