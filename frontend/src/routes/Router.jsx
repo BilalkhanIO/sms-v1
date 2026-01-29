@@ -69,7 +69,7 @@ const Router = () => {
       <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-      <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
+      <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} /> {/* Default route for /dashboard */}
         <Route path="profile" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
         <Route path="admin-dashboard" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><AdminDashboard /></PrivateRoute>} />
