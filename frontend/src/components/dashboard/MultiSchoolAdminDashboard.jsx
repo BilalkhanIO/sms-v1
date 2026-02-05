@@ -3,6 +3,7 @@ import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import ManageSchoolAdmins from './ManageSchoolAdmins';
+import { Link } from 'react-router-dom';
 import { Button } from '../ui/button';
 import {
   Dialog,
@@ -29,13 +30,20 @@ const MultiSchoolAdminDashboard = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Multi-School Admin Dashboard</h1>
+        <Link to="/dashboard/admin/manage-school-admins">
+          <Button>Manage All Admins</Button>
+        </Link>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats && stats.map((school) => (
           <div key={school.schoolId} className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-2">{school.schoolName}</h2>
-            <p>Students: {school.studentCount}</p>
-            <p>Teachers: {school.teacherCount}</p>
+            <Link to={`/dashboard/schools/${school.schoolId}/dashboard`}>
+              <h2 className="text-xl font-semibold mb-2">{school.schoolName}</h2>
+              <p>Students: {school.studentCount}</p>
+              <p>Teachers: {school.teacherCount}</p>
+            </Link>
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="mt-4">Manage Admins</Button>

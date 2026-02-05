@@ -54,7 +54,7 @@ const ManageSchoolAdmins = ({ schoolId }) => {
       <ul className="space-y-2">
         {admins && admins.map((admin) => (
           <li key={admin._id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
-            <span>{admin.name} ({admin.email})</span>
+            <span>{admin.firstName} {admin.lastName} ({admin.email})</span>
             <Button
               variant="destructive"
               size="sm"
