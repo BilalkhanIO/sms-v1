@@ -5,6 +5,7 @@ import ErrorMessage from '../common/ErrorMessage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/use-toast';
+import InviteAdmin from './InviteAdmin';
 
 const ManageSchoolAdmins = ({ schoolId }) => {
   const { toast } = useToast();
@@ -51,6 +52,7 @@ const ManageSchoolAdmins = ({ schoolId }) => {
           {isAssigning ? 'Assigning...' : 'Assign'}
         </Button>
       </form>
+      <InviteAdmin schoolId={schoolId} />
       <ul className="space-y-2">
         {admins && admins.map((admin) => (
           <li key={admin._id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
