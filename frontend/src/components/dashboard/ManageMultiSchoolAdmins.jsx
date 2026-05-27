@@ -4,102 +4,63 @@ import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { toast } from 'react-hot-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../ui/alert-dialog';
 
 const ManageMultiSchoolAdmins = () => {
-  const { data: admins, isLoading, isError, error, refetch } = useGetMultiSchoolAdminsQuery();
+  const { data: admins, isLoading, isError, error } = useGetMultiSchoolAdminsQuery();
   const [assignAdmin, { isLoading: isAssigning }] = useAssignMultiSchoolAdminMutation();
   const [removeAdmin, { isLoading: isRemoving }] = useRemoveMultiSchoolAdminMutation();
   const [email, setEmail] = useState('');
 
-  const handleAssignAdmin = async (e) => {
-    e.preventDefault();
-    if (!email) return;
-    try {
-      await assignAdmin({ email }).unwrap();
-      toast.success('Admin assigned successfully');
+  const handleAssign = async () => {
+    if (email) {
+      await assignAdmin(email);
       setEmail('');
-      refetch();
-    } catch (err) {
-      toast.error(err.data?.message || 'Failed to assign admin');
     }
   };
 
-  const [adminToRemove, setAdminToRemove] = useState(null);
+  if (isLoading) {
+    return <Spinner size="large" />;
+  }
 
-  const handleRemoveAdmin = async () => {
-    if (!adminToRemove) return;
-    try {
-      await removeAdmin(adminToRemove).unwrap();
-      toast.success('Admin removed successfully');
-      refetch();
-    } catch (err) {
-      toast.error(err.data?.message || 'Failed to remove admin');
-    } finally {
-      setAdminToRemove(null);
-    }
-  };
-
-  if (isLoading) return <Spinner />;
-  if (isError) return <ErrorMessage message={error.data?.message || 'Failed to load admins'} />;
+  if (isError) {
+    return (
+      <ErrorMessage>
+        Error: {error.data?.message || error.error || 'Failed to load admins'}
+      </ErrorMessage>
+    );
+  }
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Manage Multi-School Admins</h2>
-      <form onSubmit={handleAssignAdmin} className="flex gap-2 mb-4">
+      <h2 className="text-xl font-bold mb-4">Manage Multi-School Admins</h2>
+      <div className="flex gap-2 mb-4">
         <Input
           type="email"
           placeholder="Enter user email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
         />
-        <Button type="submit" disabled={isAssigning}>
+        <Button onClick={handleAssign} disabled={isAssigning}>
           {isAssigning ? 'Assigning...' : 'Assign Admin'}
         </Button>
-      </form>
-      <div className="space-y-2">
+      </div>
+      <div>
         {admins && admins.map((admin) => (
-          <div key={admin._id} className="flex items-center justify-between bg-gray-100 p-2 rounded">
+          <div key={admin._id} className="flex justify-between items-center p-2 border-b">
             <div>
               <p className="font-semibold">{admin.name}</p>
-              <p className="text-sm text-gray-600">{admin.email}</p>
+              <p className="text-sm text-gray-500">{admin.email}</p>
             </div>
             <Button
               variant="destructive"
-              size="sm"
-              onClick={() => setAdminToRemove(admin._id)}
+              onClick={() => removeAdmin(admin._id)}
               disabled={isRemoving}
             >
-              Remove
+              {isRemoving ? 'Removing...' : 'Remove'}
             </Button>
           </div>
         ))}
       </div>
-      <AlertDialog open={!!adminToRemove} onOpenChange={() => setAdminToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the admin.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRemoveAdmin}>Continue</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

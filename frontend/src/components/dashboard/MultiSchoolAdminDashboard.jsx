@@ -1,21 +1,14 @@
 import React from 'react';
-import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
+import { Link } from 'react-router-dom';
+import { useGetManagedSchoolsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
-import ManageSchoolAdmins from './ManageSchoolAdmins';
-import ManageMultiSchoolAdmins from './ManageMultiSchoolAdmins';
-import { Button } from '../ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import CentralizedAdminManagement from '../../pages/admin/CentralizedAdminManagement';
+import ManageMultiSchoolAdmins from './ManageMultiSchoolAdmins';
 
 const MultiSchoolAdminDashboard = () => {
-  const { data: stats, isLoading, isError, error } = useGetDashboardStatsQuery();
+  const { data: schools, isLoading, isError, error } = useGetManagedSchoolsQuery();
 
   if (isLoading) {
     return <Spinner size="large" />;
@@ -24,7 +17,7 @@ const MultiSchoolAdminDashboard = () => {
   if (isError) {
     return (
       <ErrorMessage>
-        Error: {error.data?.message || error.error || 'Failed to load dashboard stats'}
+        Error: {error.data?.message || error.error || 'Failed to load schools'}
       </ErrorMessage>
     );
   }
@@ -32,37 +25,30 @@ const MultiSchoolAdminDashboard = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
-      <Tabs defaultValue="school-stats">
+      <Tabs defaultValue="schools">
         <TabsList>
-          <TabsTrigger value="school-stats">School Statistics</TabsTrigger>
-          <TabsTrigger value="manage-admins">Manage Admins</TabsTrigger>
+          <TabsTrigger value="schools">Managed Schools</TabsTrigger>
+          <TabsTrigger value="admin-management">Admin Management</TabsTrigger>
+          <TabsTrigger value="multi-school-admins">Multi-School Admins</TabsTrigger>
         </TabsList>
-        <TabsContent value="school-stats">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {stats && stats.map((school) => (
-              <div key={school.schoolId} className="bg-white p-4 rounded-lg shadow">
-                <h2 className="text-xl font-semibold mb-2">{school.schoolName}</h2>
-                <p>Students: {school.studentCount}</p>
-                <p>Teachers: {school.teacherCount}</p>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="mt-4">Manage School Admins</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Admins for {school.schoolName}</DialogTitle>
-                    </DialogHeader>
-                    <ManageSchoolAdmins schoolId={school.schoolId} />
-                  </DialogContent>
-                </Dialog>
+        <TabsContent value="schools">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {schools && schools.map((school) => (
+              <div key={school._id} className="bg-white p-4 rounded-lg shadow">
+                <Link to={`/dashboard/schools/${school._id}`}>
+                  <h2 className="text-xl font-semibold mb-2">{school.name}</h2>
+                </Link>
+                <p>Status: {school.status}</p>
+                <p>Created At: {new Date(school.createdAt).toLocaleDateString()}</p>
               </div>
             ))}
           </div>
         </TabsContent>
-        <TabsContent value="manage-admins">
-          <div className="mt-4">
-            <ManageMultiSchoolAdmins />
-          </div>
+        <TabsContent value="admin-management">
+          <CentralizedAdminManagement />
+        </TabsContent>
+        <TabsContent value="multi-school-admins">
+          <ManageMultiSchoolAdmins />
         </TabsContent>
       </Tabs>
     </div>
