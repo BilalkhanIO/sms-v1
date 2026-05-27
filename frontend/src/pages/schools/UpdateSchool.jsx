@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import PageHeader from '../../components/common/PageHeader';
-import Button from '../../components/common/Button';
-import Input from '../../components/common/Input';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import { useGetSchoolByIdQuery, useUpdateSchoolMutation } from '../../api/schoolsApi';
+
+const formSchema = z.object({
+  name: z.string().min(1, 'School name is required'),
+  address: z.string().min(1, 'Address is required'),
+  contactInfo: z.object({
+    phone: z.string().min(1, 'Contact phone is required'),
+    email: z.string().email('Invalid email address'),
+  }),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING_APPROVAL']),
+});
 
 const UpdateSchool = () => {
   const navigate = useNavigate();
@@ -13,69 +29,40 @@ const UpdateSchool = () => {
   const { data: school, isLoading: isSchoolLoading, isError: isSchoolError, error: schoolError } = useGetSchoolByIdQuery(schoolId);
   const [updateSchool, { isLoading: isUpdating }] = useUpdateSchoolMutation();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    contactInfo: {
-      phone: '',
-      email: '',
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      address: '',
+      contactInfo: {
+        phone: '',
+        email: '',
+      },
+      status: 'PENDING_APPROVAL',
     },
-    status: '',
   });
-  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (school) {
-      setFormData({
-        name: school.name || '',
-        address: school.address || '',
+    if (school?.data?.school) {
+      form.reset({
+        name: school.data.school.name || '',
+        address: school.data.school.address || '',
         contactInfo: {
-          phone: school.contactInfo?.phone || '',
-          email: school.contactInfo?.email || '',
+          phone: school.data.school.contactInfo?.phone || '',
+          email: school.data.school.contactInfo?.email || '',
         },
-        status: school.status || '',
+        status: school.data.school.status || 'PENDING_APPROVAL',
       });
     }
-  }, [school]);
+  }, [school, form]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith('contactInfo.')) {
-      const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        contactInfo: {
-          ...prev.contactInfo,
-          [field]: value,
-        },
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (values) => {
     try {
-      await updateSchool({ id: schoolId, ...formData }).unwrap();
+      await updateSchool({ id: schoolId, ...values }).unwrap();
       navigate('/dashboard/schools');
     } catch (err) {
-      const validationErrors = {};
-      if (err.data?.errors) {
-        err.data.errors.forEach(error => {
-          if (error.path.includes('.')) {
-            validationErrors[error.path] = error.msg;
-          } else {
-            validationErrors[error.path] = error.msg;
-          }
-        });
-      } else if (err.data?.message) {
-        validationErrors.general = err.data.message;
-      }
-      setErrors(validationErrors);
+      console.error('Failed to update school:', err);
+      // You might want to display a toast notification or a general error message here
     }
   };
 
@@ -93,87 +80,104 @@ const UpdateSchool = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader title={`Edit School: ${school?.name}`} backUrl="/dashboard/schools" />
-      
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-        <Input
-          label="School Name"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          error={errors.name}
-          required
-        />
-        <Input
-          label="Address"
-          id="address"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          error={errors.address}
-          required
-        />
-        <Input
-          label="Contact Phone"
-          id="contactInfo.phone"
-          name="contactInfo.phone"
-          value={formData.contactInfo.phone}
-          onChange={handleChange}
-          error={errors['contactInfo.phone']}
-          required
-        />
-        <Input
-          label="Contact Email"
-          type="email"
-          id="contactInfo.email"
-          name="contactInfo.email"
-          value={formData.contactInfo.email}
-          onChange={handleChange}
-          error={errors['contactInfo.email']}
-          required
-        />
-
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-            <option value="PENDING_APPROVAL">Pending Approval</option>
-          </select>
-          {errors.status && (
-            <p className="mt-2 text-sm text-red-600">{errors.status}</p>
-          )}
-        </div>
-
-        {errors.general && (
-          <div className="text-red-500 text-sm mt-2">{errors.general}</div>
-        )}
-
-        <div className="flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/dashboard/schools')}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            isLoading={isUpdating}
-          >
-            Update School
-          </Button>
-        </div>
-      </form>
+      <PageHeader title={`Edit School: ${school?.data?.name}`} backUrl="/dashboard/schools" />
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>School Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>School Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter school name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="contactInfo.phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter contact phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="contactInfo.email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter contact email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
+                        <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end space-x-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate('/dashboard/schools')}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isUpdating}>
+                  {isUpdating ? 'Updating...' : 'Update School'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
