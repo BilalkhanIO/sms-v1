@@ -1,87 +1,193 @@
-import asyncHandler from "express-async-handler";
-import School from "../models/School.js";
-import User from "../models/User.js";
-import { successResponse, errorResponse } from "../utils/apiResponse.js";
+import asyncHandler from 'express-async-handler';
+import School from '../models/School.js';
+import User from '../models/User.js';
+import mongoose from 'mongoose';
 
-// @desc    Get schools managed by the multi-school admin
-// @route   GET /api/multi-school-admin/schools
+// @desc    Get dashboard stats for multi-school admin
+// @route   GET /api/multi-school-admin/dashboard-stats
 // @access  Private/MULTI_SCHOOL_ADMIN
-const getManagedSchools = asyncHandler(async (req, res) => {
-  const managedSchools = await School.find({
-    _id: { $in: req.user.managedSchools },
-  }).populate("admin", "firstName lastName email");
-
-  return successResponse(res, managedSchools, "Managed schools fetched successfully");
+export const getDashboardStats = asyncHandler(async (req, res) => {
+  const managedSchools = req.user.managedSchools;
+  const stats = await Promise.all(
+    managedSchools.map(async (schoolId) => {
+      const school = await School.findById(schoolId);
+      if (!school) return null;
+      const studentCount = await User.countDocuments({ school: schoolId, role: 'STUDENT' });
+      const teacherCount = await User.countDocuments({ school: schoolId, role: 'TEACHER' });
+      return {
+        schoolId: school._id,
+        schoolName: school.name,
+        studentCount,
+        teacherCount,
+      };
+    })
+  );
+  res.json(stats.filter(Boolean));
 });
 
-// @desc    Get all school admins for the managed schools
-// @route   GET /api/multi-school-admin/admins
+// @desc    Get admins for a specific school
+// @route   GET /api/multi-school-admin/:schoolId/admins
 // @access  Private/MULTI_SCHOOL_ADMIN
-const getSchoolAdmins = asyncHandler(async (req, res) => {
-    const schoolAdmins = await User.find({
-        role: "SCHOOL_ADMIN",
-        school: { $in: req.user.managedSchools },
-    }).populate("school", "name").select("firstName lastName email school");
-
-    return successResponse(res, schoolAdmins, "School admins fetched successfully");
+export const getSchoolAdmins = asyncHandler(async (req, res) => {
+  const { schoolId } = req.params;
+  if (!req.user.managedSchools.includes(schoolId)) {
+    res.status(403);
+    throw new Error('You are not authorized to manage this school');
+  }
+  const admins = await User.find({ school: schoolId, role: 'SCHOOL_ADMIN' });
+  res.json(admins);
 });
 
 // @desc    Assign a school admin to a school
-// @route   POST /api/multi-school-admin/assign-admin
+// @route   POST /api/multi-school-admin/:schoolId/admins
 // @access  Private/MULTI_SCHOOL_ADMIN
-const assignSchoolAdmin = asyncHandler(async (req, res) => {
-    const { schoolId, adminId } = req.body;
+export const assignSchoolAdmin = asyncHandler(async (req, res) => {
+  const { schoolId } = req.params;
+  const { email } = req.body;
 
-    if (!req.user.managedSchools.includes(schoolId)) {
-        return errorResponse(res, "You are not authorized to manage this school", 403);
-    }
+  if (!req.user.managedSchools.includes(schoolId)) {
+    res.status(403);
+    throw new Error('You are not authorized to manage this school');
+  }
 
-    const school = await School.findById(schoolId);
-    if (!school) {
-        return errorResponse(res, "School not found", 404);
-    }
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
 
-    const admin = await User.findById(adminId);
-    if (!admin || admin.role !== "SCHOOL_ADMIN") {
-        return errorResponse(res, "Admin not found or user is not a school admin", 404);
-    }
+  user.school = schoolId;
+  user.role = 'SCHOOL_ADMIN';
+  await user.save();
 
-    school.admin = adminId;
-    await school.save();
-
-    admin.school = schoolId;
-    await admin.save();
-
-    return successResponse(res, null, "Admin assigned to school successfully");
+  res.status(201).json({ message: 'Admin assigned successfully' });
 });
 
-// @desc    Unassign a school admin from a school
-// @route   POST /api/multi-school-admin/unassign-admin
+// @desc    Remove a school admin from a school
+// @route   DELETE /api/multi-school-admin/:schoolId/admins/:adminId
 // @access  Private/MULTI_SCHOOL_ADMIN
-const unassignSchoolAdmin = asyncHandler(async (req, res) => {
-    const { schoolId } = req.body;
+export const removeSchoolAdmin = asyncHandler(async (req, res) => {
+  const { schoolId, adminId } = req.params;
 
-    if (!req.user.managedSchools.includes(schoolId)) {
-        return errorResponse(res, "You are not authorized to manage this school", 403);
-    }
+  if (!req.user.managedSchools.includes(schoolId)) {
+    res.status(403);
+    throw new Error('You are not authorized to manage this school');
+  }
 
-    const school = await School.findById(schoolId);
-    if (!school) {
-        return errorResponse(res, "School not found", 404);
-    }
+  const user = await User.findById(adminId);
+  if (!user || user.school.toString() !== schoolId) {
+    res.status(404);
+    throw new Error('Admin not found in this school');
+  }
 
-    if (school.admin) {
-        const admin = await User.findById(school.admin);
-        if (admin) {
-            admin.school = null;
-            await admin.save();
-        }
-    }
+  user.school = null;
+  user.role = 'USER'; // or some other default role
+  await user.save();
 
-    school.admin = null;
-    await school.save();
-
-    return successResponse(res, null, "Admin unassigned from school successfully");
+  res.json({ message: 'Admin removed successfully' });
 });
 
-export { getManagedSchools, getSchoolAdmins, assignSchoolAdmin, unassignSchoolAdmin };
+// @desc    Get all schools managed by the multi-school admin
+// @route   GET /api/multi-school-admin/schools
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getManagedSchools = asyncHandler(async (req, res) => {
+  const managedSchoolIds = req.user.managedSchools.map(
+    (id) => new mongoose.Types.ObjectId(id)
+  );
+
+  const schools = await School.aggregate([
+    { $match: { _id: { $in: managedSchoolIds } } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: 'school',
+        as: 'users',
+      },
+    },
+    {
+      $project: {
+        name: 1,
+        status: 1,
+        studentCount: {
+          $size: {
+            $filter: {
+              input: '$users',
+              as: 'user',
+              cond: { $eq: ['$$user.role', 'STUDENT'] },
+            },
+          },
+        },
+        teacherCount: {
+          $size: {
+            $filter: {
+              input: '$users',
+              as: 'user',
+              cond: { $eq: ['$$user.role', 'TEACHER'] },
+            },
+          },
+        },
+      },
+    },
+  ]);
+
+  res.json(schools);
+});
+
+// @desc    Get all users in all managed schools
+// @route   GET /api/multi-school-admin/users
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getAllManagedUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({
+    school: { $in: req.user.managedSchools },
+  }).populate('school', 'name');
+  res.json(users);
+});
+
+// @desc    Get all multi-school admins
+// @route   GET /api/multi-school-admin/admins
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const getMultiSchoolAdmins = asyncHandler(async (req, res) => {
+  const admins = await User.find({ role: 'MULTI_SCHOOL_ADMIN' });
+  res.json(admins);
+});
+
+// @desc    Assign a user as a multi-school admin
+// @route   POST /api/multi-school-admin/admins
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const assignMultiSchoolAdmin = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.role = 'MULTI_SCHOOL_ADMIN';
+  await user.save();
+  res.status(201).json({ message: 'Multi-school admin assigned successfully' });
+});
+
+// @desc    Remove a multi-school admin
+// @route   DELETE /api/multi-school-admin/admins/:userId
+// @access  Private/MULTI_SCHOOL_ADMIN
+export const removeMultiSchoolAdmin = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (req.user._id.toString() === userId) {
+    res.status(400);
+    throw new Error('You cannot remove yourself as a multi-school admin');
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.role = 'USER'; // Or any other default role
+  await user.save();
+  res.json({ message: 'Multi-school admin removed successfully' });
+});

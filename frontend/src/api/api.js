@@ -20,6 +20,9 @@ export const api = createApi({
     "Dashboard",
     "ManagedSchools",
     "SchoolAdmins",
+    "ManagedSchools",
+    "ManagedUsers",
+    "MultiSchoolAdmins",
   ],
 });
 
