@@ -39,8 +39,8 @@ export default function DashboardLayout() {
   });
 
   useEffect(() => {
-    if (!user && !pagesIsLoading) navigate("/login");
-  }, [user, pagesIsLoading, navigate]);
+    if (!isLoading && !user) navigate("/login");
+  }, [user, isLoading, navigate]);
 
   const handleLogout = async () => {
     try {

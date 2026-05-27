@@ -167,15 +167,15 @@ const resetPassword = [
   }),
 ];
 
-// @desc    Get user profile
+// @desc    Get current user profile
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id).select("-password");
-  res.status(200).json({
-    data: user,
-    message: "User profile retrieved successfully",
-  });
+  const user = await User.findById(req.user._id).select("-password");
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  res.status(200).json({ data: user });
 });
 
 export { loginUser, logoutUser, forgotPassword, resetPassword, getMe };

@@ -14,8 +14,7 @@ const AuthProvider = ({ children }) => {
     if (user) {
       dispatch(setCredentials(user));
     } else if (error) {
-      // If there's any error fetching the user (e.g., 401, 500, network error),
-      // assume the user is not authenticated and clear credentials.
+      // If there's any error (e.g., 401, network error), clear credentials
       dispatch(clearCredentials());
     }
   }, [user, error, dispatch]);
