@@ -15,7 +15,6 @@ import ResetPassword from "../pages/auth/ResetPassword";
 
 // Dashboard Components
 import Dashboard from "../pages/dashboard/Dashboard";
-import MultiSchoolDashboard from "../pages/dashboard/MultiSchoolDashboard";
 import SuperAdminDashboard from "../components/dashboard/SuperAdminDashboard";
 import AdminDashboard from "../components/dashboard/AdminDashboard";
 import TeacherDashboard from "../components/dashboard/TeacherDashboard";
@@ -60,7 +59,6 @@ import AdminSystemSettings from "../pages/admin/SystemSettings";
 import Reports from "../pages/admin/Reports";
 import AuditLogs from "../pages/admin/AuditLogs";
 import BackupManagement from "../pages/admin/BackupManagement";
-import CentralizedAdminManagement from "../pages/admin/CentralizedAdminManagement";
 
 const Router = () => {
   return (
@@ -74,7 +72,6 @@ const Router = () => {
       <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
         <Route index element={<Dashboard />} /> {/* Default route for /dashboard */}
         <Route path="profile" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
-        <Route path="multi-school-dashboard" element={<PrivateRoute roles={["MULTI_SCHOOL_ADMIN"]}><MultiSchoolDashboard /></PrivateRoute>} />
         <Route path="admin-dashboard" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><AdminDashboard /></PrivateRoute>} />
         <Route path="teacher-dashboard" element={<PrivateRoute roles={["TEACHER"]}><TeacherDashboard /></PrivateRoute>} />
         <Route path="student-dashboard" element={<PrivateRoute roles={["STUDENT"]}><StudentDashboard /></PrivateRoute>} />
@@ -98,8 +95,7 @@ const Router = () => {
 
         <Route path="schools" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolList /></PrivateRoute>} />
         <Route path="schools/create" element={<PrivateRoute roles={["SUPER_ADMIN"]}><CreateSchool /></PrivateRoute>} />
-        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolDetails /></PrivateRoute>} />
-        <Route path="schools/:schoolId/dashboard" element={<PrivateRoute roles={["MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
+        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
         <Route path="schools/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UpdateSchool /></PrivateRoute>} />
         <Route path="settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
         <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><ActivityLogsList /></PrivateRoute>} />
@@ -108,14 +104,6 @@ const Router = () => {
         <Route path="admin/reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
         <Route path="admin/audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
         <Route path="admin/backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
-        <Route
-          path="admin/manage-admins"
-          element={
-            <PrivateRoute roles={['SUPER_ADMIN', 'MULTI_SCHOOL_ADMIN']}>
-              <CentralizedAdminManagement />
-            </PrivateRoute>
-          }
-        />
       </Route>
 
       <Route path="*" element={<NotFound />} />

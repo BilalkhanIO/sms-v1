@@ -75,6 +75,45 @@ const seedSuperAdminPages = async () => {
   console.log(`Created ${pages.length} super admin pages`);
 };
 
+const seedSuperAdminPages = async () => {
+  console.log("Seeding super admin pages...");
+  const pages = [
+    {
+      name: "Dashboard",
+      path: "/dashboard/admin",
+      icon: "LayoutDashboard",
+    },
+    {
+      name: "User Management",
+      path: "/dashboard/admin/user-management",
+      icon: "Users",
+    },
+    {
+      name: "System Settings",
+      path: "/dashboard/admin/system-settings",
+      icon: "Settings",
+    },
+    {
+      name: "Reports",
+      path: "/dashboard/admin/reports",
+      icon: "BarChart",
+    },
+    {
+      name: "Audit Logs",
+      path: "/dashboard/admin/audit-logs",
+      icon: "FileText",
+    },
+    {
+      name: "Backup Management",
+      path: "/dashboard/admin/backup-management",
+      icon: "DatabaseBackup",
+    },
+  ];
+
+  await SuperAdminPage.insertMany(pages);
+  console.log(`Created ${pages.length} super admin pages`);
+};
+
 const seedUsers = async () => {
   console.log("Seeding users...");
   const users = [
