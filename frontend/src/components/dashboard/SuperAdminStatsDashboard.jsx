@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGetSuperAdminStatsQuery, useGetUserRoleDistributionQuery } from '../../api/dashboardApi';
-import { useGetActivityLogsQuery } from '../../api/activityLogsApi';
+import { useGetActivitiesQuery as useGetActivityLogsQuery } from '../../api/activityLogsApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { ResponsiveContainer, PieChart, Pie, Tooltip } from 'recharts';

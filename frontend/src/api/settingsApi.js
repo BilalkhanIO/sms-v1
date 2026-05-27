@@ -22,7 +22,42 @@ export const settingsApi = api.injectEndpoints({
         { type: "Setting", id: settingName },
       ],
     }),
+    updateSettingByName: builder.mutation({
+      query: ({ settingName, ...rest }) => ({
+        url: `settings/${settingName}`,
+        method: "PUT",
+        body: rest,
+      }),
+      invalidatesTags: (result, error, { settingName }) => [
+        { type: "Setting", id: settingName },
+        { type: "Setting", id: "LIST" },
+      ],
+    }),
+    createSetting: builder.mutation({
+      query: (body) => ({
+        url: "settings",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "Setting", id: "LIST" }],
+    }),
+    deleteSettingByName: builder.mutation({
+      query: (settingName) => ({
+        url: `settings/${settingName}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, settingName) => [
+        { type: "Setting", id: settingName },
+        { type: "Setting", id: "LIST" },
+      ],
+    }),
   }),
 });
 
-export const { useGetSettingsQuery, useUpdateSettingMutation } = settingsApi;
+export const {
+  useGetSettingsQuery,
+  useUpdateSettingMutation,
+  useUpdateSettingByNameMutation,
+  useCreateSettingMutation,
+  useDeleteSettingByNameMutation,
+} = settingsApi;
