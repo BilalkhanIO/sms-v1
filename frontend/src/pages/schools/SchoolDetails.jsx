@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useGetSchoolByIdQuery } from '../../api/schoolsApi';
+import { useGetSchoolByIdQuery } from '../../api/schoolApi';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import PageHeader from '../../components/common/PageHeader';

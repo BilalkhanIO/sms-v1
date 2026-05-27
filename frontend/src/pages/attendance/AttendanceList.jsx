@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGetAttendanceQuery } from '../../api/attendanceApi';
-import { useGetClassesQuery } from '../../api/classApi';
+import { useGetClassesQuery } from '../../api/classesApi';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';

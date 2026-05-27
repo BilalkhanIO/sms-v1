@@ -25,6 +25,7 @@ import backupRoutes from "./routes/backupRoutes.js";
 import multiSchoolAdminRoutes from "./routes/multiSchoolAdminRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import superAdminPageRoutes from "./routes/superAdminPageRoutes.js";
+import parentRoutes from "./routes/parentRoutes.js";
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use("/api/backups", backupRoutes);
 app.use("/api/multi-school-admin", multiSchoolAdminRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/super-admin/pages", superAdminPageRoutes);
+app.use("/api/parents", parentRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useCreateUserMutation } from "../api/usersApi"; // Import RTK Query hook
-import { useGetSchoolsQuery } from "../api/schoolsApi";
+import { useGetSchoolsQuery } from "../api/schoolApi";
 import { Formik, Form, Field, ErrorMessage } from "formik"; // Import Formik components
 import * as Yup from "yup";
 import InputField from "./forms/InputField";

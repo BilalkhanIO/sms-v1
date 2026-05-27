@@ -410,3 +410,18 @@ export const subjectSchema = Yup.object().shape({
     .of(Yup.string())
     .min(0, 'At least one teacher must be assigned'),
 }); 
+export const attendanceSchema = Yup.object().shape({
+  classId: Yup.string()
+    .required('Class is required'),
+  date: Yup.date()
+    .required('Date is required'),
+  records: Yup.array().of(
+    Yup.object().shape({
+      studentId: Yup.string().required('Student ID is required'),
+      status: Yup.string()
+        .oneOf(['PRESENT', 'ABSENT', 'LATE', 'EXCUSED'], 'Invalid status')
+        .required('Status is required'),
+      remarks: Yup.string().max(200, 'Remarks must be less than 200 characters'),
+    })
+  ).min(1, 'At least one attendance record is required'),
+});

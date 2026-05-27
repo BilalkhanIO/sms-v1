@@ -3,7 +3,6 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 
 import { api } from "../api/api";
 import { activityApi } from "../api/activityApi";
-import { schoolsApi } from "../api/schoolsApi";
 import authReducer from "./authSlice";
 
 export const store = configureStore({
@@ -11,10 +10,9 @@ export const store = configureStore({
     auth: authReducer,
     [api.reducerPath]: api.reducer,
     [activityApi.reducerPath]: activityApi.reducer,
-    [schoolsApi.reducerPath]: schoolsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware, activityApi.middleware, schoolsApi.middleware),
+    getDefaultMiddleware().concat(api.middleware, activityApi.middleware),
   devTools: import.meta.env.DEV,
 });
 

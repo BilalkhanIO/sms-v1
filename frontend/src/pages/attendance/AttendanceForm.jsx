@@ -8,7 +8,7 @@ import {
   useGetAttendanceByIdQuery
 } from '../../api/attendanceApi';
 import { useGetStudentsByClassQuery } from '../../api/studentApi';
-import { useGetClassesQuery } from '../../api/classApi';
+import { useGetClassesQuery } from '../../api/classesApi';
 import Button from '../../components/common/Button';
 import FormSection from '../../components/forms/FormSection';
 import SelectField from '../../components/forms/SelectField';

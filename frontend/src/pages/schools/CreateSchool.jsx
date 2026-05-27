@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
-import { useCreateSchoolMutation } from '../../api/schoolsApi';
+import { useCreateSchoolMutation } from '../../api/schoolApi';
 
 const formSchema = z.object({
   name: z.string().min(1, 'School name is required'),

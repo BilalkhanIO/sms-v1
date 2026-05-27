@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Calendar } from '../../components/ui/calendar';
-import { LoadingSpinner } from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import { useGetEventsQuery, useCreateEventMutation } from '../../api/calendarApi';
 import {
   Select,

@@ -4,7 +4,7 @@ import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useCreateStudentMutation } from '../../api/studentApi';
-import { useGetClassesQuery } from '../../api/classApi';
+import { useGetClassesQuery } from '../../api/classesApi';
 import { useGetParentsQuery } from '../../api/parentApi';
 import Spinner from '../../components/common/Spinner';
 

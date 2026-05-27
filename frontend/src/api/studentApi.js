@@ -58,17 +58,6 @@ export const studentApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Students'],
     }),
-    updateAttendance: builder.mutation({
-      query: ({ studentId, date, status }) => ({
-        url: `/students/${studentId}/attendance`,
-        method: 'POST',
-        body: { date, status },
-      }),
-      invalidatesTags: (result, error, { studentId }) => [
-        'Students',
-        { type: 'Students', id: studentId },
-      ],
-    }),
   }),
 });
 
@@ -79,7 +68,4 @@ export const {
   useCreateStudentMutation,
   useUpdateStudentMutation,
   useDeleteStudentMutation,
-  useUpdateAttendanceMutation,
 } = studentApi;
-
-// Add other student-related API calls

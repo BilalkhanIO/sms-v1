@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
-import { useGetSchoolByIdQuery, useUpdateSchoolMutation } from '../../api/schoolsApi';
+import { useGetSchoolByIdQuery, useUpdateSchoolMutation } from '../../api/schoolApi';
 
 const formSchema = z.object({
   name: z.string().min(1, 'School name is required'),

@@ -91,6 +91,31 @@ export default function DashboardLayout() {
       icon: "School",
     });
     navLinks.push({
+      to: "/dashboard/subjects",
+      label: "Subjects",
+      icon: "BookOpen",
+    });
+    navLinks.push({
+      to: "/dashboard/exams",
+      label: "Exams",
+      icon: "ClipboardList",
+    });
+    navLinks.push({
+      to: "/dashboard/fees",
+      label: "Fees",
+      icon: "CreditCard",
+    });
+    navLinks.push({
+      to: "/dashboard/attendance",
+      label: "Attendance",
+      icon: "CalendarCheck",
+    });
+    navLinks.push({
+      to: "/dashboard/calendar",
+      label: "Calendar",
+      icon: "Calendar",
+    });
+    navLinks.push({
       to: "/dashboard/activity-logs",
       label: "Activity Logs",
       icon: "FileText",
@@ -114,6 +139,26 @@ export default function DashboardLayout() {
       label: "My Classes",
       icon: "School",
     });
+    navLinks.push({
+      to: "/dashboard/subjects",
+      label: "Subjects",
+      icon: "BookOpen",
+    });
+    navLinks.push({
+      to: "/dashboard/exams",
+      label: "Exams",
+      icon: "ClipboardList",
+    });
+    navLinks.push({
+      to: "/dashboard/attendance",
+      label: "Attendance",
+      icon: "CalendarCheck",
+    });
+    navLinks.push({
+      to: "/dashboard/calendar",
+      label: "Calendar",
+      icon: "Calendar",
+    });
   }
 
   // Student specific links
@@ -123,6 +168,21 @@ export default function DashboardLayout() {
       label: "Student Dashboard",
       icon: "Home",
     });
+    navLinks.push({
+      to: "/dashboard/exams",
+      label: "My Exams",
+      icon: "ClipboardList",
+    });
+    navLinks.push({
+      to: "/dashboard/attendance",
+      label: "My Attendance",
+      icon: "CalendarCheck",
+    });
+    navLinks.push({
+      to: "/dashboard/calendar",
+      label: "Calendar",
+      icon: "Calendar",
+    });
   }
 
   // Parent specific links
@@ -131,6 +191,11 @@ export default function DashboardLayout() {
       to: "/dashboard/parent-dashboard",
       label: "Parent Dashboard",
       icon: "Home",
+    });
+    navLinks.push({
+      to: "/dashboard/calendar",
+      label: "Calendar",
+      icon: "Calendar",
     });
   }
 

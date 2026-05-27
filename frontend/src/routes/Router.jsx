@@ -44,6 +44,37 @@ import ClassDetails from "../pages/classes/ClassDetails";
 import CreateClass from "../pages/classes/CreateClass";
 import UpdateClass from "../pages/classes/UpdateClass";
 
+// Exam Management
+import ExamList from "../pages/exams/ExamList";
+import ExamForm from "../pages/exams/ExamForm";
+import ExamDetails from "../pages/exams/ExamDetails";
+import ResultEntry from "../pages/exams/ResultEntry";
+import ResultReport from "../pages/exams/ResultReport";
+
+// Fee Management
+import FeesList from "../pages/fees/FeesList";
+import FeesForm from "../pages/fees/FeesForm";
+import FeesDetails from "../pages/fees/FeesDetails";
+import PaymentForm from "../pages/fees/PaymentForm";
+import PaymentHistory from "../pages/fees/PaymentHistory";
+
+// Attendance Management
+import AttendanceList from "../pages/attendance/AttendanceList";
+import AttendanceForm from "../pages/attendance/AttendanceForm";
+import AttendanceDetails from "../pages/attendance/AttendanceDetails";
+
+// Subject Management
+import SubjectList from "../pages/subjects/SubjectList";
+import CreateSubject from "../pages/subjects/CreateSubject";
+import UpdateSubject from "../pages/subjects/UpdateSubject";
+import SubjectDetails from "../pages/subjects/SubjectDetails";
+
+// Calendar Management
+import CalendarList from "../pages/calendar/CalendarList";
+import CalendarView from "../pages/calendar/CalendarView";
+import CalendarForm from "../pages/calendar/CalendarForm";
+import CalendarDetails from "../pages/calendar/CalendarDetails";
+
 // School Management
 import SchoolList from "../pages/schools/SchoolList";
 import CreateSchool from "../pages/schools/CreateSchool";
@@ -92,6 +123,40 @@ const Router = () => {
         <Route path="classes/:id" element={<PrivateRoute><ClassDetails /></PrivateRoute>} />
         <Route path="classes/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateClass /></PrivateRoute>} />
         <Route path="classes/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateClass /></PrivateRoute>} />
+
+        {/* Exam Routes */}
+        <Route path="exams" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamList /></PrivateRoute>} />
+        <Route path="exams/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamForm /></PrivateRoute>} />
+        <Route path="exams/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ExamDetails /></PrivateRoute>} />
+        <Route path="exams/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamForm /></PrivateRoute>} />
+        <Route path="exams/:id/results" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ResultEntry /></PrivateRoute>} />
+        <Route path="exams/reports" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ResultReport /></PrivateRoute>} />
+
+        {/* Fee Routes */}
+        <Route path="fees" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><FeesList /></PrivateRoute>} />
+        <Route path="fees/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><FeesForm /></PrivateRoute>} />
+        <Route path="fees/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><FeesDetails /></PrivateRoute>} />
+        <Route path="fees/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><FeesForm /></PrivateRoute>} />
+        <Route path="fees/:id/pay" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><PaymentForm /></PrivateRoute>} />
+        <Route path="fees/history/:studentId" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "PARENT", "STUDENT"]}><PaymentHistory /></PrivateRoute>} />
+
+        {/* Attendance Routes */}
+        <Route path="attendance" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><AttendanceList /></PrivateRoute>} />
+        <Route path="attendance/mark" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><AttendanceForm /></PrivateRoute>} />
+        <Route path="attendance/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><AttendanceDetails /></PrivateRoute>} />
+
+        {/* Subject Routes */}
+        <Route path="subjects" element={<PrivateRoute><SubjectList /></PrivateRoute>} />
+        <Route path="subjects/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateSubject /></PrivateRoute>} />
+        <Route path="subjects/:id" element={<PrivateRoute><SubjectDetails /></PrivateRoute>} />
+        <Route path="subjects/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateSubject /></PrivateRoute>} />
+
+        {/* Calendar Routes */}
+        <Route path="calendar" element={<PrivateRoute><CalendarView /></PrivateRoute>} />
+        <Route path="calendar/events" element={<PrivateRoute><CalendarList /></PrivateRoute>} />
+        <Route path="calendar/events/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><CalendarForm /></PrivateRoute>} />
+        <Route path="calendar/events/:id" element={<PrivateRoute><CalendarDetails /></PrivateRoute>} />
+        <Route path="calendar/events/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><CalendarForm /></PrivateRoute>} />
 
         <Route path="schools" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolList /></PrivateRoute>} />
         <Route path="schools/create" element={<PrivateRoute roles={["SUPER_ADMIN"]}><CreateSchool /></PrivateRoute>} />

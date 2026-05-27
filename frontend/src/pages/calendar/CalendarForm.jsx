@@ -4,11 +4,11 @@ import { useFormik } from 'formik';
 import { calendarEventSchema } from '../../utils/validationSchemas';
 import { useCreateEventMutation, useUpdateEventMutation, useGetEventByIdQuery } from '../../api/calendarApi';
 import Button from '../../components/common/Button';
-import FormSection from '../../components/common/FormSection';
-import InputField from '../../components/common/InputField';
-import SelectField from '../../components/common/SelectField';
+import FormSection from '../../components/forms/FormSection';
+import InputField from '../../components/forms/InputField';
+import SelectField from '../../components/forms/SelectField';
 import DateTimeField from '../../components/common/DateTimeField';
-import FormError from '../../components/common/FormError';
+import FormError from '../../components/forms/FormError';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 

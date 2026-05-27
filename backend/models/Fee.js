@@ -23,7 +23,7 @@ const feeSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ["TUITION", "TRANSPORT", "LIBRARY", "LABORATORY", "SPORTS", "OTHER", "ANNOUNCEMENT"],
+      enum: ["TUITION", "TRANSPORT", "LIBRARY", "LABORATORY", "SPORTS", "OTHER"],
     },
     dueDate: {
       type: Date,
