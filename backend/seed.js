@@ -62,6 +62,12 @@ const seedSuperAdminPages = async () => {
         path: "/dashboard/schools",
         icon: "School",
         component: "SchoolList",
+    },
+    {
+        name: "Page Management",
+        path: "/dashboard/admin/page-management",
+        icon: "Settings",
+        component: "PageManagement",
     }
   ];
 
