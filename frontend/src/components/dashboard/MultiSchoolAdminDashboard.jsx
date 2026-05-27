@@ -3,6 +3,7 @@ import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import ManageSchoolAdmins from './ManageSchoolAdmins';
+import ManageMultiSchoolAdmins from './ManageMultiSchoolAdmins';
 import { Button } from '../ui/button';
 import {
   Dialog,
@@ -50,6 +51,7 @@ const MultiSchoolAdminDashboard = () => {
           </div>
         ))}
       </div>
+      <ManageMultiSchoolAdmins />
     </div>
   );
 };
