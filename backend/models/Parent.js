@@ -34,7 +34,6 @@ const parentSchema = new Schema(
   { timestamps: true }
 );
 
-parentSchema.index({ user: 1 }); // Ensure user uniqueness
 parentSchema.index({ 'children': 1 });
 
 const Parent = model("Parent", parentSchema);

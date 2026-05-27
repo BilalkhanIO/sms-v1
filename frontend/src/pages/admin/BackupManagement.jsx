@@ -15,7 +15,7 @@ import {
   Settings,
   Play,
   Pause,
-  Stop,
+  StopCircle,
   Calendar,
   Shield,
   Eye

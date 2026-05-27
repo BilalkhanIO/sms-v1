@@ -100,8 +100,6 @@ const teacherSchema = new Schema(
     { timestamps: true }
   );
   
-  teacherSchema.index({ employeeId: 1 }, { unique: true }); // Ensure employeeId uniqueness
-  teacherSchema.index({ user: 1 }, { unique: true });  // One teacher record per user
   teacherSchema.index({ 'assignedClasses': 1 });
   teacherSchema.index({ 'assignedSubjects': 1 });
   

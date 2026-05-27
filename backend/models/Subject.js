@@ -66,7 +66,6 @@ const subjectSchema = new Schema(
 );
 
 subjectSchema.index({ name: 1 });
-subjectSchema.index({ code: 1 }, { unique: true }); // Ensure code uniqueness
 subjectSchema.index({ 'assignedTeachers': 1 });
 subjectSchema.index({ 'assignedClasses': 1 });
 

@@ -102,9 +102,7 @@ const studentSchema = new Schema(
   { timestamps: true }
 );
 
-studentSchema.index({ admissionNumber: 1 }, { unique: true }); // Admission number must be globally unique
 studentSchema.index({ class: 1, rollNumber: 1 }, { unique: true }); // Roll number unique within a class
-studentSchema.index({ user: 1 }, {unique: true}); // One student record per user.
 
 
 const Student = model("Student", studentSchema);

@@ -10,7 +10,6 @@ import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import ClassModel from "../models/Class.js";
 import Subject from "../models/Subject.js";
 import Student from "../models/Student.js";
-import Teacher from "../models/Teacher.js";
 import mongoose from "mongoose";
 
 // @desc    Create new exam
