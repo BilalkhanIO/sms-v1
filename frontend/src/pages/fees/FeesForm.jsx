@@ -36,8 +36,8 @@ const FeesForm = () => {
       amount: fee?.amount || '',
       dueDate: fee?.dueDate ? new Date(fee.dueDate).toISOString().split('T')[0] : '',
       studentId: fee?.student?.id || '',
-      type: fee?.type || 'tuition',
-      status: fee?.status || 'pending'
+      type: fee?.type || 'TUITION',
+      status: fee?.status || 'PENDING'
     },
     validationSchema: feeSchema,
     enableReinitialize: true,
@@ -65,18 +65,19 @@ const FeesForm = () => {
   })) || [];
 
   const typeOptions = [
-    { value: 'tuition', label: 'Tuition Fee' },
-    { value: 'exam', label: 'Exam Fee' },
-    { value: 'transport', label: 'Transport Fee' },
-    { value: 'library', label: 'Library Fee' },
-    { value: 'other', label: 'Other' }
+    { value: 'TUITION', label: 'Tuition Fee' },
+    { value: 'TRANSPORT', label: 'Transport Fee' },
+    { value: 'LIBRARY', label: 'Library Fee' },
+    { value: 'LABORATORY', label: 'Laboratory Fee' },
+    { value: 'SPORTS', label: 'Sports Fee' },
+    { value: 'OTHER', label: 'Other' },
   ];
 
   const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'partial', label: 'Partially Paid' },
-    { value: 'paid', label: 'Paid' },
-    { value: 'overdue', label: 'Overdue' }
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'PARTIAL', label: 'Partially Paid' },
+    { value: 'PAID', label: 'Paid' },
+    { value: 'OVERDUE', label: 'Overdue' }
   ];
 
   return (

@@ -69,7 +69,7 @@ const AttendanceForm = () => {
         'records',
         students.map(student => ({
           studentId: student.id,
-          status: 'present',
+          status: 'PRESENT',
           remarks: ''
         }))
       );
@@ -81,10 +81,10 @@ const AttendanceForm = () => {
   }
 
   const statusOptions = [
-    { value: 'present', label: 'Present' },
-    { value: 'absent', label: 'Absent' },
-    { value: 'late', label: 'Late' },
-    { value: 'excused', label: 'Excused' }
+    { value: 'PRESENT', label: 'Present' },
+    { value: 'ABSENT', label: 'Absent' },
+    { value: 'LATE', label: 'Late' },
+    { value: 'EXCUSED', label: 'Excused' }
   ];
 
   const handleBulkAction = (status) => {
@@ -146,7 +146,7 @@ const AttendanceForm = () => {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => handleBulkAction('present')}
+                onClick={() => handleBulkAction('PRESENT')}
               >
                 <UserCheck className="w-4 h-4 mr-2" />
                 Mark All Present
@@ -154,7 +154,7 @@ const AttendanceForm = () => {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => handleBulkAction('absent')}
+                onClick={() => handleBulkAction('ABSENT')}
               >
                 <UserX className="w-4 h-4 mr-2" />
                 Mark All Absent
@@ -194,7 +194,7 @@ const AttendanceForm = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <select
                             name={`records.${index}.status`}
-                            value={record?.status || 'present'}
+                            value={record?.status || 'PRESENT'}
                             onChange={formik.handleChange}
                             className="border rounded-md px-3 py-2"
                           >

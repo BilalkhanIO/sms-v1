@@ -274,7 +274,7 @@ export const feeSchema = Yup.object().shape({
     .min(new Date(), 'Due date cannot be in the past')
     .required('Due date is required'),
   type: Yup.string()
-    .oneOf(['TUITION', 'EXAM', 'TRANSPORT', 'LIBRARY', 'OTHER'], 'Invalid fee type')
+    .oneOf(['TUITION', 'TRANSPORT', 'LIBRARY', 'LABORATORY', 'SPORTS', 'OTHER'], 'Invalid fee type')
     .required('Fee type is required'),
   class: Yup.object()
     .shape({

@@ -34,6 +34,12 @@ export const getParentById = asyncHandler(async (req, res) => {
   ) {
     return errorResponse(res, "Access denied", 403);
   }
+  if (
+    req.user.role === "PARENT" &&
+    String(parent.user?._id) !== String(req.user.id)
+  ) {
+    return errorResponse(res, "Access denied", 403);
+  }
   successResponse(res, parent);
 });
 

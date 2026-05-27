@@ -18,9 +18,10 @@ const ExamList = () => {
   const handleDelete = async (id) => {
     try {
       await deleteExam(id).unwrap();
-      setConfirmId(null);
     } catch (err) {
       console.error('Delete failed:', err);
+    } finally {
+      setConfirmId(null);
     }
   };
 

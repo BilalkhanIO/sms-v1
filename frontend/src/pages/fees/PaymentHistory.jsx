@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useGetPaymentHistoryQuery } from '../../api/feesApi';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
@@ -6,6 +7,7 @@ import PageHeader from '../../components/common/PageHeader';
 import { Search, Filter, Download } from 'lucide-react';
 
 const PaymentHistory = () => {
+  const { studentId } = useParams();
   const [filters, setFilters] = useState({
     search: '',
     startDate: '',
@@ -13,7 +15,7 @@ const PaymentHistory = () => {
     paymentMethod: 'all'
   });
 
-  const { data: payments, isLoading, error } = useGetPaymentHistoryQuery(filters);
+  const { data: payments, isLoading, error } = useGetPaymentHistoryQuery({ studentId, ...filters });
 
   if (isLoading) {
     return <Spinner size="large" />;
