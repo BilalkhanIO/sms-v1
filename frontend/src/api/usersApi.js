@@ -70,8 +70,8 @@ export const usersApi = api.injectEndpoints({
                 { type: 'Users', id },
             ],
         }),
-        getMyProfile: builder.query({
-            query: () => '/users/my-profile',
+        searchUsers: builder.query({
+            query: (searchQuery) => `/users/search?query=${searchQuery}`,
             providesTags: ['Users'],
         }),
     }),
@@ -80,7 +80,6 @@ export const usersApi = api.injectEndpoints({
 export const {
     useGetUsersQuery,
     useGetUserByIdQuery,
-    useGetMyProfileQuery,
     useCreateUserMutation,
     useUpdateUserMutation,
     useDeleteUserMutation,
@@ -88,4 +87,5 @@ export const {
     useUpdateUserProfileMutation,
     useUpdateUserRoleMutation,
     useUpdateUserStatusMutation,
+    useLazySearchUsersQuery,
 } = usersApi;

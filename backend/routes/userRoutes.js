@@ -11,11 +11,10 @@ import {
   getUserById,
   updateUser,
   updateUserStatus,
-  getMyProfile,
+  searchUsers,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { setSchoolId } from "../middleware/schoolMiddleware.js";
-import { logActivity } from '../middleware/auditLogMiddleware.js';
 
 // GET /api/users - Get all users (Admin only)
 router.get(
@@ -26,8 +25,10 @@ router.get(
   getUsers
 );
 
-// GET /api/users/my-profile - Get logged-in user's profile
-router.get("/my-profile", protect, getMyProfile);
+// GET /api/users/profile - Get logged-in user's profile
+router.get('/search', protect, authorize('MULTI_SCHOOL_ADMIN', 'SUPER_ADMIN'), searchUsers);
+
+router.get("/profile", protect, getProfile);
 
 // PUT /api/users/profile - Update logged-in user's profile
 router.put("/profile", protect, updateUserProfile);
@@ -37,7 +38,6 @@ router.put(
   "/:id/role",
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
-  logActivity('USER_UPDATE', 'User'),
   updateUserRole
 );
 
@@ -46,19 +46,17 @@ router.put(
   "/:id/status",
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
-  logActivity('USER_UPDATE', 'User'),
   updateUserStatus
 );
 
 // POST /api/users - Create a new user (Admin only)
-router.post("/", protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), logActivity('USER_CREATE', 'User'), createUser);
+router.post("/", protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createUser);
 
 // DELETE /api/users/:id - Delete a user (Admin only)
 router.delete(
   "/:id",
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
-  logActivity('USER_DELETE', 'User'),
   deleteUser
 );
 
@@ -70,7 +68,6 @@ router.put(
   "/:id",
   protect,
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
-  logActivity('USER_UPDATE', 'User'),
   updateUser
 );
 

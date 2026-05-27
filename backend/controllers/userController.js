@@ -315,8 +315,6 @@ const createUser = [
       await session.commitTransaction();
       session.endSession();
 
-      res.locals.entityId = user[0]._id;
-
       // Log activity
       await Activity.logActivity({
         userId: req.user._id,
@@ -549,14 +547,12 @@ const getUserById = [
       return errorResponse(res, "User not found", 404);
     }
 
-    // Authorization check:
-    const isOwner = req.user._id.toString() === userId;
-    const isSuperAdmin = req.user.role === "SUPER_ADMIN";
-    const isSchoolAdminInSameSchool =
-      req.user.role === "SCHOOL_ADMIN" &&
-      user.school?.toString() === req.user.school?.toString();
-
-    if (!isOwner && !isSuperAdmin && !isSchoolAdminInSameSchool) {
+    // Authorization check: Admin or the user themselves
+    if (
+      req.user.role !== "SUPER_ADMIN" &&
+      req.user.role !== "SCHOOL_ADMIN" &&
+      req.user._id.toString() !== userId
+    ) {
       return errorResponse(
         res,
         "Not authorized to access this user's data",
@@ -637,6 +633,33 @@ const updateUserStatus = [
   }),
 ];
 
+// @desc    Search for users by name or email
+// @route   GET /api/users/search
+// @access  Private/MULTI_SCHOOL_ADMIN
+const searchUsers = [
+  protect,
+  authorize('MULTI_SCHOOL_ADMIN', 'SUPER_ADMIN'),
+  asyncHandler(async (req, res) => {
+    const { query } = req.query;
+
+    if (!query) {
+      return successResponse(res, [], 'No search query provided');
+    }
+
+    const users = await User.find({
+      $or: [
+        { firstName: { $regex: query, $options: 'i' } },
+        { lastName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } },
+      ],
+      // Optionally, you might want to filter out users who are already admins
+      // role: { $ne: 'SCHOOL_ADMIN' }
+    }).select('firstName lastName email');
+
+    return successResponse(res, users, 'Users retrieved successfully');
+  }),
+];
+
 export {
   getUsers,
   getProfile,
@@ -647,39 +670,5 @@ export {
   updateUser,
   deleteUser,
   getUserById,
-  getMyProfile,
+  searchUsers,
 };
-
-const getMyProfile = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const user = await User.findById(userId).select("-password");
-
-  if (!user) {
-    return errorResponse(res, "User not found", 404);
-  }
-
-  let userData = { ...user.toObject() };
-
-  switch (user.role) {
-    case "TEACHER":
-      const teacherData = await Teacher.findOne({ user: userId })
-        .populate("assignedClasses", "name section")
-        .populate("assignedSubjects", "name code");
-      userData = { ...userData, teacherDetails: teacherData };
-      break;
-    case "STUDENT":
-      const studentData = await Student.findOne({ user: userId })
-        .populate("class", "name section");
-      userData = { ...userData, studentDetails: studentData };
-      break;
-    case "PARENT":
-      const parentData = await Parent.findOne({ user: userId })
-        .populate("wards", "firstName lastName");
-      userData = { ...userData, parentDetails: parentData };
-      break;
-    default:
-      break;
-  }
-
-  return successResponse(res, userData, "User profile retrieved successfully");
-});
