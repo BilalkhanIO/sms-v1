@@ -52,6 +52,7 @@ import SchoolDetails from "../pages/schools/SchoolDetails";
 import SchoolDetailsDashboard from "../pages/schools/SchoolDetailsDashboard";
 import SystemSettings from "../pages/settings/SystemSettings";
 import ActivityLogsList from "../pages/activity-logs/ActivityLogsList";
+import CentralizedAdminManagement from "../pages/admin/CentralizedAdminManagement";
 
 // Super Admin Pages
 import UserManagement from "../pages/admin/UserManagement";
@@ -95,7 +96,8 @@ const Router = () => {
 
         <Route path="schools" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SchoolList /></PrivateRoute>} />
         <Route path="schools/create" element={<PrivateRoute roles={["SUPER_ADMIN"]}><CreateSchool /></PrivateRoute>} />
-        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
+        <Route path="schools/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"]}><SchoolDetails /></PrivateRoute>} />
+        <Route path="schools/:id/dashboard" element={<PrivateRoute roles={["MULTI_SCHOOL_ADMIN"]}><SchoolDetailsDashboard /></PrivateRoute>} />
         <Route path="schools/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UpdateSchool /></PrivateRoute>} />
         <Route path="settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><SystemSettings /></PrivateRoute>} />
         <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><ActivityLogsList /></PrivateRoute>} />
@@ -104,6 +106,7 @@ const Router = () => {
         <Route path="admin/reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
         <Route path="admin/audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
         <Route path="admin/backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
+        <Route path="admin/manage-school-admins" element={<PrivateRoute roles={["SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"]}><CentralizedAdminManagement /></PrivateRoute>} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

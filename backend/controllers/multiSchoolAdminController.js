@@ -86,68 +86,39 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
   res.json({ message: 'Admin removed successfully' });
 });
 
-// @desc    Get all multi-school admins
-// @route   GET /api/multi-school-admin/admins
+// @desc    Get detailed stats for a specific school
+// @route   GET /api/multi-school-admin/schools/:schoolId/details
 // @access  Private/MULTI_SCHOOL_ADMIN
-export const getMultiSchoolAdmins = asyncHandler(async (req, res) => {
-  const admins = await User.find({ role: 'MULTI_SCHOOL_ADMIN' });
-  res.json(admins);
-});
+export const getSchoolDetails = asyncHandler(async (req, res) => {
+  const { schoolId } = req.params;
 
-// @desc    Assign a user as a multi-school admin
-// @route   POST /api/multi-school-admin/admins
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const assignMultiSchoolAdmin = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
+  // Ensure the user is authorized to manage this school
+  if (!req.user.managedSchools.includes(schoolId)) {
+    res.status(403);
+    throw new Error('You are not authorized to manage this school');
+  }
 
-  if (!user) {
+  const school = await School.findById(schoolId);
+  if (!school) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error('School not found');
   }
 
-  user.role = 'MULTI_SCHOOL_ADMIN';
-  await user.save();
-  res.status(201).json({ message: 'Multi-school admin assigned successfully' });
-});
+  const studentCount = await User.countDocuments({ school: schoolId, role: 'STUDENT' });
+  const teacherCount = await User.countDocuments({ school: schoolId, role: 'TEACHER' });
 
-// @desc    Remove a multi-school admin
-// @route   DELETE /api/multi-school-admin/admins/:adminId
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const removeMultiSchoolAdmin = asyncHandler(async (req, res) => {
-  const { adminId } = req.params;
+  // In a real application, you would fetch more detailed data,
+  // such as class schedules, financial summaries, etc.
+  // For this example, we'll keep it simple.
+  const details = {
+    schoolId: school._id,
+    schoolName: school.name,
+    studentCount,
+    teacherCount,
+    address: school.address,
+    email: school.email,
+    phone: school.phone,
+  };
 
-  if (req.user._id.toString() === adminId) {
-    res.status(400);
-    throw new Error('You cannot remove yourself as a multi-school admin');
-  }
-
-  const user = await User.findById(adminId);
-
-  if (!user || user.role !== 'MULTI_SCHOOL_ADMIN') {
-    res.status(404);
-    throw new Error('Multi-school admin not found');
-  }
-
-  user.role = 'USER'; // or some other default role
-  await user.save();
-  res.json({ message: 'Multi-school admin removed successfully' });
-});
-
-// @desc    Get all schools managed by a multi-school admin
-// @route   GET /api/multi-school-admin/schools
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const getManagedSchools = asyncHandler(async (req, res) => {
-  const managedSchools = req.user.managedSchools;
-  const schools = await School.find({ _id: { $in: managedSchools } });
-  res.json(schools);
-});
-
-// @desc    Get all users from all schools managed by a multi-school admin
-// @route   GET /api/multi-school-admin/users
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const getAllManagedUsers = asyncHandler(async (req, res) => {
-  const managedSchools = req.user.managedSchools;
-  const users = await User.find({ school: { $in: managedSchools } });
-  res.json(users);
+  res.json(details);
 });

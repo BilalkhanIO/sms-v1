@@ -167,4 +167,22 @@ const resetPassword = [
   }),
 ];
 
-export { loginUser, logoutUser, forgotPassword, resetPassword };
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (user) {
+    res.status(200).json({
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      school: user.school,
+    });
+  } else {
+    res.status(404).json({ message: "User not found" });
+  }
+});
+
+export { loginUser, logoutUser, forgotPassword, resetPassword, getCurrentUser };
