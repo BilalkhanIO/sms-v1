@@ -6,6 +6,7 @@ import store from "./store/store";
 import App from "./App";
 import "./index.css";
 import "./api/multiSchoolAdminApi";
+import './api/auditLogsApi';
 import {BrowserRouter} from "react-router-dom";
 
 
