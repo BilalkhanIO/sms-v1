@@ -18,9 +18,7 @@ export const api = createApi({
     "Fees",
     "Exams",
     "Dashboard",
-    "DashboardStats",
-    "SchoolAdmins",
-    "MultiSchoolAdmins",
+    "Pages",
   ],
 });
 
