@@ -1,115 +1,51 @@
-import Report from '../models/Report.js';
 import asyncHandler from 'express-async-handler';
-import { successResponse, errorResponse } from '../utils/apiResponse.js';
-import PDFDocument from 'pdfkit';
-import fs from 'fs';
+import { successResponse } from '../utils/apiResponse.js';
+import { Parser } from 'json2csv';
+import Student from '../models/Student.js';
 
-// @desc    Generate a new report
-// @route   POST /api/reports
+// @desc    Get all report types
+// @route   GET /api/reports/types
 // @access  Private/SuperAdmin
-const generateReport = asyncHandler(async (req, res) => {
-  const { reportName, reportType, fileFormat, filters } = req.body;
-
-  const doc = new PDFDocument();
-  const filePath = `./backend/data/reports/${reportName.replace(/ /g, '_')}_${Date.now()}.pdf`;
-  const stream = fs.createWriteStream(filePath);
-  doc.pipe(stream);
-
-  // Add content to the PDF
-  doc.fontSize(25).text(reportName, {
-    align: 'center',
-  });
-
-  doc.fontSize(16).text(`Report Type: ${reportType}`);
-  doc.fontSize(16).text(`Generated on: ${new Date().toLocaleString()}`);
-  doc.moveDown();
-
-  doc.fontSize(12).text(JSON.stringify(filters, null, 2));
-
-  doc.end();
-
-  await new Promise((resolve, reject) => {
-    stream.on('finish', resolve);
-    stream.on('error', reject);
-  });
-
-  const stats = fs.statSync(filePath);
-  const fileSizeInBytes = stats.size;
-
-  const report = await Report.create({
-    reportName,
-    reportType,
-    generatedBy: req.user._id,
-    fileFormat,
-    fileUrl: filePath,
-    fileSize: fileSizeInBytes,
-    status: 'COMPLETED',
-    filters,
-  });
-
-  successResponse(res, report, 'Report generated successfully', 201);
+export const getReportTypes = asyncHandler(async (req, res) => {
+  const reportTypes = [
+    {
+      id: 'student-report',
+      name: 'Student Report',
+      description: 'Comprehensive student information and academic performance',
+      category: 'Academic'
+    }
+  ];
+  successResponse(res, reportTypes, 'Report types retrieved successfully');
 });
 
-// @desc    Get all reports
-// @route   GET /api/reports
+// @desc    Generate a report
+// @route   POST /api/reports/generate/:reportType
 // @access  Private/SuperAdmin
-const getReports = asyncHandler(async (req, res) => {
-  const reports = await Report.find({}).populate('generatedBy', 'name');
-  successResponse(res, reports, 'Reports retrieved successfully');
-});
+export const generateReport = asyncHandler(async (req, res) => {
+  const { reportType } = req.params;
+  const { filters } = req.body;
 
-// @desc    Get a single report by ID
-// @route   GET /api/reports/:id
-// @access  Private/SuperAdmin
-const getReportById = asyncHandler(async (req, res) => {
-  const report = await Report.findById(req.params.id).populate(
-    'generatedBy',
-    'name'
-  );
+  if (reportType === 'student-report') {
+    let query = {};
 
-  if (report) {
-    successResponse(res, report, 'Report retrieved successfully');
-  } else {
-    errorResponse(res, 'Report not found', 404);
-  }
-});
-
-// @desc    Download a report
-// @route   GET /api/reports/:id/download
-// @access  Private/SuperAdmin
-const downloadReport = asyncHandler(async (req, res) => {
-  const report = await Report.findById(req.params.id);
-
-  if (report) {
-    res.download(report.fileUrl, report.reportName + '.pdf');
-  } else {
-    errorResponse(res, 'Report not found', 404);
-  }
-});
-
-// @desc    Delete a report
-// @route   DELETE /api/reports/:id
-// @access  Private/SuperAdmin
-const deleteReport = asyncHandler(async (req, res) => {
-  const report = await Report.findById(req.params.id);
-
-  if (report) {
-    await Report.deleteOne({ _id: req.params.id });
-    fs.unlink(report.fileUrl, (err) => {
-      if (err) {
-        console.error(err);
+    if (filters) {
+      if (filters.class) {
+        query.class = filters.class;
       }
-    });
-    successResponse(res, null, 'Report deleted successfully');
+      if (filters.start && filters.end) {
+        query.createdAt = { $gte: new Date(filters.start), $lte: new Date(filters.end) };
+      }
+    }
+
+    const students = await Student.find(query).populate('user', 'firstName lastName email');
+    const fields = ['user.firstName', 'user.lastName', 'user.email', 'admissionNumber', 'rollNumber', 'gender'];
+    const json2csv = new Parser({ fields });
+    const csv = json2csv.parse(students);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('student-report.csv');
+    return res.send(csv);
   } else {
-    errorResponse(res, 'Report not found', 404);
+    res.status(400);
+    throw new Error('Invalid report type');
   }
 });
-
-export {
-  generateReport,
-  getReports,
-  getReportById,
-  downloadReport,
-  deleteReport,
-};

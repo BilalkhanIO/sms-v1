@@ -1,116 +1,135 @@
-import Backup from '../models/Backup.js';
 import asyncHandler from 'express-async-handler';
-import { successResponse, errorResponse } from '../utils/apiResponse.js';
+import { successResponse } from '../utils/apiResponse.js';
 import archiver from 'archiver';
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
+import path from 'path';
+import { exec } from 'child_process';
+import util from 'util';
+import unzipper from 'unzipper';
 
-// @desc    Create a new backup
-// @route   POST /api/backups
-// @access  Private/SuperAdmin
-const createBackup = asyncHandler(async (req, res) => {
-  const { backupName, backupType } = req.body;
+const execPromise = util.promisify(exec);
 
-  const filePath = `./backend/data/backups/${backupName.replace(/ /g, '_')}_${Date.now()}.zip`;
-  const output = fs.createWriteStream(filePath);
-  const archive = archiver('zip', {
-    zlib: { level: 9 }, // Sets the compression level.
-  });
+const backupDir = path.join(process.cwd(), 'backups');
 
-  archive.pipe(output);
-  archive.directory('backend/data', 'data');
-  await archive.finalize();
-
-  const stats = fs.statSync(filePath);
-  const fileSizeInBytes = stats.size;
-
-  const backup = await Backup.create({
-    backupName,
-    backupType,
-    initiatedBy: req.user._id,
-    fileUrl: filePath,
-    fileSize: fileSizeInBytes,
-    status: 'COMPLETED',
-  });
-
-  successResponse(res, backup, 'Backup created successfully', 201);
-});
+if (!fs.existsSync(backupDir)) {
+  fs.mkdirSync(backupDir);
+}
 
 // @desc    Get all backups
 // @route   GET /api/backups
 // @access  Private/SuperAdmin
-const getBackups = asyncHandler(async (req, res) => {
-  const backups = await Backup.find({}).populate('initiatedBy', 'name');
-  successResponse(res, backups, 'Backups retrieved successfully');
-});
-
-// @desc    Get a single backup by ID
-// @route   GET /api/backups/:id
-// @access  Private/SuperAdmin
-const getBackupById = asyncHandler(async (req, res) => {
-  const backup = await Backup.findById(req.params.id).populate(
-    'initiatedBy',
-    'name'
+export const getBackups = asyncHandler(async (req, res) => {
+  const backupFiles = await fsPromises.readdir(backupDir);
+  const backupDetails = await Promise.all(
+    backupFiles
+      .filter(file => file.endsWith('.zip'))
+      .map(async file => {
+        const filePath = path.join(backupDir, file);
+        const stats = await fsPromises.stat(filePath);
+        return {
+          id: file,
+          name: file,
+          size: `${(stats.size / (1024 * 1024)).toFixed(2)} MB`,
+          createdAt: stats.birthtime,
+          status: 'COMPLETED',
+          location: 'LOCAL',
+          description: 'Database backup',
+        };
+      })
   );
 
-  if (backup) {
-    successResponse(res, backup, 'Backup retrieved successfully');
-  } else {
-    errorResponse(res, 'Backup not found', 404);
-  }
+  backupDetails.sort((a, b) => b.createdAt - a.createdAt);
+  successResponse(res, backupDetails, 'Backups retrieved successfully');
 });
 
-// @desc    Download a backup
-// @route   GET /api/backups/:id/download
+// @desc    Create a new backup
+// @route   POST /api/backups
 // @access  Private/SuperAdmin
-const downloadBackup = asyncHandler(async (req, res) => {
-  const backup = await Backup.findById(req.params.id);
+export const createBackup = asyncHandler(async (req, res) => {
+  const { type } = req.body;
+  const dumpDir = path.join(backupDir, 'dump');
+  const timestamp = new Date().toISOString().replace(/:/g, '-');
+  const backupFileName = `${type}-backup-${timestamp}.zip`;
+  const backupFilePath = path.join(backupDir, backupFileName);
 
-  if (backup) {
-    res.download(backup.fileUrl, backup.backupName + '.zip');
-  } else {
-    errorResponse(res, 'Backup not found', 404);
+  if (fs.existsSync(dumpDir)) {
+    fs.rmSync(dumpDir, { recursive: true, force: true });
   }
-});
+  fs.mkdirSync(dumpDir);
 
-// @desc    Delete a backup
-// @route   DELETE /api/backups/:id
-// @access  Private/SuperAdmin
-const deleteBackup = asyncHandler(async (req, res) => {
-  const backup = await Backup.findById(req.params.id);
+  const mongodumpCommand = `mongodump --uri="${process.env.MONGO_URI}" --out="${dumpDir}"`;
 
-  if (backup) {
-    await Backup.deleteOne({ _id: req.params.id });
-    fs.unlink(backup.fileUrl, (err) => {
-      if (err) {
-        console.error(err);
-      }
+  try {
+    await execPromise(mongodumpCommand);
+
+    const output = fs.createWriteStream(backupFilePath);
+    const archive = archiver('zip', {
+      zlib: { level: 9 },
     });
-    successResponse(res, null, 'Backup deleted successfully');
-  } else {
-    errorResponse(res, 'Backup not found', 404);
+
+    archive.pipe(output);
+    archive.directory(dumpDir, false);
+    await archive.finalize();
+
+    fs.rmSync(dumpDir, { recursive: true, force: true });
+    successResponse(res, { name: backupFileName }, 'Backup created successfully');
+
+  } catch (error) {
+    console.error(`mongodump error: ${error.message}`);
+    res.status(500);
+    throw new Error('Backup creation failed');
   }
 });
 
 // @desc    Restore from a backup
 // @route   POST /api/backups/:id/restore
 // @access  Private/SuperAdmin
-const restoreBackup = asyncHandler(async (req, res) => {
-  const backup = await Backup.findById(req.params.id);
+export const restoreBackup = asyncHandler(async (req, res) => {
+  const backupFileName = req.params.id;
+  const backupFilePath = path.join(backupDir, backupFileName);
+  const restoreDir = path.join(backupDir, 'restore');
 
-  if (backup) {
-    // In a real application, this would trigger a background job
-    // to restore the backup.
-    successResponse(res, null, 'Backup restore process started');
-  } else {
-    errorResponse(res, 'Backup not found', 404);
+  if (!fs.existsSync(backupFilePath)) {
+    res.status(404);
+    throw new Error('Backup not found');
+  }
+
+  if (fs.existsSync(restoreDir)) {
+    fs.rmSync(restoreDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(restoreDir);
+
+  await fs.createReadStream(backupFilePath)
+    .pipe(unzipper.Extract({ path: restoreDir }))
+    .promise();
+
+  const mongorestoreCommand = `mongorestore --uri="${process.env.MONGO_URI}" --dir="${restoreDir}" --drop`;
+
+  try {
+    await execPromise(mongorestoreCommand);
+    fs.rmSync(restoreDir, { recursive: true, force: true });
+    successResponse(res, null, 'Backup restored successfully');
+  } catch (error) {
+    console.error(`mongorestore error: ${error.message}`);
+    fs.rmSync(restoreDir, { recursive: true, force: true });
+    res.status(500);
+    throw new Error('Backup restore failed');
   }
 });
 
-export {
-  createBackup,
-  getBackups,
-  getBackupById,
-  downloadBackup,
-  deleteBackup,
-  restoreBackup,
-};
+// @desc    Delete a backup
+// @route   DELETE /api/backups/:id
+// @access  Private/SuperAdmin
+export const deleteBackup = asyncHandler(async (req, res) => {
+  const backupFileName = req.params.id;
+  const backupFilePath = path.join(backupDir, backupFileName);
+
+  if (fs.existsSync(backupFilePath)) {
+    fs.unlinkSync(backupFilePath);
+    successResponse(res, null, 'Backup deleted successfully');
+  } else {
+    res.status(404);
+    throw new Error('Backup not found');
+  }
+});

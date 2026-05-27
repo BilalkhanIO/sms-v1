@@ -20,26 +20,17 @@ import schoolRoutes from "./routes/schoolRoutes.js";
 import settingRoutes from "./routes/settingRoutes.js";
 import defaultRoutes from "./routes/routeDefaults.js";
 import multiSchoolAdminRoutes from "./routes/multiSchoolAdminRoutes.js";
-import reportRoutes from "./routes/reportRoutes.js";
 import backupRoutes from "./routes/backupRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 const app = express();
 
 // Configure CORS properly (Allow multiple origins)
-const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
-  : ["http://localhost:5173", "http://127.0.0.1:5173"];
-
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow non-browser requests
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  origin: process.env.FRONTEND_URL?.split(",") || "*", // Allow multiple origins
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 204,
 };
 
 // Middleware
@@ -76,8 +67,8 @@ app.use("/api/schools", schoolRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/defaults", defaultRoutes);
 app.use("/api/multi-school-admin", multiSchoolAdminRoutes);
-app.use("/api/reports", reportRoutes);
 app.use("/api/backups", backupRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

@@ -2,7 +2,7 @@ import { api } from './api';
 
 export const activityLogsApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getActivityLogs: builder.query({
+    getActivities: builder.query({
       query: (params) => ({
         url: '/activities', // Backend route is /api/activities
         params: {
@@ -17,11 +17,11 @@ export const activityLogsApi = api.injectEndpoints({
       }),
       providesTags: ['Activities'], // Use 'Activities' tag type from base API
     }),
-    getActivityLogById: builder.query({
+    getActivityById: builder.query({
       query: (id) => `/activities/${id}`, // Backend route is /api/activities/:id
       providesTags: (result, error, id) => [{ type: 'Activities', id }],
     }),
-    exportActivityLogs: builder.query({
+    exportActivities: builder.query({
       query: (params) => ({
         url: '/activities/export', // Assuming a backend export route for activities
         params,
@@ -33,7 +33,7 @@ export const activityLogsApi = api.injectEndpoints({
 });
 
 export const {
-  useGetActivityLogsQuery,
-  useGetActivityLogByIdQuery,
-  useLazyExportActivityLogsQuery,
+  useGetActivitiesQuery,
+  useGetActivityByIdQuery,
+  useLazyExportActivitiesQuery,
 } = activityLogsApi;

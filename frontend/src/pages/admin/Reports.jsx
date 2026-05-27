@@ -1,111 +1,66 @@
 import React, { useState } from 'react';
-import {
-  FileText,
-  Download,
-  BarChart3,
-  TrendingUp,
-  Users,
-  GraduationCap,
+import { 
+  FileText, 
+  Download, 
+  BarChart3, 
+  PieChart, 
+  TrendingUp, 
+  Users, 
+  GraduationCap, 
   DollarSign,
   Calendar,
+  Filter,
   RefreshCw,
   Eye,
-  Trash2,
+  Printer,
+  Mail,
+  Share2
 } from 'lucide-react';
-import {
-  useGetReportsQuery,
-  useGenerateReportMutation,
-  useDeleteReportMutation,
-} from '../../api/reportsApi';
+import { useGetReportTypesQuery, useGenerateReportMutation } from '../../api/reportsApi';
 import Spinner from '../../components/common/Spinner';
+import { useToast } from '../../hooks/useToast';
 
 const Reports = () => {
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const { toast } = useToast();
+  const { data: reportTypes, isLoading: isLoadingReportTypes } = useGetReportTypesQuery();
+  const [generateReport, { isLoading: isGenerating }] = useGenerateReportMutation();
+
+  const [dateRange, setDateRange] = useState({
+    start: '',
+    end: ''
+  });
   const [filters, setFilters] = useState({
     class: '',
     grade: '',
     status: '',
-    userType: '',
+    userType: ''
   });
-
-  const {
-    data: reports,
-    isLoading: isLoadingReports,
-    error: reportsError,
-  } = useGetReportsQuery();
-  const [
-    generateReport,
-    { isLoading: isGenerating, error: generateError },
-  ] = useGenerateReportMutation();
-  const [
-    deleteReport,
-    { isLoading: isDeleting, error: deleteError },
-  ] = useDeleteReportMutation();
-
-  const reportTypes = [
-    {
-      id: 'STUDENT_REPORT',
-      name: 'Student Report',
-      description: 'Comprehensive student information and academic performance',
-      icon: GraduationCap,
-      category: 'Academic',
-    },
-    {
-      id: 'FINANCIAL_REPORT',
-      name: 'Financial Report',
-      description: 'Fee collection, payments, and financial overview',
-      icon: DollarSign,
-      category: 'Financial',
-    },
-    {
-      id: 'ATTENDANCE_REPORT',
-      name: 'Attendance Report',
-      description: 'Student and staff attendance statistics',
-      icon: Users,
-      category: 'Academic',
-    },
-    {
-      id: 'EXAM_REPORT',
-      name: 'Exam Report',
-      description: 'Exam results and performance analysis',
-      icon: FileText,
-      category: 'Academic',
-    },
-    {
-      id: 'USER_ACTIVITY_REPORT',
-      name: 'User Activity Report',
-      description: 'System usage and user activity logs',
-      icon: BarChart3,
-      category: 'System',
-    },
-    {
-      id: 'SYSTEM_PERFORMANCE_REPORT',
-      name: 'System Performance Report',
-      description: 'System metrics and performance data',
-      icon: TrendingUp,
-      category: 'System',
-    },
-  ];
 
   const handleGenerateReport = async (reportType) => {
     try {
-      await generateReport({
-        reportName: reportType.name,
-        reportType: reportType.id,
-        fileFormat: 'PDF',
-        filters,
-      }).unwrap();
+      await generateReport({ reportType, filters: { ...filters, ...dateRange } }).unwrap();
+      toast({
+        title: "Success",
+        description: "Report generated successfully.",
+      });
     } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate report.",
+        variant: "destructive",
+      });
       console.error('Failed to generate report:', error);
     }
   };
 
-  const handleDeleteReport = async (id) => {
-    try {
-      await deleteReport(id).unwrap();
-    } catch (error) {
-      console.error('Failed to delete report:', error);
-    }
+  const previewReport = (reportType) => {
+    // Simulate preview functionality
+    console.log('Previewing report:', reportType);
+  };
+
+  const scheduleReport = (reportType) => {
+    // Simulate scheduling functionality
+    console.log('Scheduling report:', reportType);
   };
 
   const getReportIcon = (category) => {
@@ -125,6 +80,10 @@ const Reports = () => {
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
+
+  if (isLoadingReportTypes) {
+    return <Spinner size="large" />;
+  }
 
   return (
     <div className="space-y-6">
@@ -149,7 +108,7 @@ const Reports = () => {
             <FileText className="w-8 h-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Reports</p>
-              <p className="text-2xl font-bold text-gray-900">{reportTypes.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{reportTypes?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -235,8 +194,8 @@ const Reports = () => {
 
       {/* Report Types */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reportTypes.map((report) => {
-          const Icon = report.icon;
+        {reportTypes?.map((report) => {
+          const Icon = getReportIcon(report.category);
           const CategoryIcon = getReportIcon(report.category);
           return (
             <div key={report.id} className="bg-white rounded-lg shadow p-6">
@@ -244,34 +203,36 @@ const Reports = () => {
                 <div className="flex items-center">
                   <Icon className="w-8 h-8 text-blue-600 mr-3" />
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {report.name}
-                    </h3>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(
-                        report.category
-                      )}`}
-                    >
+                    <h3 className="text-lg font-medium text-gray-900">{report.name}</h3>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(report.category)}`}>
                       <CategoryIcon className="w-3 h-3 mr-1" />
                       {report.category}
                     </span>
                   </div>
                 </div>
               </div>
-
-              <p className="text-sm text-gray-600 mb-4">
-                {report.description}
-              </p>
-
+              
+              <p className="text-sm text-gray-600 mb-4">{report.description}</p>
+              
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <button className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                  <button
+                    onClick={() => previewReport(report.id)}
+                    className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
                     <Eye className="w-4 h-4 mr-1" />
                     Preview
                   </button>
+                  <button
+                    onClick={() => scheduleReport(report.id)}
+                    className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Schedule
+                  </button>
                 </div>
                 <button
-                  onClick={() => handleGenerateReport(report)}
+                  onClick={() => handleGenerateReport(report.id)}
                   disabled={isGenerating}
                   className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                 >
@@ -296,74 +257,127 @@ const Reports = () => {
       {/* Recent Reports */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Recent Reports
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Reports</h3>
           <div className="overflow-x-auto">
-            {isLoadingReports ? (
-              <Spinner />
-            ) : reportsError ? (
-              <div>Error loading reports.</div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Report Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Generated
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Size
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {reports.map((report) => (
-                    <tr key={report._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {report.reportName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {report.reportType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(report.generationDate).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {(report.fileSize / 1024).toFixed(2)} KB
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          <a
-                            href={`/api/reports/${report._id}/download`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                          <button
-                            onClick={() => handleDeleteReport(report._id)}
-                            disabled={isDeleting}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Report Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Generated
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Size
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    Student Report - January 2024
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Academic
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    2 hours ago
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    2.3 MB
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    Financial Report - Q4 2023
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Financial
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    1 day ago
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    1.8 MB
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    System Performance Report
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      System
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    3 days ago
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    856 KB
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
