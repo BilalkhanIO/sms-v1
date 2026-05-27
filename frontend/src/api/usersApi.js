@@ -70,9 +70,12 @@ export const usersApi = api.injectEndpoints({
                 { type: 'Users', id },
             ],
         }),
-        searchUsers: builder.query({
-            query: (searchQuery) => `/users/search?query=${searchQuery}`,
-            providesTags: ['Users'],
+        assignSchoolAdmin: builder.mutation({
+            query: ({ userId, schoolId }) => ({
+                url: `/users/${userId}/assign-school/${schoolId}`,
+                method: 'PUT',
+            }),
+            invalidatesTags: ['Users', 'Schools'],
         }),
     }),
 });
@@ -87,5 +90,5 @@ export const {
     useUpdateUserProfileMutation,
     useUpdateUserRoleMutation,
     useUpdateUserStatusMutation,
-    useLazySearchUsersQuery,
+    useAssignSchoolAdminMutation,
 } = usersApi;

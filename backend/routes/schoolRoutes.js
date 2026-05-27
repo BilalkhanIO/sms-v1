@@ -7,19 +7,19 @@ import {
   deleteSchool,
 } from '../controllers/schoolController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
-import { logActivity } from '../middleware/auditLogMiddleware.js';
 
 const router = express.Router();
 
 // Private routes (Super Admin only)
 router
-  .route('/')
-  .post(protect, authorize('SUPER_ADMIN'), logActivity('SCHOOL_CREATE', 'School'), createSchool)
-  .get(protect, authorize('SUPER_ADMIN'), getSchools);
+  .route("/")
+  .post(protect, authorize("SUPER_ADMIN"), createSchool)
+  .get(protect, authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"), getSchools);
+
 router
-  .route('/:id')
-  .get(protect, authorize('SUPER_ADMIN'), getSchoolById)
-  .put(protect, authorize('SUPER_ADMIN'), logActivity('SCHOOL_UPDATE', 'School'), updateSchool)
-  .delete(protect, authorize('SUPER_ADMIN'), logActivity('SCHOOL_DELETE', 'School'), deleteSchool);
+  .route("/:id")
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"), getSchoolById)
+  .put(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"), updateSchool)
+  .delete(protect, authorize("SUPER_ADMIN"), deleteSchool);
 
 export default router;

@@ -11,7 +11,7 @@ import {
   getUserById,
   updateUser,
   updateUserStatus,
-  searchUsers,
+  assignSchoolAdmin,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { setSchoolId } from "../middleware/schoolMiddleware.js";
@@ -26,8 +26,6 @@ router.get(
 );
 
 // GET /api/users/profile - Get logged-in user's profile
-router.get('/search', protect, authorize('MULTI_SCHOOL_ADMIN', 'SUPER_ADMIN'), searchUsers);
-
 router.get("/profile", protect, getProfile);
 
 // PUT /api/users/profile - Update logged-in user's profile
@@ -70,5 +68,14 @@ router.put(
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   updateUser
 );
+
+// Assign School Admin route
+router.put(
+  "/:userId/assign-school/:schoolId",
+  protect,
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"),
+  assignSchoolAdmin
+);
+
 
 export default router;
