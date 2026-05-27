@@ -2,6 +2,10 @@ import { api } from './api';
 
 export const usersApi = api.injectEndpoints({
     endpoints: (builder) => ({
+        getAllUsers: builder.query({
+            query: () => '/users/all',
+            providesTags: ['Users'],
+        }),
         getUsers: builder.query({
             query: () => '/users',
             providesTags: ['Users'],
@@ -70,13 +74,6 @@ export const usersApi = api.injectEndpoints({
                 { type: 'Users', id },
             ],
         }),
-        assignSchoolAdmin: builder.mutation({
-            query: ({ userId, schoolId }) => ({
-                url: `/users/${userId}/assign-school/${schoolId}`,
-                method: 'PUT',
-            }),
-            invalidatesTags: ['Users', 'Schools'],
-        }),
     }),
 });
 
@@ -90,5 +87,5 @@ export const {
     useUpdateUserProfileMutation,
     useUpdateUserRoleMutation,
     useUpdateUserStatusMutation,
-    useAssignSchoolAdminMutation,
+    useGetAllUsersQuery,
 } = usersApi;

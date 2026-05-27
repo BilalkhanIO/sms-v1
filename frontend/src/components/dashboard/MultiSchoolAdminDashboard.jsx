@@ -1,62 +1,70 @@
-import React, { useState } from 'react';
-import { useGetSchoolsQuery } from '../../api/schoolApi';
+import React from 'react';
+import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
-import ManageAdminsModal from './ManageAdminsModal';
-
-const SchoolCard = ({ school, onManageAdmins }) => (
-    <div className="bg-white shadow rounded-lg p-4 flex flex-col justify-between">
-        <div>
-            <h3 className="text-lg font-bold">{school.name}</h3>
-            <p className="text-sm text-gray-600">{school.address}</p>
-        </div>
-        <button
-            onClick={() => onManageAdmins(school)}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-            Manage Admins
-        </button>
-    </div>
-);
+import ManageSchoolAdmins from './ManageSchoolAdmins';
+import { Button } from '../ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import UserManagement from '../../pages/admin/UserManagement';
 
 const MultiSchoolAdminDashboard = () => {
-    const { data: schools, isLoading, isError, error } = useGetSchoolsQuery();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedSchool, setSelectedSchool] = useState(null);
+  const { data: stats, isLoading, isError, error } = useGetDashboardStatsQuery();
 
-    const handleManageAdmins = (school) => {
-        setSelectedSchool(school);
-        setIsModalOpen(true);
-    };
+  if (isLoading) {
+    return <Spinner size="large" />;
+  }
 
-    if (isLoading) {
-        return <Spinner size="large" />;
-    }
-
-    if (isError) {
-        return (
-            <ErrorMessage>
-                Error: {error.data?.message || error.error || 'Failed to load schools'}
-            </ErrorMessage>
-        );
-    }
-
+  if (isError) {
     return (
-        <div>
-            <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {schools?.map((school) => (
-                    <SchoolCard key={school._id} school={school} onManageAdmins={handleManageAdmins} />
-                ))}
-            </div>
-            {isModalOpen && (
-                <ManageAdminsModal
-                    school={selectedSchool}
-                    onClose={() => setIsModalOpen(false)}
-                />
-            )}
-        </div>
+      <ErrorMessage>
+        Error: {error.data?.message || error.error || 'Failed to load dashboard stats'}
+      </ErrorMessage>
     );
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-4">Multi-School Admin Dashboard</h1>
+      <Tabs defaultValue="schools">
+        <TabsList>
+          <TabsTrigger value="schools">Schools</TabsTrigger>
+          <TabsTrigger value="user-management">User Management</TabsTrigger>
+        </TabsList>
+        <TabsContent value="schools">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            {stats && stats.map((school) => (
+              <div key={school.schoolId} className="bg-white p-4 rounded-lg shadow">
+                <h2 className="text-xl font-semibold mb-2">{school.schoolName}</h2>
+                <p>Students: {school.studentCount}</p>
+                <p>Teachers: {school.teacherCount}</p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="mt-4">Manage Admins</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Admins for {school.schoolName}</DialogTitle>
+                    </DialogHeader>
+                    <ManageSchoolAdmins schoolId={school.schoolId} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="user-management">
+          <UserManagement />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 };
 
 export default MultiSchoolAdminDashboard;

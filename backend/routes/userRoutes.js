@@ -2,6 +2,7 @@
 import express from "express";
 const router = express.Router();
 import {
+  getAllUsers,
   getUsers,
   getProfile,
   updateUserProfile,
@@ -15,6 +16,13 @@ import {
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { setSchoolId } from "../middleware/schoolMiddleware.js";
+
+router.get(
+  "/all",
+  protect,
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"),
+  getAllUsers
+);
 
 // GET /api/users - Get all users (Admin only)
 router.get(
