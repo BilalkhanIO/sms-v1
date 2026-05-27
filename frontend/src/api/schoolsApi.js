@@ -1,14 +1,18 @@
-import { api } from './api';
+// api/schoolsApi.js
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-export const schoolsApi = api.injectEndpoints({
+export const schoolsApi = createApi({
+  reducerPath: 'schoolsApi',
+  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  tagTypes: ['School'],
   endpoints: (builder) => ({
     getSchools: builder.query({
       query: () => '/schools',
-      providesTags: ['Schools'],
+      providesTags: ['School'],
     }),
     getSchoolById: builder.query({
       query: (id) => `/schools/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Schools', id }],
+      providesTags: (result, error, id) => [{ type: 'School', id }],
     }),
     createSchool: builder.mutation({
       query: (newSchool) => ({
@@ -16,22 +20,22 @@ export const schoolsApi = api.injectEndpoints({
         method: 'POST',
         body: newSchool,
       }),
-      invalidatesTags: ['Schools'],
+      invalidatesTags: ['School'],
     }),
     updateSchool: builder.mutation({
-      query: ({ id, ...patch }) => ({
+      query: ({ id, ...updatedSchool }) => ({
         url: `/schools/${id}`,
         method: 'PUT',
-        body: patch,
+        body: updatedSchool,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Schools', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'School', id }],
     }),
     deleteSchool: builder.mutation({
       query: (id) => ({
         url: `/schools/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Schools'],
+      invalidatesTags: ['School'],
     }),
   }),
 });

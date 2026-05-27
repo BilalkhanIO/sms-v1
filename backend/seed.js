@@ -62,6 +62,63 @@ const seedSuperAdminPages = async () => {
         path: "/dashboard/schools",
         icon: "School",
         component: "SchoolList",
+    },
+    {
+        name: "Page Management",
+        path: "/dashboard/admin/page-management",
+        icon: "Settings",
+        component: "PageManagement",
+    }
+  ];
+
+  await SuperAdminPage.insertMany(pages);
+  console.log(`Created ${pages.length} super admin pages`);
+};
+
+const seedSuperAdminPages = async () => {
+  console.log("Seeding super admin pages...");
+  const pages = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: "LayoutDashboard",
+      component: "SuperAdminDashboard",
+    },
+    {
+      name: "User Management",
+      path: "/dashboard/admin/user-management",
+      icon: "Users",
+      component: "UserManagement",
+    },
+    {
+      name: "System Settings",
+      path: "/dashboard/admin/system-settings",
+      icon: "Settings",
+      component: "SystemSettings",
+    },
+    {
+      name: "Reports",
+      path: "/dashboard/admin/reports",
+      icon: "BarChart",
+      component: "Reports",
+    },
+    {
+      name: "Audit Logs",
+      path: "/dashboard/admin/audit-logs",
+      icon: "FileText",
+      component: "AuditLogs",
+    },
+    {
+      name: "Backup Management",
+      path: "/dashboard/admin/backup-management",
+      icon: "DatabaseBackup",
+      component: "BackupManagement",
+    },
+    {
+        name: "Schools",
+        path: "/dashboard/schools",
+        icon: "School",
+        component: "SchoolList",
     }
   ];
 

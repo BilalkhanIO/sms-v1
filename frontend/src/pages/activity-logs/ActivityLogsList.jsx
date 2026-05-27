@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetActivityLogsQuery } from '../../api/activityLogsApi';
+import { useGetActivitiesQuery } from '../../api/activityApi';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import PageHeader from '../../components/common/PageHeader';

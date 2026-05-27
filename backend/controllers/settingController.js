@@ -135,4 +135,55 @@ const deleteSettingByName = [
   }),
 ];
 
-export { createSetting, getSettings, getSettingByName, updateSettingByName, deleteSettingByName };
+// @desc    Get backup settings
+// @route   GET /api/settings/backup
+// @access  Private/SuperAdmin
+const getBackupSettings = [
+    protect,
+    authorize('SUPER_ADMIN'),
+    asyncHandler(async (req, res) => {
+        const backupSettings = await Setting.findOne({ name: 'backup' });
+        if (backupSettings) {
+            successResponse(res, backupSettings.value, 'Backup settings retrieved successfully');
+        } else {
+            // Return default settings if not found
+            successResponse(res, {
+                autoBackup: true,
+                frequency: 'daily',
+                time: '02:00',
+                retention: 30,
+                cloudBackup: false,
+                localBackup: true,
+                compression: true,
+                encryption: true
+            }, 'Default backup settings retrieved');
+        }
+    })
+];
+
+// @desc    Update backup settings
+// @route   PUT /api/settings/backup
+// @access  Private/SuperAdmin
+const updateBackupSettings = [
+    protect,
+    authorize('SUPER_ADMIN'),
+    asyncHandler(async (req, res) => {
+        const { body } = req;
+        let backupSettings = await Setting.findOne({ name: 'backup' });
+
+        if (backupSettings) {
+            backupSettings.value = body;
+        } else {
+            backupSettings = new Setting({
+                name: 'backup',
+                value: body
+            });
+        }
+
+        const updatedSettings = await backupSettings.save();
+        successResponse(res, updatedSettings.value, 'Backup settings updated successfully');
+    })
+];
+
+
+export { createSetting, getSettings, getSettingByName, updateSettingByName, deleteSettingByName, getBackupSettings, updateBackupSettings };

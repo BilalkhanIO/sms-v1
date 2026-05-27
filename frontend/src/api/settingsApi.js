@@ -1,45 +1,63 @@
-import { api } from './api';
+import { api } from "./api";
 
 export const settingsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getSettings: builder.query({
-      query: () => '/settings',
-      providesTags: ['Settings'],
+      query: () => "settings",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Setting", id })),
+              { type: "Setting", id: "LIST" },
+            ]
+          : [{ type: "Setting", id: "LIST" }],
     }),
-    getSettingByName: builder.query({
-      query: (settingName) => `/settings/${settingName}`,
-      providesTags: (result, error, settingName) => [{ type: 'Settings', settingName }],
-    }),
-    createSetting: builder.mutation({
-      query: (newSetting) => ({
-        url: '/settings',
-        method: 'POST',
-        body: newSetting,
+    updateSetting: builder.mutation({
+      query: ({ settingName, ...rest }) => ({
+        url: `settings/${settingName}`,
+        method: "PUT",
+        body: rest,
       }),
-      invalidatesTags: ['Settings'],
+      invalidatesTags: (result, error, { settingName }) => [
+        { type: "Setting", id: settingName },
+      ],
     }),
     updateSettingByName: builder.mutation({
-      query: ({ settingName, ...patch }) => ({
-        url: `/settings/${settingName}`,
-        method: 'PUT',
-        body: patch,
+      query: ({ settingName, ...rest }) => ({
+        url: `settings/${settingName}`,
+        method: "PUT",
+        body: rest,
       }),
-      invalidatesTags: (result, error, { settingName }) => [{ type: 'Settings', settingName }],
+      invalidatesTags: (result, error, { settingName }) => [
+        { type: "Setting", id: settingName },
+        { type: "Setting", id: "LIST" },
+      ],
+    }),
+    createSetting: builder.mutation({
+      query: (body) => ({
+        url: "settings",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "Setting", id: "LIST" }],
     }),
     deleteSettingByName: builder.mutation({
       query: (settingName) => ({
-        url: `/settings/${settingName}`,
-        method: 'DELETE',
+        url: `settings/${settingName}`,
+        method: "DELETE",
       }),
-      invalidatesTags: ['Settings'],
+      invalidatesTags: (result, error, settingName) => [
+        { type: "Setting", id: settingName },
+        { type: "Setting", id: "LIST" },
+      ],
     }),
   }),
 });
 
 export const {
   useGetSettingsQuery,
-  useGetSettingByNameQuery,
-  useCreateSettingMutation,
+  useUpdateSettingMutation,
   useUpdateSettingByNameMutation,
+  useCreateSettingMutation,
   useDeleteSettingByNameMutation,
 } = settingsApi;

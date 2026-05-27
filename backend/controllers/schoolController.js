@@ -123,67 +123,122 @@ const createSchool = [
 
 // @desc    Get all schools
 // @route   GET /api/schools
-// @access  Private/SuperAdmin
+// @access  Private/SuperAdmin or MultiSchoolAdmin
 const getSchools = [
   protect,
-  authorize('SUPER_ADMIN'),
+  authorize("SUPER_ADMIN", "MULTI_SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
-    const schools = await School.find().populate('admin', 'firstName lastName email');
-    return successResponse(res, schools, 'Schools retrieved successfully');
-  })
+    let query = {};
+    if (req.user.role === "MULTI_SCHOOL_ADMIN") {
+      query = { _id: { $in: req.user.managedSchools } };
+    }
+    const schools = await School.find(query).populate(
+      "admin",
+      "firstName lastName email"
+    );
+    return successResponse(res, schools, "Schools retrieved successfully");
+  }),
 ];
 
 // @desc    Get school by ID
 // @route   GET /api/schools/:id
-// @access  Private/SuperAdmin or SchoolAdmin
+// @access  Private/SuperAdmin, SchoolAdmin, or MultiSchoolAdmin
 const getSchoolById = [
   protect,
-  authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
     const schoolId = req.params.id;
 
-    // School Admins can only view their own school
-    if (req.user.role === 'SCHOOL_ADMIN' && req.user.school.toString() !== schoolId) {
-      return errorResponse(res, 'You are not authorized to view this school', 403);
+    // Role-based access control
+    if (
+      req.user.role === "SCHOOL_ADMIN" &&
+      req.user.school.toString() !== schoolId
+    ) {
+      return errorResponse(
+        res,
+        "You are not authorized to view this school",
+        403
+      );
+    }
+    if (
+      req.user.role === "MULTI_SCHOOL_ADMIN" &&
+      !req.user.managedSchools.includes(schoolId)
+    ) {
+      return errorResponse(
+        res,
+        "You are not authorized to view this school",
+        403
+      );
     }
 
-    const school = await School.findById(schoolId).populate('admin', 'firstName lastName email');
+    const school = await School.findById(schoolId).populate(
+      "admin",
+      "firstName lastName email"
+    );
     if (!school) {
-      return errorResponse(res, 'School not found', 404);
+      return errorResponse(res, "School not found", 404);
     }
-    return successResponse(res, school, 'School retrieved successfully');
-  })
+    return successResponse(res, school, "School retrieved successfully");
+  }),
 ];
 
 // @desc    Update school
 // @route   PUT /api/schools/:id
-// @access  Private/SuperAdmin or SchoolAdmin
+// @access  Private/SuperAdmin, SchoolAdmin or MultiSchoolAdmin
 const updateSchool = [
   protect,
-  authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
-  body('name').optional().notEmpty().withMessage('School name is required'),
-  body('address').optional().notEmpty().withMessage('Address is required'),
-  body('contactInfo.phone').optional().notEmpty().withMessage('Contact phone is required'),
-  body('contactInfo.email').optional().isEmail().withMessage('Invalid contact email address'),
-  body('status').optional().isIn(['ACTIVE', 'INACTIVE', 'PENDING_APPROVAL']).withMessage('Invalid status value'),
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
+  body("name").optional().notEmpty().withMessage("School name is required"),
+  body("address").optional().notEmpty().withMessage("Address is required"),
+  body("contactInfo.phone")
+    .optional()
+    .notEmpty()
+    .withMessage("Contact phone is required"),
+  body("contactInfo.email")
+    .optional()
+    .isEmail()
+    .withMessage("Invalid contact email address"),
+  body("status")
+    .optional()
+    .isIn(["ACTIVE", "INACTIVE", "PENDING_APPROVAL"])
+    .withMessage("Invalid status value"),
 
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return errorResponse(res, 'Validation failed', 400, errors.array());
+      return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
     const { name, address, contactInfo, status } = req.body;
 
     // School Admins can only update their own school
-    if (req.user.role === 'SCHOOL_ADMIN' && req.user.school.toString() !== req.params.id) {
-      return errorResponse(res, 'You are not authorized to update this school', 403);
+    if (
+      req.user.role === "SCHOOL_ADMIN" &&
+      req.user.school.toString() !== req.params.id
+    ) {
+      return errorResponse(
+        res,
+        "You are not authorized to update this school",
+        403
+      );
+    }
+
+    // Multi-School Admins can only update schools they manage
+    if (
+        req.user.role === "MULTI_SCHOOL_ADMIN" &&
+        !req.user.managedSchools.includes(req.params.id)
+    ) {
+        return errorResponse(
+            res,
+            "You are not authorized to update this school",
+            403
+        );
     }
 
     const school = await School.findById(req.params.id);
 
     if (!school) {
-      return errorResponse(res, 'School not found', 404);
+      return errorResponse(res, "School not found", 404);
     }
 
     // Check for duplicate name or email if they are being updated

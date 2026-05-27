@@ -47,8 +47,8 @@ export const dashboardApi = api.injectEndpoints({
       providesTags: ["Dashboard"],
     }),
     getSchoolDetails: builder.query({
-      query: (schoolId) => `dashboard/school-details/${schoolId}`,
-      providesTags: ["Dashboard"],
+      query: (schoolId) => `multi-school-admin/schools/${schoolId}/details`,
+      providesTags: (result, error, schoolId) => [{ type: 'SchoolDetails', id: schoolId }],
     }),
   }),
 });
