@@ -25,23 +25,21 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { schoolId }) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
-
-    // New endpoints for multi-school admin management
     getMultiSchoolAdmins: builder.query({
       query: () => 'multi-school-admin/admins',
       providesTags: ['MultiSchoolAdmins'],
     }),
     assignMultiSchoolAdmin: builder.mutation({
-      query: ({ email }) => ({
+      query: (body) => ({
         url: 'multi-school-admin/admins',
         method: 'POST',
-        body: { email },
+        body,
       }),
       invalidatesTags: ['MultiSchoolAdmins'],
     }),
     removeMultiSchoolAdmin: builder.mutation({
-      query: (userId) => ({
-        url: `multi-school-admin/admins/${userId}`,
+      query: (adminId) => ({
+        url: `multi-school-admin/admins/${adminId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['MultiSchoolAdmins'],

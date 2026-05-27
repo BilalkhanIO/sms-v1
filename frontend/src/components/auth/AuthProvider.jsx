@@ -11,13 +11,14 @@ const AuthProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    if (user) {
-      dispatch(setCredentials(user));
-    } else if (error) {
-      // On any error, clear credentials
-      dispatch(clearCredentials());
+    if (!isLoading) { // Only dispatch when not loading
+      if (user) {
+        dispatch(setCredentials(user));
+      } else if (error) {
+        dispatch(clearCredentials());
+      }
     }
-  }, [user, error, dispatch]);
+  }, [user, error, isLoading, dispatch]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {
