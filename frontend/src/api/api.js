@@ -4,11 +4,6 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "/api",
     credentials: "include",
-    prepareHeaders: (headers) => {
-      // Ensure cookies are sent; set JSON headers consistently
-      if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-      return headers;
-    },
   }),
   endpoints: () => ({}),
   tagTypes: [
@@ -25,7 +20,9 @@ export const api = createApi({
     "Dashboard",
     "DashboardStats",
     "SchoolAdmins",
-    "MultiSchoolAdmins",
+    "Report",
+    "Backup",
+    "Setting",
   ],
 });
 
