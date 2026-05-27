@@ -1,22 +1,10 @@
 import React, { useState } from 'react';
-import {
-  useGetMultiSchoolAdminsQuery,
-  useAssignMultiSchoolAdminMutation,
-  useRemoveMultiSchoolAdminMutation,
-} from '../../api/multiSchoolAdminApi';
+import { useGetMultiSchoolAdminsQuery, useAssignMultiSchoolAdminMutation, useRemoveMultiSchoolAdminMutation } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../ui/table';
 
 const ManageMultiSchoolAdmins = () => {
   const { toast } = useToast();
@@ -29,28 +17,20 @@ const ManageMultiSchoolAdmins = () => {
     e.preventDefault();
     if (!email) return;
     try {
-      await assignAdmin({ email }).unwrap();
+      await assignAdmin(email).unwrap();
       toast({ title: 'Success', description: 'Multi-school admin assigned successfully.' });
       setEmail('');
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: err.data?.message || 'Failed to assign multi-school admin.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to assign admin.' });
     }
   };
 
-  const handleRemoveAdmin = async (userId) => {
+  const handleRemoveAdmin = async (adminId) => {
     try {
-      await removeAdmin({ userId }).unwrap();
+      await removeAdmin(adminId).unwrap();
       toast({ title: 'Success', description: 'Multi-school admin removed successfully.' });
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: err.data?.message || 'Failed to remove multi-school admin.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to remove admin.' });
     }
   };
 
@@ -59,7 +39,7 @@ const ManageMultiSchoolAdmins = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Manage Multi-School Admins</h2>
+      <h3 className="text-lg font-semibold mb-2">Manage Multi-School Admins</h3>
       <form onSubmit={handleAssignAdmin} className="flex gap-2 mb-4">
         <Input
           type="email"
@@ -71,34 +51,21 @@ const ManageMultiSchoolAdmins = () => {
           {isAssigning ? 'Assigning...' : 'Assign'}
         </Button>
       </form>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {admins &&
-            admins.map((admin) => (
-              <TableRow key={admin._id}>
-                <TableCell>{admin.name}</TableCell>
-                <TableCell>{admin.email}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleRemoveAdmin(admin._id)}
-                    disabled={isRemoving}
-                  >
-                    Remove
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-        </TableBody>
-      </Table>
+      <ul className="space-y-2">
+        {admins && admins.map((admin) => (
+          <li key={admin._id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
+            <span>{admin.name} ({admin.email})</span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleRemoveAdmin(admin._id)}
+              disabled={isRemoving}
+            >
+              Remove
+            </Button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
