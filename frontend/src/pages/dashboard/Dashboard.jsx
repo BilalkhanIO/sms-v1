@@ -29,7 +29,6 @@ const Reports = lazy(() => import("../admin/Reports"));
 const AuditLogs = lazy(() => import("../admin/AuditLogs"));
 const BackupManagement = lazy(() => import("../admin/BackupManagement"));
 const SchoolList = lazy(() => import("../schools/SchoolList"));
-const PageManagement = lazy(() => import("../admin/PageManagement"));
 
 const componentMap = {
   SuperAdminDashboard,
@@ -44,7 +43,6 @@ const componentMap = {
   AuditLogs,
   BackupManagement,
   SchoolList,
-  PageManagement,
 };
 
 const Dashboard = () => {

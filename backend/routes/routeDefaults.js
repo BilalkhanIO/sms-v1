@@ -1,7 +1,7 @@
 // routes/routeDefaults.js
 import express from 'express';
 import { protect, authorize } from '../middleware/authMiddleware.js';
-import { getSuperAdminPages } from "../controllers/defaultController.js";
+import { getSuperAdminPages, getAvailableSuperAdminPages } from "../controllers/defaultController.js";
 
 // Standard route creation with role-based protection (Less frequently used now)
 export const createProtectedRoute = (roles = []) => {
@@ -24,6 +24,13 @@ router.get(
   protect,
   authorize("SUPER_ADMIN"),
   getSuperAdminPages
+);
+
+router.get(
+    "/available-super-admin-pages",
+    protect,
+    authorize("SUPER_ADMIN"),
+    getAvailableSuperAdminPages
 );
 
 export default router;
