@@ -33,6 +33,7 @@ const ExamForm = () => {
 
   const formik = useFormik({
     enableReinitialize: true,
+    validateOnMount: true,
     initialValues: {
       title: exam?.title || '',
       type: exam?.type || '',

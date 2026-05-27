@@ -111,21 +111,21 @@ const Router = () => {
         <Route path="users/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateUserForm /></PrivateRoute>} />
         <Route path="users/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UserDetail /></PrivateRoute>} />
         <Route path="users/edit/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateUser /></PrivateRoute>} />
-        <Route path="teachers" element={<PrivateRoute><TeacherList /></PrivateRoute>} />
-        <Route path="teachers/:id" element={<PrivateRoute><TeacherDetails /></PrivateRoute>} />
+        <Route path="teachers" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><TeacherList /></PrivateRoute>} />
+        <Route path="teachers/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><TeacherDetails /></PrivateRoute>} />
         <Route path="teachers/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateTeacher /></PrivateRoute>} />
         <Route path="teachers/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateTeacher /></PrivateRoute>} />
-        <Route path="students" element={<PrivateRoute><StudentList /></PrivateRoute>} />
-        <Route path="students/:id" element={<PrivateRoute><StudentDetails /></PrivateRoute>} />
+        <Route path="students" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><StudentList /></PrivateRoute>} />
+        <Route path="students/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "PARENT"]}><StudentDetails /></PrivateRoute>} />
         <Route path="students/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><CreateStudent /></PrivateRoute>} />
         <Route path="students/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><UpdateStudent /></PrivateRoute>} />
-        <Route path="classes" element={<PrivateRoute><ClassList /></PrivateRoute>} />
-        <Route path="classes/:id" element={<PrivateRoute><ClassDetails /></PrivateRoute>} />
+        <Route path="classes" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ClassList /></PrivateRoute>} />
+        <Route path="classes/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ClassDetails /></PrivateRoute>} />
         <Route path="classes/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><CreateClass /></PrivateRoute>} />
         <Route path="classes/update/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><UpdateClass /></PrivateRoute>} />
 
         {/* Exam Routes */}
-        <Route path="exams" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamList /></PrivateRoute>} />
+        <Route path="exams" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ExamList /></PrivateRoute>} />
         <Route path="exams/create" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamForm /></PrivateRoute>} />
         <Route path="exams/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ExamDetails /></PrivateRoute>} />
         <Route path="exams/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamForm /></PrivateRoute>} />

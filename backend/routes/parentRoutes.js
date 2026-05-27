@@ -16,6 +16,6 @@ router.get("/", authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), getParents);
 router.post("/", authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), createParent);
 router.get("/:id", authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "PARENT"), getParentById);
 router.put("/:id", authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), updateParent);
-router.delete("/:id", authorize("SUPER_ADMIN"), deleteParent);
+router.delete("/:id", authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), deleteParent);
 
 export default router;
