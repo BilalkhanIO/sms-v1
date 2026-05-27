@@ -25,24 +25,32 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { schoolId }) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
-    getMultiSchoolAdmins: builder.query({
-      query: () => 'multi-school-admin/admins',
-      providesTags: ['MultiSchoolAdmins'],
+    getManagedUsers: builder.query({
+      query: () => 'multi-school-admin/users',
+      providesTags: ['ManagedUsers'],
     }),
-    assignMultiSchoolAdmin: builder.mutation({
-      query: ({ email }) => ({
-        url: 'multi-school-admin/admins',
+    createManagedUser: builder.mutation({
+      query: (newUser) => ({
+        url: 'multi-school-admin/users',
         method: 'POST',
-        body: { email },
+        body: newUser,
       }),
-      invalidatesTags: ['MultiSchoolAdmins'],
+      invalidatesTags: ['ManagedUsers'],
     }),
-    removeMultiSchoolAdmin: builder.mutation({
-      query: (adminId) => ({
-        url: `multi-school-admin/admins/${adminId}`,
+    updateManagedUser: builder.mutation({
+      query: ({ id, ...updatedData }) => ({
+        url: `multi-school-admin/users/${id}`,
+        method: 'PUT',
+        body: updatedData,
+      }),
+      invalidatesTags: ['ManagedUsers'],
+    }),
+    deleteManagedUser: builder.mutation({
+      query: (id) => ({
+        url: `multi-school-admin/users/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['MultiSchoolAdmins'],
+      invalidatesTags: ['ManagedUsers'],
     }),
   }),
 });
@@ -52,7 +60,8 @@ export const {
   useGetSchoolAdminsQuery,
   useAssignSchoolAdminMutation,
   useRemoveSchoolAdminMutation,
-  useGetMultiSchoolAdminsQuery,
-  useAssignMultiSchoolAdminMutation,
-  useRemoveMultiSchoolAdminMutation,
+  useGetManagedUsersQuery,
+  useCreateManagedUserMutation,
+  useUpdateManagedUserMutation,
+  useDeleteManagedUserMutation,
 } = multiSchoolAdminApi;
