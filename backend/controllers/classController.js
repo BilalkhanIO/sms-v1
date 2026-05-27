@@ -5,6 +5,7 @@ import { body, validationResult } from 'express-validator';
 import { protect, authorize } from '../middleware/authMiddleware.js'; // Import auth middleware
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import Activity from "../models/Activity.js";
+import Teacher from "../models/Teacher.js";
 
 // @desc     Get all classes
 // @route   GET /api/classes
@@ -14,18 +15,19 @@ const getClasses = [
     authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT'), // Allow admin, teachers and students
     asyncHandler(async (req, res) => {
       let query = {};
-      if (req.schoolId) {
-        query.school = req.schoolId;
-      }
 
       if (req.user.role === 'TEACHER') {
-          query = {
-              school: req.schoolId,
-              $or: [
-                  { classTeacher: req.user._id },  // Classes where the user is the class teacher
-                  { 'subjects': { $in: req.user.assignedSubjects } } // Assuming teachers have an assignedSubjects field
-              ]
-          };
+          const teacher = await Teacher.findOne({ user: req.user._id }).lean();
+          if (teacher) {
+            query = {
+                $or: [
+                    { classTeacher: teacher._id },
+                    { 'schedule.periods.teacher': teacher._id }
+                ]
+            };
+          } else {
+            query = { _id: null }; // No classes
+          }
       }
 
       if (req.user.role === 'STUDENT') {
@@ -47,11 +49,7 @@ const getClassById = [
     authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT'),
     asyncHandler(async (req, res) => {
         const classId = req.params.id;
-        const filter = { _id: classId };
-        if (req.schoolId) {
-          filter.school = req.schoolId;
-        }
-        const classData = await ClassModel.findOne(filter)
+        const classData = await ClassModel.findById(classId)
             .populate('classTeacher', 'firstName lastName')
             .populate('subjects', 'name code') // Populate the 'subject' field within the 'subjects' array
             .populate('students', 'firstName lastName admissionNumber');
@@ -62,7 +60,11 @@ const getClassById = [
 
         // If the user is a teacher, they can only access the class if they are the class teacher or teach a subject in the class
         if (req.user.role === 'TEACHER') {
-            if (!classData.classTeacher.equals(req.user._id) && !classData.subjects.some(subject => subject.assignedTeachers.includes(req.user._id))) {
+            const teacher = await Teacher.findOne({ user: req.user._id }).lean();
+            const teacherId = teacher?._id;
+            const isClassTeacher = teacherId ? classData.classTeacher.equals(teacherId) : false;
+            const teachesInSchedule = teacherId ? classData.schedule?.some(day => day.periods?.some(p => p.teacher?.equals(teacherId))) : false;
+            if (!isClassTeacher && !teachesInSchedule) {
                 return errorResponse(res, 'Unauthorized to access this class', 403);
             }
         }
@@ -109,7 +111,6 @@ const createClass = [
 
     // Create the class
     const classData = await ClassModel.create({
-      school: req.schoolId,
       name,
       section,
       academicYear,
@@ -158,10 +159,7 @@ const updateClass = [
         return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
-    const classData = await ClassModel.findOne({
-      _id: req.params.id,
-      school: req.schoolId,
-    });
+    const classData = await ClassModel.findById(req.params.id);
 
     if (!classData) {
         return errorResponse(res, 'Class not found', 404);
@@ -202,10 +200,7 @@ const deleteClass = [
   protect,
   authorize('SUPER_ADMIN', 'SCHOOL_ADMIN'),
   asyncHandler(async (req, res) => {
-    const classData = await ClassModel.findOne({
-      _id: req.params.id,
-      school: req.schoolId,
-    });
+    const classData = await ClassModel.findById(req.params.id);
 
     if (!classData) {
         return errorResponse(res, 'Class not found', 404);
