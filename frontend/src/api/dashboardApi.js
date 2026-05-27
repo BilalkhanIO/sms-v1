@@ -57,13 +57,12 @@ export const {
   useGetDashboardStatsQuery,
   useGetSuperAdminStatsQuery,
   useGetSchoolDetailsQuery,
-  useGetSchoolStatsQuery,
-  useGetAdminDashboardStatsQuery,
-  useGetParentDashboardStatsQuery,
-  useGetTeacherDashboardStatsQuery,
-  useGetStudentDashboardStatsQuery,
-  useGetUserRoleDistributionQuery,
-  useGetUserStatusDistributionQuery,
-  useGetSchoolStatusDistributionQuery,
-  useGetUserRegistrationTrendsQuery,
-} = dashboardApi;
+export const useGetSchoolStatsQuery = dashboardApi.useGetSchoolStatsQuery;
+export const useGetAdminDashboardStatsQuery = dashboardApi.useGetAdminDashboardStatsQuery;
+export const useGetParentDashboardStatsQuery = dashboardApi.useGetParentDashboardStatsQuery;
+export const useGetTeacherDashboardStatsQuery = dashboardApi.useGetTeacherDashboardStatsQuery;
+export const useGetStudentDashboardStatsQuery = dashboardApi.useGetStudentDashboardStatsQuery;
+export const useGetUserRoleDistributionQuery = dashboardApi.useGetUserRoleDistributionQuery;
+export const useGetUserStatusDistributionQuery = dashboardApi.useGetUserStatusDistributionQuery;
+export const useGetSchoolStatusDistributionQuery = dashboardApi.useGetSchoolStatusDistributionQuery;
+export const useGetUserRegistrationTrendsQuery = dashboardApi.useGetUserRegistrationTrendsQuery;

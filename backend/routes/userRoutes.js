@@ -11,6 +11,7 @@ import {
   getUserById,
   updateUser,
   updateUserStatus,
+  getMyProfile,
 } from "../controllers/userController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { setSchoolId } from "../middleware/schoolMiddleware.js";
@@ -24,8 +25,8 @@ router.get(
   getUsers
 );
 
-// GET /api/users/profile - Get logged-in user's profile
-router.get("/profile", protect, getProfile);
+// GET /api/users/my-profile - Get logged-in user's profile
+router.get("/my-profile", protect, getMyProfile);
 
 // PUT /api/users/profile - Update logged-in user's profile
 router.put("/profile", protect, updateUserProfile);
