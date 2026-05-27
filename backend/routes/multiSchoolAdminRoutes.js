@@ -5,26 +5,37 @@ import {
   getSchoolAdmins,
   assignSchoolAdmin,
   removeSchoolAdmin,
-  getMultiSchoolAdmins,
-  assignMultiSchoolAdmin,
-  removeMultiSchoolAdmin,
+  getAllSchoolAdmins,
   getSchoolDetails,
+  createSchoolAdmin,
+  updateSchoolAdmin,
+  deleteSchoolAdmin,
 } from '../controllers/multiSchoolAdminController.js';
 
 const router = express.Router();
 
-// School-specific admin routes
+// Dashboard
 router.get('/dashboard-stats', protect, authorize('MULTI_SCHOOL_ADMIN'), getDashboardStats);
+router.get(
+  '/schools/:schoolId/details',
+  protect,
+  authorize('MULTI_SCHOOL_ADMIN'),
+  getSchoolDetails
+);
+
+// Admin Management
+router.get('/admins', protect, authorize('MULTI_SCHOOL_ADMIN'), getAllSchoolAdmins);
+router.post('/admins', protect, authorize('MULTI_SCHOOL_ADMIN'), createSchoolAdmin);
+router.put('/admins/:adminId', protect, authorize('MULTI_SCHOOL_ADMIN'), updateSchoolAdmin);
+router.delete('/admins/:adminId', protect, authorize('MULTI_SCHOOL_ADMIN'), deleteSchoolAdmin);
+
 router.get('/:schoolId/admins', protect, authorize('MULTI_SCHOOL_ADMIN'), getSchoolAdmins);
 router.post('/:schoolId/admins', protect, authorize('MULTI_SCHOOL_ADMIN'), assignSchoolAdmin);
-router.delete('/:schoolId/admins/:adminId', protect, authorize('MULTI_SCHOOL_ADMIN'), removeSchoolAdmin);
-
-// Multi-school system admin routes
-router.get('/admins', protect, authorize('MULTI_SCHOOL_ADMIN'), getMultiSchoolAdmins);
-router.post('/admins', protect, authorize('MULTI_SCHOOL_ADMIN'), assignMultiSchoolAdmin);
-router.delete('/admins/:adminId', protect, authorize('MULTI_SCHOOL_ADMIN'), removeMultiSchoolAdmin);
-
-// School details route
-router.get('/schools/:schoolId/details', protect, authorize('MULTI_SCHOOL_ADMIN'), getSchoolDetails);
+router.delete(
+  '/:schoolId/admins/:adminId',
+  protect,
+  authorize('MULTI_SCHOOL_ADMIN'),
+  removeSchoolAdmin
+);
 
 export default router;

@@ -10,6 +10,10 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       query: (schoolId) => `multi-school-admin/${schoolId}/admins`,
       providesTags: (result, error, schoolId) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
+    getAllSchoolAdmins: builder.query({
+      query: () => 'multi-school-admin/admins',
+      providesTags: ['SchoolAdmins'],
+    }),
     assignSchoolAdmin: builder.mutation({
       query: ({ schoolId, email }) => ({
         url: `multi-school-admin/${schoolId}/admins`,
@@ -25,28 +29,28 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { schoolId }) => [{ type: 'SchoolAdmins', id: schoolId }],
     }),
-    getMultiSchoolAdmins: builder.query({
-      query: () => 'multi-school-admin/admins',
-      providesTags: ['MultiSchoolAdmins'],
-    }),
-    assignMultiSchoolAdmin: builder.mutation({
-      query: ({ email }) => ({
+    createSchoolAdmin: builder.mutation({
+      query: (admin) => ({
         url: 'multi-school-admin/admins',
         method: 'POST',
-        body: { email },
+        body: admin,
       }),
-      invalidatesTags: ['MultiSchoolAdmins'],
+      invalidatesTags: ['SchoolAdmins'],
     }),
-    removeMultiSchoolAdmin: builder.mutation({
+    updateSchoolAdmin: builder.mutation({
+      query: ({ adminId, ...admin }) => ({
+        url: `multi-school-admin/admins/${adminId}`,
+        method: 'PUT',
+        body: admin,
+      }),
+      invalidatesTags: ['SchoolAdmins'],
+    }),
+    deleteSchoolAdmin: builder.mutation({
       query: (adminId) => ({
         url: `multi-school-admin/admins/${adminId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['MultiSchoolAdmins'],
-    }),
-    getSchoolDetails: builder.query({
-      query: (schoolId) => `multi-school-admin/schools/${schoolId}/details`,
-      providesTags: (result, error, schoolId) => [{ type: 'SchoolDetails', id: schoolId }],
+      invalidatesTags: ['SchoolAdmins'],
     }),
   }),
 });
@@ -54,10 +58,10 @@ export const multiSchoolAdminApi = api.injectEndpoints({
 export const {
   useGetDashboardStatsQuery,
   useGetSchoolAdminsQuery,
+  useGetAllSchoolAdminsQuery,
   useAssignSchoolAdminMutation,
   useRemoveSchoolAdminMutation,
-  useGetMultiSchoolAdminsQuery,
-  useAssignMultiSchoolAdminMutation,
-  useRemoveMultiSchoolAdminMutation,
-  useGetSchoolDetailsQuery,
+  useCreateSchoolAdminMutation,
+  useUpdateSchoolAdminMutation,
+  useDeleteSchoolAdminMutation,
 } = multiSchoolAdminApi;
