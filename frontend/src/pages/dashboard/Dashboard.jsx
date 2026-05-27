@@ -56,6 +56,12 @@ const Dashboard = () => {
     skip: user?.role !== "SUPER_ADMIN",
   });
 
+  const { isLoading: isUserLoading } = useSelector((state) => state.auth);
+
+  if (isUserLoading || pagesIsLoading) {
+    return <Spinner />;
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }

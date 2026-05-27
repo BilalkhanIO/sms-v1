@@ -4,16 +4,16 @@ import {
   logoutUser,
   forgotPassword,
   resetPassword,
-  getCurrentUser,
+  getMe,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/login", loginUser);
+router.get("/me", protect, getMe);
 router.post("/logout", protect, logoutUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
-router.get("/me", protect, getCurrentUser);
 
 export default router;

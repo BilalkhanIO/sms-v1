@@ -33,7 +33,7 @@ const loginUser = [
 
       await user.updateLastLogin();
 
-      await Activity.logActivity({
+      await Activity.create({
         userId: user._id,
         type: "LOGIN",
         description: "User logged in",
@@ -74,7 +74,7 @@ const loginUser = [
 // @route   POST /api/auth/logout
 // @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
-  await Activity.logActivity({
+  await Activity.create({
     userId: req.user._id,
     type: "LOGOUT",
     description: "User logged out",
@@ -167,22 +167,15 @@ const resetPassword = [
   }),
 ];
 
-const getCurrentUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select("-password");
-
-  if (user) {
-    res.status(200).json({
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      profilePicture: user.profilePicture,
-      school: user.school,
-    });
-  } else {
-    res.status(404).json({ message: "User not found" });
-  }
+// @desc    Get user profile
+// @route   GET /api/auth/me
+// @access  Private
+const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password");
+  res.status(200).json({
+    data: user,
+    message: "User profile retrieved successfully",
+  });
 });
 
-export { loginUser, logoutUser, forgotPassword, resetPassword, getCurrentUser };
+export { loginUser, logoutUser, forgotPassword, resetPassword, getMe };
