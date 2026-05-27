@@ -1,51 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import {
-  useGetSchoolAdminsQuery,
-  useAssignSchoolAdminMutation,
-  useRemoveSchoolAdminMutation,
-} from '../../api/multiSchoolAdminApi';
-import { useLazySearchUsersQuery } from '../../api/usersApi';
+import React, { useState } from 'react';
+import { useGetSchoolAdminsQuery, useAssignSchoolAdminMutation, useRemoveSchoolAdminMutation } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/use-toast';
-import { debounce } from 'lodash';
 
 const ManageSchoolAdmins = ({ schoolId }) => {
   const { toast } = useToast();
   const { data: admins, isLoading, isError, error } = useGetSchoolAdminsQuery(schoolId);
   const [assignAdmin, { isLoading: isAssigning }] = useAssignSchoolAdminMutation();
   const [removeAdmin, { isLoading: isRemoving }] = useRemoveSchoolAdminMutation();
-  const [searchUsers, { data: searchResults, isLoading: isSearching }] = useLazySearchUsersQuery();
+  const [email, setEmail] = useState('');
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
-
-  const debouncedSearch = debounce((term) => {
-    if (term) {
-      searchUsers(term);
-    }
-  }, 300);
-
-  useEffect(() => {
-    debouncedSearch(searchTerm);
-    return () => debouncedSearch.cancel();
-  }, [searchTerm, debouncedSearch]);
-
-  const handleAssignAdmin = async () => {
-    if (!selectedUser) return;
+  const handleAssignAdmin = async (e) => {
+    e.preventDefault();
+    if (!email) return;
     try {
-      await assignAdmin({ schoolId, email: selectedUser.email }).unwrap();
+      await assignAdmin({ schoolId, email }).unwrap();
       toast({ title: 'Success', description: 'Admin assigned successfully.' });
-      setSelectedUser(null);
-      setSearchTerm('');
+      setEmail('');
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: err.data?.message || 'Failed to assign admin.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to assign admin.' });
     }
   };
 
@@ -54,11 +30,7 @@ const ManageSchoolAdmins = ({ schoolId }) => {
       await removeAdmin({ schoolId, adminId }).unwrap();
       toast({ title: 'Success', description: 'Admin removed successfully.' });
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: err.data?.message || 'Failed to remove admin.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to remove admin.' });
     }
   };
 
@@ -67,59 +39,32 @@ const ManageSchoolAdmins = ({ schoolId }) => {
 
   return (
     <div>
-      <div className="mb-4">
+      <h3 className="text-lg font-semibold mb-2">Manage School Admins</h3>
+      <form onSubmit={handleAssignAdmin} className="flex gap-2 mb-4">
         <Input
-          placeholder="Search for user to add as admin..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setSelectedUser(null);
-          }}
+          type="email"
+          placeholder="New admin email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
-        {isSearching && <Spinner size="small" />}
-        {searchResults && searchTerm && !selectedUser && (
-          <ul className="border rounded-md mt-1 max-h-40 overflow-y-auto">
-            {searchResults.map((user) => (
-              <li
-                key={user._id}
-                className="p-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => {
-                  setSelectedUser(user);
-                  setSearchTerm(`${user.firstName} ${user.lastName} (${user.email})`);
-                }}
-              >
-                {user.firstName} {user.lastName} ({user.email})
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <Button onClick={handleAssignAdmin} disabled={!selectedUser || isAssigning}>
-        {isAssigning ? 'Assigning...' : 'Assign Selected User'}
-      </Button>
-
-      <h3 className="text-lg font-semibold mt-6 mb-2">Current Admins</h3>
+        <Button type="submit" disabled={isAssigning}>
+          {isAssigning ? 'Assigning...' : 'Assign'}
+        </Button>
+      </form>
       <ul className="space-y-2">
-        {admins &&
-          admins.map((admin) => (
-            <li
-              key={admin._id}
-              className="flex justify-between items-center bg-gray-100 p-2 rounded"
+        {admins && admins.map((admin) => (
+          <li key={admin._id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
+            <span>{admin.name} ({admin.email})</span>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleRemoveAdmin(admin._id)}
+              disabled={isRemoving}
             >
-              <span>
-                {admin.name} ({admin.email})
-              </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleRemoveAdmin(admin._id)}
-                disabled={isRemoving}
-              >
-                Remove
-              </Button>
-            </li>
-          ))}
+              Remove
+            </Button>
+          </li>
+        ))}
       </ul>
     </div>
   );

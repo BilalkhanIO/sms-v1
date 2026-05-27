@@ -1,9 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import School from '../models/School.js';
 import User from '../models/User.js';
-import Fee from '../models/Fee.js';
-import Attendance from '../models/Attendance.js';
-import mongoose from 'mongoose';
 
 // @desc    Get dashboard stats for multi-school admin
 // @route   GET /api/multi-school-admin/dashboard-stats
@@ -14,44 +11,13 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     managedSchools.map(async (schoolId) => {
       const school = await School.findById(schoolId);
       if (!school) return null;
-
       const studentCount = await User.countDocuments({ school: schoolId, role: 'STUDENT' });
       const teacherCount = await User.countDocuments({ school: schoolId, role: 'TEACHER' });
-
-      // Calculate total income from fees
-      const feeData = await Fee.aggregate([
-        { $match: { school: new mongoose.Types.ObjectId(schoolId) } },
-        { $group: { _id: null, totalIncome: { $sum: '$paidAmount' } } },
-      ]);
-      const totalIncome = feeData[0]?.totalIncome || 0;
-
-      // Calculate average attendance
-      const attendanceData = await Attendance.aggregate([
-        { $match: { school: new mongoose.Types.ObjectId(schoolId) } },
-        {
-          $group: {
-            _id: null,
-            totalRecords: { $sum: 1 },
-            presentRecords: {
-              $sum: {
-                $cond: [{ $eq: ['$status', 'PRESENT'] }, 1, 0],
-              },
-            },
-          },
-        },
-      ]);
-
-      const totalAttendance = attendanceData[0]?.totalRecords || 0;
-      const presentAttendance = attendanceData[0]?.presentRecords || 0;
-      const averageAttendance = totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 0;
-
       return {
         schoolId: school._id,
         schoolName: school.name,
         studentCount,
         teacherCount,
-        totalIncome,
-        averageAttendance: parseFloat(averageAttendance.toFixed(2)),
       };
     })
   );
@@ -118,58 +84,4 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
   await user.save();
 
   res.json({ message: 'Admin removed successfully' });
-});
-
-// @desc    Get all multi-school admins
-// @route   GET /api/multi-school-admin/admins
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const getMultiSchoolAdmins = asyncHandler(async (req, res) => {
-  const admins = await User.find({ role: 'MULTI_SCHOOL_ADMIN' });
-  res.json(admins);
-});
-
-// @desc    Assign a multi-school admin
-// @route   POST /api/multi-school-admin/admins
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const assignMultiSchoolAdmin = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
-
-  user.role = 'MULTI_SCHOOL_ADMIN';
-  user.school = null;
-  user.managedSchools = req.user.managedSchools; // Assign same schools
-  await user.save();
-
-  res.status(201).json({ message: 'Multi-school admin assigned successfully' });
-});
-
-// @desc    Remove a multi-school admin
-// @route   DELETE /api/multi-school-admin/admins/:adminId
-// @access  Private/MULTI_SCHOOL_ADMIN
-export const removeMultiSchoolAdmin = asyncHandler(async (req, res) => {
-  const { adminId } = req.params;
-
-  // Prevent a user from removing their own multi-school admin role
-  if (req.user._id.toString() === adminId) {
-    res.status(400);
-    throw new Error('You cannot remove your own admin role.');
-  }
-
-  const user = await User.findById(adminId);
-
-  if (!user || user.role !== 'MULTI_SCHOOL_ADMIN') {
-    res.status(404);
-    throw new Error('Multi-school admin not found');
-  }
-
-  user.role = 'USER'; // Revert to a default role
-  user.managedSchools = []; // Clear managed schools
-  await user.save();
-
-  res.json({ message: 'Multi-school admin removed successfully' });
 });
