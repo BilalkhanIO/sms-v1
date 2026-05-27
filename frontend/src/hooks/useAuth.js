@@ -1,12 +1,16 @@
-import { useSelector } from "react-redux";
-import { selectCurrentUser, selectIsLoading, selectIsAuthenticated } from "../store/authSlice"; 
+import { useAuthStore } from '../store/zustand/useAuthStore';
+import { can } from '../lib/permissions';
 
 const useAuth = () => {
-  const user = useSelector(selectCurrentUser);
-  const isLoading = useSelector(selectIsLoading);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
 
-  return { user, isAuthenticated, isLoading };
+  return {
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    can: (resource, action) => can(user, resource, action),
+  };
 };
 
 export default useAuth;

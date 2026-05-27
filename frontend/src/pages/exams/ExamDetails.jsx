@@ -1,7 +1,7 @@
+import useAuth from '../../hooks/useAuth';
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGetExamByIdQuery, useDeleteExamMutation } from '../../api/examApi';
-import { useSelector } from 'react-redux';
 import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';
 import { Edit, Trash2, ClipboardList } from 'lucide-react';
@@ -9,7 +9,7 @@ import { Edit, Trash2, ClipboardList } from 'lucide-react';
 const ExamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useAuth();
   const canManage = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER'].includes(user?.role);
 
   const { data: exam, isLoading, isError } = useGetExamByIdQuery(id);

@@ -1,202 +1,190 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useGetFeesQuery } from '../../api/feesApi';
-import Button from '../../components/common/Button';
-import Spinner from '../../components/common/Spinner';
-import PageHeader from '../../components/common/PageHeader';
-import { DollarSign, Search, Filter } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { PlusCircle, Eye, Edit, Trash2, CreditCard, DollarSign } from 'lucide-react';
+import { useGetFeesQuery, useDeleteFeeMutation } from '../../api/feesApi';
 import useAuth from '../../hooks/useAuth';
+import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/common/DataTable';
+import StatusBadge from '../../components/common/StatusBadge';
+import Button from '../../components/common/Button';
+import { useUIStore } from '../../store/zustand/useUIStore';
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Status' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'PAID', label: 'Paid' },
+  { value: 'PARTIAL', label: 'Partial' },
+  { value: 'OVERDUE', label: 'Overdue' },
+  { value: 'WAIVED', label: 'Waived' },
+];
 
 const FeesList = () => {
-  const { isAdmin } = useAuth();
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    dueDate: ''
-  });
+  const navigate = useNavigate();
+  const { can } = useAuth();
+  const openConfirm = useUIStore((s) => s.openConfirm);
+  const addToast = useUIStore((s) => s.addToast);
+  const [statusFilter, setStatusFilter] = useState('');
 
-  const { data: fees, isLoading, error } = useGetFeesQuery(filters);
+  const { data, isLoading, isError, error } = useGetFeesQuery(statusFilter ? { status: statusFilter } : undefined);
+  const [deleteFee, { isLoading: isDeleting }] = useDeleteFeeMutation();
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
+  const fees = data?.data || data || [];
 
-  if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
-  }
-
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'partial', label: 'Partially Paid' },
-    { value: 'paid', label: 'Paid' },
-    { value: 'overdue', label: 'Overdue' }
-  ];
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'partial':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'pending':
-        return 'bg-blue-100 text-blue-800';
-      case 'overdue':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const handleDelete = (fee) => {
+    openConfirm({
+      title: 'Delete Fee',
+      message: `Are you sure you want to delete this fee record?`,
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteFee(fee._id).unwrap();
+          addToast({ type: 'success', title: 'Fee record deleted' });
+        } catch (err) {
+          addToast({ type: 'error', title: 'Delete failed', message: err.data?.message });
+        }
+      },
+    });
   };
 
+  const columns = [
+    {
+      key: 'type',
+      header: 'Fee Details',
+      render: (f) => (
+        <div>
+          <p className="font-medium text-gray-900">{f.type}</p>
+          {f.description && (
+            <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">
+              {f.description.length > 60 ? `${f.description.slice(0, 60)}…` : f.description}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'student',
+      header: 'Student',
+      className: 'text-gray-500',
+      render: (f) => {
+        const name = `${f.student?.user?.firstName ?? ''} ${f.student?.user?.lastName ?? ''}`.trim();
+        return name || '—';
+      },
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      className: 'font-medium text-gray-900',
+      render: (f) => (
+        <div>
+          <p>${Number(f.amount || 0).toFixed(2)}</p>
+          {f.status === 'PARTIAL' && f.paidAmount != null && (
+            <p className="text-xs text-gray-400">Paid: ${Number(f.paidAmount).toFixed(2)}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'dueDate',
+      header: 'Due Date',
+      className: 'text-gray-500',
+      render: (f) => f.dueDate ? new Date(f.dueDate).toLocaleDateString() : '—',
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (f) => <StatusBadge status={f.status} />,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      render: (f) => (
+        <div className="flex items-center justify-end gap-2">
+          <Link
+            to={`/dashboard/fees/${f._id}`}
+            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+            title="View"
+          >
+            <Eye className="h-4 w-4" />
+          </Link>
+          {can('fees', 'edit') && (
+            <>
+              <Link
+                to={`/dashboard/fees/${f._id}/edit`}
+                className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded"
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Link>
+              {f.status !== 'PAID' && (
+                <Link
+                  to={`/dashboard/fees/${f._id}/pay`}
+                  className="p-1.5 text-green-600 hover:bg-green-50 rounded"
+                  title="Record Payment"
+                >
+                  <DollarSign className="h-4 w-4" />
+                </Link>
+              )}
+            </>
+          )}
+          {can('fees', 'delete') && (
+            <button
+              onClick={() => handleDelete(f)}
+              disabled={isDeleting}
+              className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      <PageHeader title="Fees Management">
-        {isAdmin && (
-          <Link to="/dashboard/fees/create">
-            <Button>
-              <DollarSign className="w-4 h-4 mr-2" />
+    <div>
+      <PageHeader
+        title="Fees"
+        action={
+          can('fees', 'create') && (
+            <Button onClick={() => navigate('/dashboard/fees/create')} size="small">
+              <PlusCircle className="h-4 w-4 mr-1.5" />
               Add Fee
             </Button>
-          </Link>
-        )}
-      </PageHeader>
+          )
+        }
+      />
 
-      {/* Filters */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search fees..."
-            value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg"
-          />
-          <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-        </div>
-
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-          className="border rounded-lg px-4 py-2"
-        >
-          {statusOptions.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          value={filters.dueDate}
-          onChange={(e) => setFilters(prev => ({ ...prev, dueDate: e.target.value }))}
-          className="border rounded-lg px-4 py-2"
-          placeholder="Due Date"
-        />
+      {/* Status Filter */}
+      <div className="mb-4 flex gap-2 flex-wrap">
+        {STATUS_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setStatusFilter(opt.value)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+              statusFilter === opt.value
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
-      {/* Fees List */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fee Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Due Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {fees?.map((fee) => (
-                <tr key={fee.id}>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {fee.title}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {fee.description}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {fee.student.firstName} {fee.student.lastName}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Class: {fee.student.class?.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      ${fee.amount.toFixed(2)}
-                    </div>
-                    {fee.status === 'partial' && (
-                      <div className="text-sm text-gray-500">
-                        Paid: ${fee.paidAmount.toFixed(2)}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {new Date(fee.dueDate).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(fee.status)}`}>
-                      {fee.status.charAt(0).toUpperCase() + fee.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link
-                      to={`/dashboard/fees/${fee.id}`}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      View
-                    </Link>
-                    {isAdmin && (
-                      <>
-                        <Link
-                          to={`/dashboard/fees/${fee.id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        >
-                          Edit
-                        </Link>
-                        <Link
-                          to={`/dashboard/fees/${fee.id}/payment`}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Record Payment
-                        </Link>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {(!fees || fees.length === 0) && (
-          <div className="p-6 text-center text-gray-500">
-            No fees found for the selected filters.
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={fees}
+        keyField="_id"
+        isLoading={isLoading}
+        error={isError ? error : null}
+        emptyMessage="No fee records found."
+        emptyIcon={<CreditCard className="h-12 w-12 opacity-30" />}
+      />
     </div>
   );
 };
 
-export default FeesList; 
+export default FeesList;

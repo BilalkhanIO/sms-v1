@@ -1,29 +1,28 @@
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { useGetCurrentUserQuery } from '../../api/authApi';
-import { setCredentials, clearCredentials } from '../../store/authSlice';
+import { useAuthStore } from '../../store/zustand/useAuthStore';
 import Spinner from '../common/Spinner';
 
 const AuthProvider = ({ children }) => {
-  const dispatch = useDispatch();
-  const { data: user, isLoading, error } = useGetCurrentUserQuery(undefined, {
-    skip: false, // Always try to fetch user on app load
-  });
+  const { setUser, clearUser } = useAuthStore();
+
+  const { data, isLoading, error } = useGetCurrentUserQuery();
 
   useEffect(() => {
-    if (user) {
-      dispatch(setCredentials(user));
+    if (data) {
+      setUser(data.data ?? data);
     } else if (error) {
-      // If there's any error (e.g., 401, network error), clear credentials
-      dispatch(clearCredentials());
+      clearUser();
     }
-  }, [user, error, dispatch]);
+  }, [data, error, setUser, clearUser]);
 
-  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Spinner />
+          <p className="mt-3 text-sm text-gray-500">Loading...</p>
+        </div>
       </div>
     );
   }

@@ -1,5 +1,5 @@
+import useAuth from '../../hooks/useAuth';
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { useGetAllUsersQuery, useGetUsersQuery, useUpdateUserMutation, useDeleteUserMutation } from '../../api/usersApi';
 import { 
   Users, 
@@ -32,7 +32,7 @@ const UserManagement = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
 
-  const { user: currentUser } = useSelector((state) => state.auth);
+  const { user: currentUser } = useAuth();
 
   const isAdmin = currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'MULTI_SCHOOL_ADMIN';
 

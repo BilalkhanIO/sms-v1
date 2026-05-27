@@ -1,5 +1,5 @@
+import useAuth from '../../hooks/useAuth';
 import React from "react";
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import Spinner from "../../components/common/Spinner";
 import SuperAdminDashboard from "../../components/dashboard/SuperAdminDashboard";
@@ -10,7 +10,7 @@ import ParentDashboard from "../../components/dashboard/ParentDashboard";
 import MultiSchoolAdminDashboard from "../../components/dashboard/MultiSchoolAdminDashboard";
 
 const Dashboard = () => {
-  const { user, isLoading } = useSelector((state) => state.auth);
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return <Spinner />;

@@ -1,5 +1,5 @@
+import useAuth from '../hooks/useAuth';
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useGetUserProfileQuery, useUpdateUserProfileMutation } from '../api/usersApi';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -17,7 +17,7 @@ const validationSchema = Yup.object().shape({
 });
 
 const UserProfile = () => {
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useAuth();
   const { data: profile, isLoading, error } = useGetUserProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateUserProfileMutation();
   const [successMessage, setSuccessMessage] = useState('');

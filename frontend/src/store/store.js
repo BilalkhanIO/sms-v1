@@ -1,13 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-
 import { api } from "../api/api";
 import { activityApi } from "../api/activityApi";
-import authReducer from "./authSlice";
 
+// Redux is kept only for RTK Query server-state caching.
+// Global client state (auth, UI) lives in Zustand stores.
 export const store = configureStore({
   reducer: {
-    auth: authReducer,
     [api.reducerPath]: api.reducer,
     [activityApi.reducerPath]: activityApi.reducer,
   },

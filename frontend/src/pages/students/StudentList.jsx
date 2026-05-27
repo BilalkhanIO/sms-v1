@@ -1,89 +1,129 @@
-// src/pages/students/StudentList.jsx
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { useGetStudentsQuery } from '../../api/studentApi'
-import Button from '../../components/common/Button'
-import Spinner from '../../components/common/Spinner'
-import PageHeader from '../../components/common/PageHeader'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { PlusCircle, Eye, Edit, Trash2, BookUser } from 'lucide-react';
+import { useGetStudentsQuery, useDeleteStudentMutation } from '../../api/studentApi';
+import useAuth from '../../hooks/useAuth';
+import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/common/DataTable';
+import Button from '../../components/common/Button';
+import { useUIStore } from '../../store/zustand/useUIStore';
 
 const StudentList = () => {
-  const { data: students, isLoading, error } = useGetStudentsQuery()
+  const navigate = useNavigate();
+  const { can } = useAuth();
+  const openConfirm = useUIStore((s) => s.openConfirm);
+  const addToast = useUIStore((s) => s.addToast);
 
-  if (isLoading) {
-    return <Spinner size="large" />
-  }
+  const { data, isLoading, isError, error } = useGetStudentsQuery();
+  const [deleteStudent, { isLoading: isDeleting }] = useDeleteStudentMutation();
 
-  if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>
-  }
+  const students = data?.data || data || [];
+
+  const handleDelete = (student) => {
+    const name = `${student.user?.firstName ?? ''} ${student.user?.lastName ?? ''}`.trim();
+    openConfirm({
+      title: 'Delete Student',
+      message: `Are you sure you want to delete ${name || 'this student'}?`,
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteStudent(student._id).unwrap();
+          addToast({ type: 'success', title: 'Student deleted' });
+        } catch (err) {
+          addToast({ type: 'error', title: 'Delete failed', message: err.data?.message });
+        }
+      },
+    });
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Name',
+      className: 'font-medium text-gray-900',
+      render: (s) => `${s.user?.firstName ?? ''} ${s.user?.lastName ?? ''}`.trim() || '—',
+    },
+    {
+      key: 'rollNumber',
+      header: 'Roll No.',
+      className: 'text-gray-500',
+      render: (s) => s.rollNumber || '—',
+    },
+    {
+      key: 'class',
+      header: 'Class',
+      className: 'text-gray-500',
+      render: (s) => s.class ? `${s.class.name} ${s.class.section || ''}`.trim() : '—',
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      className: 'text-gray-500',
+      render: (s) => s.user?.email || '—',
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      render: (s) => (
+        <div className="flex items-center justify-end gap-2">
+          <Link
+            to={`/dashboard/students/${s._id}`}
+            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+            title="View details"
+          >
+            <Eye className="h-4 w-4" />
+          </Link>
+          {can('students', 'edit') && (
+            <Link
+              to={`/dashboard/students/update/${s._id}`}
+              className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded"
+              title="Edit"
+            >
+              <Edit className="h-4 w-4" />
+            </Link>
+          )}
+          {can('students', 'delete') && (
+            <button
+              onClick={() => handleDelete(s)}
+              disabled={isDeleting}
+              className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <PageHeader title="Students">
-        <Link to="/students/new">
-          <Button>Add Student</Button>
-        </Link>
-      </PageHeader>
+    <div>
+      <PageHeader
+        title="Students"
+        action={
+          can('students', 'create') && (
+            <Button onClick={() => navigate('/dashboard/students/create')} size="small">
+              <PlusCircle className="h-4 w-4 mr-1.5" />
+              Add Student
+            </Button>
+          )
+        }
+      />
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Roll Number
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Class
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {students?.map((student) => (
-              <tr key={student.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {student.firstName} {student.lastName}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{student.rollNumber}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{student.class?.name || 'N/A'}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{student.contactNumber || 'N/A'}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Link
-                    to={`/students/${student.id}`}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    View
-                  </Link>
-                  <Link
-                    to={`/students/${student.id}/edit`}
-                    className="text-indigo-600 hover:text-indigo-900"
-                  >
-                    Edit
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={students}
+        keyField="_id"
+        isLoading={isLoading}
+        error={isError ? error : null}
+        emptyMessage="No students found."
+        emptyIcon={<BookUser className="h-12 w-12 opacity-30" />}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default StudentList
+export default StudentList;

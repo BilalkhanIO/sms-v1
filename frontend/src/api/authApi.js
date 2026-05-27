@@ -1,5 +1,7 @@
 import { api } from "./api";
-import { setCredentials, clearCredentials, setError } from "../store/authSlice";
+import { useAuthStore } from "../store/zustand/useAuthStore";
+
+const getAuth = () => useAuthStore.getState();
 
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -16,10 +18,10 @@ export const authApi = api.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          dispatch(setCredentials(data.data));
+          getAuth().setUser(data.data ?? data);
         } catch (err) {
-          dispatch(setError(err.error?.data?.message || "Login failed"));
-          throw err; // Re-throw to maintain error handling in components
+          getAuth().setError(err.error?.data?.message || "Login failed");
+          throw err;
         }
       },
       invalidatesTags: ["Auth"],
@@ -33,9 +35,8 @@ export const authApi = api.injectEndpoints({
         try {
           await queryFulfilled;
           dispatch(api.util.resetApiState());
-          dispatch(clearCredentials());
+          getAuth().clearUser();
         } catch (err) {
-          dispatch(setError(err.error?.data?.message || "Logout failed"));
           console.error("Logout failed:", err);
         }
       },
@@ -54,15 +55,11 @@ export const authApi = api.injectEndpoints({
         method: "POST",
         body: { token, password },
       }),
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+      async onQueryStarted(_, { queryFulfilled }) {
         try {
           await queryFulfilled;
-          dispatch(clearCredentials()); // Clear user state after reset
-        } catch (err) {
-          dispatch(
-            setError(err.error?.data?.message || "Password reset failed")
-          );
-        }
+          getAuth().clearUser();
+        } catch (_) {}
       },
     }),
   }),

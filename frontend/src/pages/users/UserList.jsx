@@ -1,49 +1,55 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { PlusCircle } from 'lucide-react';
 import { useGetUsersQuery, useDeleteUserMutation } from '../../api/usersApi';
-import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '../../store/authSlice';
+import useAuth from '../../hooks/useAuth';
 import Button from '../../components/common/Button';
-import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';
-import ErrorMessage from '../../components/common/ErrorMessage';
 import UserDataGrid from '../../components/users/UserDataGrid';
+import Spinner from '../../components/common/Spinner';
+import { useUIStore } from '../../store/zustand/useUIStore';
 
 const UserList = () => {
+  const navigate = useNavigate();
+  const { can } = useAuth();
+  const openConfirm = useUIStore((s) => s.openConfirm);
+  const addToast = useUIStore((s) => s.addToast);
+
   const { data: users, isLoading, isError, error } = useGetUsersQuery();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await deleteUser(id).unwrap();
-      } catch (err) {
-        console.error('Failed to delete user:', err);
-        alert(`Failed to delete user: ${err.data?.message || err.error}`);
-      }
-    }
+  const handleDelete = (id) => {
+    openConfirm({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteUser(id).unwrap();
+          addToast({ type: 'success', title: 'User deleted' });
+        } catch (err) {
+          addToast({ type: 'error', title: 'Delete failed', message: err.data?.message });
+        }
+      },
+    });
   };
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
-
-  if (isError) {
-    return (
-      <ErrorMessage>
-        Error: {error.data?.message || error.error || 'Failed to load users'}
-      </ErrorMessage>
-    );
-  }
+  if (isLoading) return <Spinner />;
+  if (isError) return <div className="text-red-500 p-4">{error?.data?.message || 'Failed to load users.'}</div>;
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <PageHeader title="Users">
-        <Link to="/dashboard/users/create">
-          <Button>Add User</Button>
-        </Link>
-      </PageHeader>
-
+    <div>
+      <PageHeader
+        title="Users"
+        action={
+          can('users', 'create') && (
+            <Button onClick={() => navigate('/dashboard/users/create')} size="small">
+              <PlusCircle className="h-4 w-4 mr-1.5" />
+              Add User
+            </Button>
+          )
+        }
+      />
       <UserDataGrid users={users?.data || []} handleDelete={handleDelete} />
     </div>
   );

@@ -1,81 +1,161 @@
-// src/pages/teachers/TeacherList.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useGetTeachersQuery } from '../../api/teacherApi';
-import Button from '../../components/common/Button';
-import Spinner from '../../components/common/Spinner';
+import { PlusCircle, Eye, Edit, Trash2, GraduationCap } from 'lucide-react';
+import { useGetTeachersQuery, useDeleteTeacherMutation } from '../../api/teacherApi';
+import useAuth from '../../hooks/useAuth';
 import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/common/DataTable';
+import StatusBadge from '../../components/common/StatusBadge';
+import Modal from '../../components/common/Modal';
+import Button from '../../components/common/Button';
+import { useUIStore } from '../../store/zustand/useUIStore';
+import TeacherForm from '../../components/TeacherForm';
 
 const TeacherList = () => {
-  const { data: teachers, isLoading, error } = useGetTeachersQuery();
+  const { user, can } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editTeacher, setEditTeacher] = useState(null);
+  const openConfirm = useUIStore((s) => s.openConfirm);
+  const addToast = useUIStore((s) => s.addToast);
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
+  const { data, isLoading, isError, error } = useGetTeachersQuery();
+  const [deleteTeacher, { isLoading: isDeleting }] = useDeleteTeacherMutation();
 
-  if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
-  }
+  const teachers = data?.data || data || [];
+
+  const handleCreate = () => {
+    setEditTeacher(null);
+    setModalOpen(true);
+  };
+
+  const handleEdit = (teacher) => {
+    setEditTeacher(teacher);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (teacher) => {
+    openConfirm({
+      title: 'Delete Teacher',
+      message: `Are you sure you want to delete ${teacher.user?.firstName} ${teacher.user?.lastName}? This cannot be undone.`,
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteTeacher(teacher._id).unwrap();
+          addToast({ type: 'success', title: 'Teacher deleted' });
+        } catch (err) {
+          addToast({ type: 'error', title: 'Delete failed', message: err.data?.message });
+        }
+      },
+    });
+  };
+
+  const handleFormSuccess = () => {
+    setModalOpen(false);
+    addToast({
+      type: 'success',
+      title: editTeacher ? 'Teacher updated' : 'Teacher created',
+    });
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Name',
+      className: 'font-medium text-gray-900',
+      render: (t) => `${t.user?.firstName ?? ''} ${t.user?.lastName ?? ''}`.trim() || '—',
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      className: 'text-gray-500',
+      render: (t) => t.user?.email || '—',
+    },
+    {
+      key: 'employeeId',
+      header: 'Employee ID',
+      className: 'text-gray-500',
+      render: (t) => t.employeeId || '—',
+    },
+    {
+      key: 'specialization',
+      header: 'Specialization',
+      className: 'text-gray-500',
+      render: (t) => t.specialization || '—',
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      render: (t) => (
+        <div className="flex items-center justify-end gap-2">
+          <Link
+            to={`/dashboard/teachers/${t._id}`}
+            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+            title="View details"
+          >
+            <Eye className="h-4 w-4" />
+          </Link>
+          {can('teachers', 'edit') && (
+            <button
+              onClick={() => handleEdit(t)}
+              className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded"
+              title="Edit"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          )}
+          {can('teachers', 'delete') && (
+            <button
+              onClick={() => handleDelete(t)}
+              disabled={isDeleting}
+              className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <PageHeader title="Teachers">
-        <Link to="/teachers/new">
-          <Button>Add Teacher</Button>
-        </Link>
-      </PageHeader>
+    <div>
+      <PageHeader
+        title="Teachers"
+        action={
+          can('teachers', 'create') && (
+            <Button onClick={handleCreate} size="small">
+              <PlusCircle className="h-4 w-4 mr-1.5" />
+              Add Teacher
+            </Button>
+          )
+        }
+      />
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Subject
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {(teachers?.data || []).map((teacher) => (
-              <tr key={teacher.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {teacher.firstName} {teacher.lastName}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{teacher.email}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{teacher.subject}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Link
-                    to={`/teachers/${teacher.id}`}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    View
-                  </Link>
-                  <Link
-                    to={`/teachers/${teacher.id}/edit`}
-                    className="text-indigo-600 hover:text-indigo-900"
-                  >
-                    Edit
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={teachers}
+        keyField="_id"
+        isLoading={isLoading}
+        error={isError ? error : null}
+        emptyMessage="No teachers found."
+        emptyIcon={<GraduationCap className="h-12 w-12 opacity-30" />}
+      />
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editTeacher ? 'Edit Teacher' : 'Add Teacher'}
+        size="xl"
+      >
+        <TeacherForm
+          teacher={editTeacher}
+          onSuccess={handleFormSuccess}
+          onCancel={() => setModalOpen(false)}
+        />
+      </Modal>
     </div>
   );
 };

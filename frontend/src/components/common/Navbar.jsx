@@ -1,12 +1,12 @@
+import useAuth from '../hooks/useAuth';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useLogoutMutation } from '../../api/authApi';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
 
