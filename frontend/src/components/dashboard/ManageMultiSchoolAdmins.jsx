@@ -1,66 +1,71 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useGetMultiSchoolAdminsQuery, useAssignMultiSchoolAdminMutation, useRemoveMultiSchoolAdminMutation } from '../../api/multiSchoolAdminApi';
 import Spinner from '../common/Spinner';
 import ErrorMessage from '../common/ErrorMessage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { useToast } from '../ui/use-toast';
 
 const ManageMultiSchoolAdmins = () => {
+  const { toast } = useToast();
   const { data: admins, isLoading, isError, error } = useGetMultiSchoolAdminsQuery();
   const [assignAdmin, { isLoading: isAssigning }] = useAssignMultiSchoolAdminMutation();
   const [removeAdmin, { isLoading: isRemoving }] = useRemoveMultiSchoolAdminMutation();
   const [email, setEmail] = useState('');
 
-  const handleAssign = async () => {
-    if (email) {
-      await assignAdmin(email);
+  const handleAssignAdmin = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      await assignAdmin({ email }).unwrap();
+      toast({ title: 'Success', description: 'Multi-school admin assigned successfully.' });
       setEmail('');
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to assign multi-school admin.' });
     }
   };
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
+  const handleRemoveAdmin = async (adminId) => {
+    try {
+      await removeAdmin(adminId).unwrap();
+      toast({ title: 'Success', description: 'Multi-school admin removed successfully.' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: err.data?.message || 'Failed to remove multi-school admin.' });
+    }
+  };
 
-  if (isError) {
-    return (
-      <ErrorMessage>
-        Error: {error.data?.message || error.error || 'Failed to load admins'}
-      </ErrorMessage>
-    );
-  }
+  if (isLoading) return <Spinner />;
+  if (isError) return <ErrorMessage>{error.data?.message || 'Failed to load multi-school admins'}</ErrorMessage>;
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Manage Multi-School Admins</h2>
-      <div className="flex gap-2 mb-4">
+      <h3 className="text-lg font-semibold mb-2">Manage Multi-School Admins</h3>
+      <form onSubmit={handleAssignAdmin} className="flex gap-2 mb-4">
         <Input
           type="email"
-          placeholder="Enter user email"
+          placeholder="New admin email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <Button onClick={handleAssign} disabled={isAssigning}>
-          {isAssigning ? 'Assigning...' : 'Assign Admin'}
+        <Button type="submit" disabled={isAssigning}>
+          {isAssigning ? 'Assigning...' : 'Assign'}
         </Button>
-      </div>
-      <div>
+      </form>
+      <ul className="space-y-2">
         {admins && admins.map((admin) => (
-          <div key={admin._id} className="flex justify-between items-center p-2 border-b">
-            <div>
-              <p className="font-semibold">{admin.name}</p>
-              <p className="text-sm text-gray-500">{admin.email}</p>
-            </div>
+          <li key={admin._id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
+            <span>{admin.name} ({admin.email})</span>
             <Button
               variant="destructive"
-              onClick={() => removeAdmin(admin._id)}
+              size="sm"
+              onClick={() => handleRemoveAdmin(admin._id)}
               disabled={isRemoving}
             >
-              {isRemoving ? 'Removing...' : 'Remove'}
+              Remove
             </Button>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };
