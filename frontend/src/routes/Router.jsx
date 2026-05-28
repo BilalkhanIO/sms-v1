@@ -91,6 +91,19 @@ import Reports from "../pages/admin/Reports";
 import AuditLogs from "../pages/admin/AuditLogs";
 import BackupManagement from "../pages/admin/BackupManagement";
 
+// New Modules
+import TimetableView from "../pages/timetable/TimetableView";
+import TimetableManage from "../pages/timetable/TimetableManage";
+import AssignmentList from "../pages/assignments/AssignmentList";
+import AssignmentDetails from "../pages/assignments/AssignmentDetails";
+import LibraryList from "../pages/library/LibraryList";
+import TransportList from "../pages/transport/TransportList";
+import TransportDetails from "../pages/transport/TransportDetails";
+import LeaveList from "../pages/leave/LeaveList";
+import MessageList from "../pages/messages/MessageList";
+import MessageDetails from "../pages/messages/MessageDetails";
+import AcademicYearList from "../pages/academic-years/AcademicYearList";
+
 const Router = () => {
   return (
     <Routes>
@@ -166,9 +179,34 @@ const Router = () => {
         <Route path="activity-logs" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><ActivityLogsList /></PrivateRoute>} />
         <Route path="admin/user-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><UserManagement /></PrivateRoute>} />
         <Route path="admin/system-settings" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AdminSystemSettings /></PrivateRoute>} />
-        <Route path="admin/reports" element={<PrivateRoute roles={["SUPER_ADMIN"]}><Reports /></PrivateRoute>} />
+        <Route path="admin/reports" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><Reports /></PrivateRoute>} />
         <Route path="admin/audit-logs" element={<PrivateRoute roles={["SUPER_ADMIN"]}><AuditLogs /></PrivateRoute>} />
         <Route path="admin/backup-management" element={<PrivateRoute roles={["SUPER_ADMIN"]}><BackupManagement /></PrivateRoute>} />
+
+        {/* Timetable */}
+        <Route path="timetable" element={<PrivateRoute><TimetableView /></PrivateRoute>} />
+        <Route path="timetable/manage" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><TimetableManage /></PrivateRoute>} />
+
+        {/* Assignments */}
+        <Route path="assignments" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentList /></PrivateRoute>} />
+        <Route path="assignments/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentDetails /></PrivateRoute>} />
+
+        {/* Library */}
+        <Route path="library" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><LibraryList /></PrivateRoute>} />
+
+        {/* Transport */}
+        <Route path="transport" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "STUDENT", "PARENT"]}><TransportList /></PrivateRoute>} />
+        <Route path="transport/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><TransportDetails /></PrivateRoute>} />
+
+        {/* Leave */}
+        <Route path="leave" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><LeaveList /></PrivateRoute>} />
+
+        {/* Messages */}
+        <Route path="messages" element={<PrivateRoute><MessageList /></PrivateRoute>} />
+        <Route path="messages/:id" element={<PrivateRoute><MessageDetails /></PrivateRoute>} />
+
+        {/* Academic Years */}
+        <Route path="academic-years" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><AcademicYearList /></PrivateRoute>} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

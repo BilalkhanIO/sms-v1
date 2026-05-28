@@ -368,6 +368,9 @@ const submitResults = [
 
     const bulkOps = [];
     for (const r of results) {
+      if (r.marksObtained < 0 || r.marksObtained > exam.totalMarks) {
+        return errorResponse(res, `Marks ${r.marksObtained} out of range (0–${exam.totalMarks})`, 400);
+      }
       const grade = r.grade ?? calculateGrade(r.marksObtained, exam.totalMarks);
       bulkOps.push({
         updateOne: {

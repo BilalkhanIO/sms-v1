@@ -179,7 +179,7 @@ const deleteEvent = asyncHandler(async (req, res) => {
     return errorResponse(res, "Not authorized to delete this event", 403);
   }
 
-  await event.remove();
+  await event.deleteOne();
 
   await Activity.logActivity({
     userId: req.user._id,

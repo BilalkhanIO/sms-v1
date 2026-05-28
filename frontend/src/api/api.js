@@ -21,6 +21,10 @@ export const api = createApi({
     "DashboardStats",
     "SchoolAdmins",
     "Pages",
+    "Transport",
+    "Leave",
+    "Messages",
+    "Notifications",
   ],
 });
 

@@ -26,6 +26,12 @@ import multiSchoolAdminRoutes from "./routes/multiSchoolAdminRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import superAdminPageRoutes from "./routes/superAdminPageRoutes.js";
 import parentRoutes from "./routes/parentRoutes.js";
+import libraryRoutes from "./routes/libraryRoutes.js";
+import transportRoutes from "./routes/transportRoutes.js";
+import leaveRoutes from "./routes/leaveRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
+import academicYearRoutes from "./routes/academicYearRoutes.js";
+import timetableRoutes from "./routes/timetableRoutes.js";
 
 const app = express();
 
@@ -77,6 +83,12 @@ app.use("/api/multi-school-admin", multiSchoolAdminRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/super-admin/pages", superAdminPageRoutes);
 app.use("/api/parents", parentRoutes);
+app.use("/api/library", libraryRoutes);
+app.use("/api/transport", transportRoutes);
+app.use("/api/leaves", leaveRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/academic-years", academicYearRoutes);
+app.use("/api/timetables", timetableRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

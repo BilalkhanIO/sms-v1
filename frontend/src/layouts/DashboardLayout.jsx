@@ -4,9 +4,10 @@ import * as Icons from 'lucide-react';
 import { useAuthStore } from '../store/zustand/useAuthStore';
 import { useUIStore } from '../store/zustand/useUIStore';
 import { useLogoutMutation } from '../api/authApi';
-import { NAV_CONFIG } from '../lib/permissions';
+import { NAV_CONFIG, NAV_GROUPS } from '../lib/permissions';
 import GlobalConfirmDialog from '../components/common/GlobalConfirmDialog';
 import ToastContainer from '../components/common/ToastContainer';
+import NotificationBell from '../components/common/NotificationBell';
 import Spinner from '../components/common/Spinner';
 
 const getIcon = (name, className = 'h-4 w-4') => {
@@ -49,14 +50,27 @@ function Sidebar({ user, navItems, onClose }) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            item={item}
-            isActive={isActive(item.to)}
-            onClick={onClose}
-          />
-        ))}
+        {Object.entries(NAV_GROUPS).map(([groupKey, groupLabel]) => {
+          const groupItems = navItems.filter((item) => item.group === groupKey);
+          if (!groupItems.length) return null;
+          return (
+            <div key={groupKey} className="mb-2">
+              {groupLabel && (
+                <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2">
+                  {groupLabel}
+                </p>
+              )}
+              {groupItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  item={item}
+                  isActive={isActive(item.to)}
+                  onClick={onClose}
+                />
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       {/* User info at bottom */}
@@ -159,6 +173,8 @@ export default function DashboardLayout() {
           </button>
 
           <div className="flex-1" />
+
+          <NotificationBell />
 
           {/* User menu */}
           <div className="relative group">
