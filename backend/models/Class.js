@@ -67,8 +67,8 @@ const classSchema = new Schema(
   { timestamps: true }
 );
 
-// Unique compound index
-classSchema.index({ name: 1, section: 1, academicYear: 1 }, { unique: true });
+// Unique compound index scoped to school for multi-tenancy
+classSchema.index({ school: 1, name: 1, section: 1, academicYear: 1 }, { unique: true });
 classSchema.index({ classTeacher: 1 });
 classSchema.index({ 'students': 1 });
 

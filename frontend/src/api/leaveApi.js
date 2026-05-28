@@ -4,18 +4,18 @@ export const leaveApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getLeaveRequests: builder.query({
       query: (params) => ({
-        url: '/leave',
+        url: '/leaves',
         params,
       }),
       providesTags: ['Leave'],
     }),
     getLeaveById: builder.query({
-      query: (id) => `/leave/${id}`,
+      query: (id) => `/leaves/${id}`,
       providesTags: (result, error, id) => [{ type: 'Leave', id }],
     }),
     createLeaveRequest: builder.mutation({
       query: (data) => ({
-        url: '/leave',
+        url: '/leaves',
         method: 'POST',
         body: data,
       }),
@@ -23,7 +23,7 @@ export const leaveApi = api.injectEndpoints({
     }),
     updateLeaveRequest: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/leave/${id}`,
+        url: `/leaves/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -34,7 +34,7 @@ export const leaveApi = api.injectEndpoints({
     }),
     deleteLeaveRequest: builder.mutation({
       query: (id) => ({
-        url: `/leave/${id}`,
+        url: `/leaves/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Leave'],

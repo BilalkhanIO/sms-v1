@@ -25,6 +25,16 @@ export const api = createApi({
     "Leave",
     "Messages",
     "Notifications",
+    "AcademicYears",
+    "Assignments",
+    "Library",
+    "Timetables",
+    "School",
+    "Schools",
+    "Settings",
+    "Backups",
+    "Activities",
+    "AuditLog",
   ],
 });
 

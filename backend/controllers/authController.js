@@ -34,7 +34,7 @@ const loginUser = [
       await user.updateLastLogin();
 
       await Activity.create({
-        userId: user._id,
+        user: user._id,
         type: "LOGIN",
         description: "User logged in",
         ip: req.ip,
@@ -75,7 +75,7 @@ const loginUser = [
 // @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
   await Activity.create({
-    userId: req.user._id,
+    user: req.user._id,
     type: "LOGOUT",
     description: "User logged out",
     ip: req.ip,

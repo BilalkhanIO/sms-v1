@@ -14,7 +14,7 @@ export const assignmentApi = api.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Assignments', id }],
     }),
     getMyAssignments: builder.query({
-      query: () => '/assignments/me',
+      query: () => '/assignments/my',
       providesTags: ['Assignments'],
     }),
     createAssignment: builder.mutation({
@@ -57,7 +57,7 @@ export const assignmentApi = api.injectEndpoints({
     gradeSubmission: builder.mutation({
       query: ({ assignmentId, studentId, grade, feedback }) => ({
         url: `/assignments/${assignmentId}/grade/${studentId}`,
-        method: 'POST',
+        method: 'PUT',
         body: { grade, feedback },
       }),
       invalidatesTags: (result, error, { assignmentId }) => [

@@ -4,18 +4,18 @@ export const libraryApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getBooks: builder.query({
       query: (params) => ({
-        url: '/library',
+        url: '/library/books',
         params,
       }),
       providesTags: ['Library'],
     }),
     getBookById: builder.query({
-      query: (id) => `/library/${id}`,
+      query: (id) => `/library/books/${id}`,
       providesTags: (result, error, id) => [{ type: 'Library', id }],
     }),
     createBook: builder.mutation({
       query: (data) => ({
-        url: '/library',
+        url: '/library/books',
         method: 'POST',
         body: data,
       }),
@@ -23,7 +23,7 @@ export const libraryApi = api.injectEndpoints({
     }),
     updateBook: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/library/${id}`,
+        url: `/library/books/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -34,14 +34,14 @@ export const libraryApi = api.injectEndpoints({
     }),
     deleteBook: builder.mutation({
       query: (id) => ({
-        url: `/library/${id}`,
+        url: `/library/books/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Library'],
     }),
     issueBook: builder.mutation({
       query: ({ bookId, borrowerId, dueDate }) => ({
-        url: `/library/${bookId}/issue`,
+        url: `/library/books/${bookId}/issue`,
         method: 'POST',
         body: { borrowerId, dueDate },
       }),
@@ -52,9 +52,8 @@ export const libraryApi = api.injectEndpoints({
     }),
     returnBook: builder.mutation({
       query: ({ bookId, issueId }) => ({
-        url: `/library/${bookId}/return`,
-        method: 'POST',
-        body: { issueId },
+        url: `/library/books/${bookId}/return/${issueId}`,
+        method: 'PUT',
       }),
       invalidatesTags: (result, error, { bookId }) => [
         'Library',

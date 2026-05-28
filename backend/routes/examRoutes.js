@@ -48,12 +48,15 @@ router
     getExamsBySubject
   );
 
+// Report card — must be before /:id to avoid being shadowed
+router.route("/report-card").post(protect, setSchoolId, generateReportCard);
+
 // GET /api/exams/:id - Get exam by ID (Admin, Teacher)
 // PUT /api/exams/:id - Update exam (Teacher, Admin)
 // DELETE /api/exams/:id - Delete exam (Admin only)
 router
   .route("/:id")
-  .get(protect, setSchoolId, getExamById) //Authorize removed since it is handled in controller
+  .get(protect, setSchoolId, getExamById)
   .put(
     protect,
     authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
@@ -77,20 +80,15 @@ router
     updateExamStatus
   );
 
-// GET /api/exams/:id/results - Get exam results (Admin, Teacher, Student)
-router.route("/:id/results").get(protect, setSchoolId, getExamResults); // Authorize removed since its handled in controller
+// GET /api/exams/:id/results - Get exam results; POST to submit results
 router
   .route("/:id/results")
+  .get(protect, setSchoolId, getExamResults)
   .post(protect, authorize("TEACHER"), setSchoolId, submitResults);
 
-// PUT /api/exams/:examId/results/:resultId - Update a specific exam result (Teacher)
-router
-  .route("/:id/results/:resultId")
-  .put(protect, authorize("TEACHER"), setSchoolId, updateExamResult);
+// GET/PUT /api/exams/:id/results/:studentId - Get or update specific student result
 router
   .route("/:id/results/:studentId")
-  .get(protect, setSchoolId, getStudentExamResult);
-
-// Report card
-router.route("/report-card").post(protect, setSchoolId, generateReportCard);
+  .get(protect, setSchoolId, getStudentExamResult)
+  .put(protect, authorize("TEACHER"), setSchoolId, updateExamResult);
 export default router;

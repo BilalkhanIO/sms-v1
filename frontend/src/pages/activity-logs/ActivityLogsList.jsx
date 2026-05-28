@@ -19,7 +19,7 @@ const ActivityLogsList = () => {
   const [severityFilter, setSeverityFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState(''); // For user or description search
 
-  const { data, isLoading, isError, error, refetch } = useGetActivityLogsQuery({
+  const { data, isLoading, isError, error, refetch } = useGetActivitiesQuery({
     page,
     limit,
     type: typeFilter,

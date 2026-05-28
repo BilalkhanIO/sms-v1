@@ -11,7 +11,7 @@ import useAuth from '../../hooks/useAuth';
 const ResultEntry = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isTeacher, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [errors, setErrors] = useState({});
@@ -23,7 +23,7 @@ const ResultEntry = () => {
   );
   const [submitResults, { isLoading: isSubmitting }] = useSubmitResultsMutation();
 
-  if (!isTeacher && !isAdmin) {
+  if (!user || !['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     navigate('/dashboard');
     return null;
   }

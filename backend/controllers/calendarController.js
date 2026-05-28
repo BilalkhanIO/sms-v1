@@ -80,8 +80,8 @@ const getEvents = asyncHandler(async (req, res) => {
   }
 
   const events = await Calendar.find(query)
-    .populate('createdBy', 'name email')
-    .populate('participants', 'name email');
+    .populate('createdBy', 'firstName lastName email')
+    .populate('participants', 'firstName lastName email');
 
   return successResponse(res, events, "Events retrieved successfully");
 });
@@ -94,8 +94,8 @@ const getEventById = asyncHandler(async (req, res) => {
     _id: req.params.id,
     schools: req.schoolId,
   })
-    .populate('createdBy', 'name email')
-    .populate('participants', 'name email');
+    .populate('createdBy', 'firstName lastName email')
+    .populate('participants', 'firstName lastName email');
 
   if (!event) {
     return errorResponse(res, "Event not found", 404);
@@ -144,8 +144,8 @@ const updateEvent = [
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    ).populate('createdBy', 'name email')
-     .populate('participants', 'name email');
+    ).populate('createdBy', 'firstName lastName email')
+     .populate('participants', 'firstName lastName email');
 
     await Activity.logActivity({
       userId: req.user._id,
@@ -205,8 +205,8 @@ const getUpcomingEvents = asyncHandler(async (req, res) => {
   })
     .sort({ start: 1 })
     .limit(parseInt(limit))
-    .populate('createdBy', 'name email')
-    .populate('participants', 'name email');
+    .populate('createdBy', 'firstName lastName email')
+    .populate('participants', 'firstName lastName email');
 
   return successResponse(res, events, "Upcoming events retrieved successfully");
 });
@@ -221,8 +221,8 @@ const getEventsByType = asyncHandler(async (req, res) => {
   }
 
   const events = await Calendar.find({ type, schools: req.schoolId })
-    .populate('createdBy', 'name email')
-    .populate('participants', 'name email');
+    .populate('createdBy', 'firstName lastName email')
+    .populate('participants', 'firstName lastName email');
 
   return successResponse(res, events, "Events retrieved successfully");
 });
@@ -242,8 +242,8 @@ const getEventsByDateRange = asyncHandler(async (req, res) => {
     end: { $lte: new Date(endDate) },
   })
     .sort({ start: 1 })
-    .populate('createdBy', 'name email')
-    .populate('participants', 'name email');
+    .populate('createdBy', 'firstName lastName email')
+    .populate('participants', 'firstName lastName email');
 
   return successResponse(res, events, "Events retrieved successfully");
 });
@@ -255,7 +255,7 @@ const getParticipants = asyncHandler(async (req, res) => {
   const event = await Calendar.findOne({
     _id: req.params.id,
     schools: req.schoolId,
-  }).populate("participants", "name email role");
+  }).populate('participants', 'firstName lastName email role');
 
   if (!event) {
     return errorResponse(res, "Event not found", 404);
@@ -296,7 +296,7 @@ const updateParticipants = [
     await event.save();
 
     const updatedEvent = await Calendar.findById(req.params.id)
-      .populate('participants', 'name email role');
+      .populate('participants', 'firstName lastName email role');
 
     await Activity.logActivity({
       userId: req.user._id,

@@ -25,7 +25,7 @@ export const messageApi = api.injectEndpoints({
     markAsRead: builder.mutation({
       query: (id) => ({
         url: `/messages/${id}/read`,
-        method: 'PATCH',
+        method: 'PUT',
       }),
       invalidatesTags: (result, error, id) => [
         'Messages',

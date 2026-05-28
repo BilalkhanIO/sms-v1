@@ -1,8 +1,10 @@
 // controllers/classController.js
 import ClassModel from "../models/Class.js";
+import Teacher from "../models/Teacher.js";
+import Student from "../models/Student.js";
 import asyncHandler from "express-async-handler";
 import { body, validationResult } from 'express-validator';
-import { protect, authorize } from '../middleware/authMiddleware.js'; // Import auth middleware
+import { protect, authorize } from '../middleware/authMiddleware.js';
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import Activity from "../models/Activity.js";
 
@@ -19,20 +21,25 @@ const getClasses = [
       }
 
       if (req.user.role === 'TEACHER') {
+          const teacher = await Teacher.findOne({ user: req.user._id, school: req.schoolId });
+          if (!teacher) return successResponse(res, [], 'Classes retrieved successfully');
           query = {
               school: req.schoolId,
               $or: [
-                  { classTeacher: req.user._id },  // Classes where the user is the class teacher
-                  { 'subjects': { $in: req.user.assignedSubjects } } // Assuming teachers have an assignedSubjects field
+                  { classTeacher: teacher._id },
+                  { subjects: { $in: teacher.assignedSubjects || [] } }
               ]
           };
       }
 
       if (req.user.role === 'STUDENT') {
-        query = { students: req.user._id }; // Classes where the user is a student
-    }
+          const student = await Student.findOne({ user: req.user._id, school: req.schoolId });
+          if (!student) return successResponse(res, [], 'Classes retrieved successfully');
+          query = { students: student._id };
+      }
+
       const classes = await ClassModel.find(query)
-        .populate('classTeacher', 'firstName lastName')
+        .populate({ path: 'classTeacher', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
         .sort({ academicYear: 'desc', name: 'asc', section: 'asc' });
         return successResponse(res, classes, "Classes retrieved successfully");
 
@@ -52,23 +59,24 @@ const getClassById = [
           filter.school = req.schoolId;
         }
         const classData = await ClassModel.findOne(filter)
-            .populate('classTeacher', 'firstName lastName')
-            .populate('subjects', 'name code') // Populate the 'subject' field within the 'subjects' array
-            .populate('students', 'firstName lastName admissionNumber');
+            .populate({ path: 'classTeacher', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
+            .populate('subjects', 'name code')
+            .populate({ path: 'students', select: 'admissionNumber user', populate: { path: 'user', select: 'firstName lastName' } });
 
         if (!classData) {
             return errorResponse(res, 'Class not found', 404);
         }
 
-        // If the user is a teacher, they can only access the class if they are the class teacher or teach a subject in the class
         if (req.user.role === 'TEACHER') {
-            if (!classData.classTeacher.equals(req.user._id) && !classData.subjects.some(subject => subject.assignedTeachers.includes(req.user._id))) {
+            const teacher = await Teacher.findOne({ user: req.user._id });
+            if (!teacher || !classData.classTeacher?._id?.equals(teacher._id)) {
                 return errorResponse(res, 'Unauthorized to access this class', 403);
             }
         }
-      // If user is student, they can only access the class if they are a student of the class
+
         if (req.user.role === 'STUDENT') {
-            if (!classData.students.some(student => student._id.equals(req.user._id))) {
+            const student = await Student.findOne({ user: req.user._id });
+            if (!student || !classData.students.some(s => s._id.equals(student._id))) {
                 return errorResponse(res, 'Unauthorized to access this class', 403);
             }
         }

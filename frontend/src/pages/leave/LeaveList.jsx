@@ -22,6 +22,7 @@ const EMPTY_FORM = {
   startDate: '',
   endDate: '',
   reason: '',
+  applicantType: '',
 };
 
 // Map leave statuses to StatusBadge-compatible keys
@@ -88,7 +89,8 @@ const LeaveList = () => {
       return;
     }
     try {
-      await createLeaveRequest(form).unwrap();
+      const applicantType = user?.role === 'TEACHER' ? 'TEACHER' : 'STUDENT';
+      await createLeaveRequest({ ...form, applicantType }).unwrap();
       addToast({ type: 'success', title: 'Leave request submitted' });
       setModalOpen(false);
       setForm(EMPTY_FORM);

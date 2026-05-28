@@ -3,16 +3,16 @@ import { api } from './api';
 export const transportApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getRoutes: builder.query({
-      query: () => '/transport',
+      query: () => '/transport/routes',
       providesTags: ['Transport'],
     }),
     getRouteById: builder.query({
-      query: (id) => `/transport/${id}`,
+      query: (id) => `/transport/routes/${id}`,
       providesTags: (result, error, id) => [{ type: 'Transport', id }],
     }),
     createRoute: builder.mutation({
       query: (data) => ({
-        url: '/transport',
+        url: '/transport/routes',
         method: 'POST',
         body: data,
       }),
@@ -20,7 +20,7 @@ export const transportApi = api.injectEndpoints({
     }),
     updateRoute: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `/transport/${id}`,
+        url: `/transport/routes/${id}`,
         method: 'PUT',
         body: data,
       }),
@@ -31,14 +31,14 @@ export const transportApi = api.injectEndpoints({
     }),
     deleteRoute: builder.mutation({
       query: (id) => ({
-        url: `/transport/${id}`,
+        url: `/transport/routes/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Transport'],
     }),
     assignStudent: builder.mutation({
       query: ({ routeId, studentId }) => ({
-        url: `/transport/${routeId}/assign`,
+        url: `/transport/routes/${routeId}/students`,
         method: 'POST',
         body: { studentId },
       }),
@@ -49,14 +49,17 @@ export const transportApi = api.injectEndpoints({
     }),
     removeStudent: builder.mutation({
       query: ({ routeId, studentId }) => ({
-        url: `/transport/${routeId}/remove`,
-        method: 'POST',
-        body: { studentId },
+        url: `/transport/routes/${routeId}/students/${studentId}`,
+        method: 'DELETE',
       }),
       invalidatesTags: (result, error, { routeId }) => [
         'Transport',
         { type: 'Transport', id: routeId },
       ],
+    }),
+    getStudentRoute: builder.query({
+      query: (studentId) => `/transport/students/${studentId}/route`,
+      providesTags: ['Transport'],
     }),
   }),
 });
@@ -69,4 +72,5 @@ export const {
   useDeleteRouteMutation,
   useAssignStudentMutation,
   useRemoveStudentMutation,
+  useGetStudentRouteQuery,
 } = transportApi;

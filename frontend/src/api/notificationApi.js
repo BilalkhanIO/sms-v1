@@ -13,14 +13,14 @@ export const notificationApi = api.injectEndpoints({
     markAsRead: builder.mutation({
       query: (id) => ({
         url: `/notifications/${id}/read`,
-        method: 'PATCH',
+        method: 'PUT',
       }),
       invalidatesTags: ['Notifications'],
     }),
     markAllAsRead: builder.mutation({
       query: () => ({
         url: '/notifications/read-all',
-        method: 'PATCH',
+        method: 'PUT',
       }),
       invalidatesTags: ['Notifications'],
     }),

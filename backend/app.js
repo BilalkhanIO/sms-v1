@@ -89,6 +89,7 @@ app.use("/api/leaves", leaveRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/academic-years", academicYearRoutes);
 app.use("/api/timetables", timetableRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

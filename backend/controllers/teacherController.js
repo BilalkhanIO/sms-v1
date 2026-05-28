@@ -1,15 +1,17 @@
 // controllers/teacherController.js
+import mongoose from "mongoose";
 import Teacher from "../models/Teacher.js";
 import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
+import School from "../models/School.js";
 import ClassModel from "../models/Class.js";
 import Subject from "../models/Subject.js";
 import { body, validationResult } from "express-validator";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import Activity from "../models/Activity.js";
-import cloudinary from "../utils/cloudinary.js"; // Import Cloudinary
-import upload from "../utils/multer.js"; // Import Multer
+import cloudinary from "../utils/cloudinary.js";
+import upload from "../utils/multer.js";
 
 // @desc    Get all teachers
 // @route   GET /api/teachers
@@ -452,7 +454,7 @@ const deleteTeacher = [
       }
 
       // Delete the teacher
-      const teacherDeleteResult = await Teacher.deleteOne({ _id: teacherId, ...baseFilter }, { session });
+      const teacherDeleteResult = await Teacher.deleteOne({ _id: teacherId, ...filter }, { session });
       if (teacherDeleteResult.deletedCount === 0 && req.user.role !== "SUPER_ADMIN") {
         throw new Error("Teacher not found or not authorized for deletion within school scope.");
       }

@@ -1,11 +1,12 @@
 import Student from "../models/Student.js";
 import asyncHandler from "express-async-handler";
 import Activity from "../models/Activity.js";
-import { body, validationResult } from "express-validator"; // Import express-validator
+import { body, validationResult } from "express-validator";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import User from "../models/User.js";
 import Parent from "../models/Parent.js";
+import Teacher from "../models/Teacher.js";
 import ClassModel from "../models/Class.js";
 import upload from "../utils/multer.js";
 import cloudinary from "../utils/cloudinary.js";
@@ -128,7 +129,7 @@ const getStudentById = [
     })
       .populate("class", "name section")
       .populate("user", "firstName lastName email")
-      .populate("parentInfo.guardian", "firstName lastName contactNumber");
+      .populate({ path: "parentInfo.guardian", select: "user contactNumber", populate: { path: "user", select: "firstName lastName" } });
 
     if (!student) {
       return errorResponse(res, "Student not found", 404);
@@ -170,12 +171,11 @@ const getStudentsByClass = [
       return errorResponse(res, "Class not found", 404);
     }
 
-    // If the user is a teacher, they can only access the class if they are the class teacher
     if (req.user.role === "TEACHER") {
-      // Allow if teacher is class teacher or appears in schedule for this class
-      const isClassTeacher = classData.classTeacher.equals(req.user._id);
+      const teacher = await Teacher.findOne({ user: req.user._id });
+      const isClassTeacher = teacher && classData.classTeacher.equals(teacher._id);
       const teachesInSchedule = classData.schedule?.some((day) =>
-        day.periods?.some((p) => p.teacher?.equals(req.user._id))
+        day.periods?.some((p) => p.teacher?.equals(teacher?._id))
       );
       if (!isClassTeacher && !teachesInSchedule) {
         return errorResponse(res, "Unauthorized to access this class", 403);

@@ -103,7 +103,7 @@ const getSubjects = [
     }
 
     const subjects = await Subject.find(query)
-      .populate("assignedTeachers", "firstName lastName")
+      .populate({ path: 'assignedTeachers', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
       .populate("assignedClasses", "name section");
 
     return successResponse(res, subjects, "Subjects retrieved successfully");
@@ -127,7 +127,7 @@ const getSubjectsByClass = [
       assignedClasses: classId,
       school: req.schoolId,
     })
-      .populate("assignedTeachers", "firstName lastName")
+      .populate({ path: 'assignedTeachers', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
       .populate("assignedClasses", "name section");
     return successResponse(res, subjects, "Subjects retrieved successfully");
   }),
@@ -150,7 +150,7 @@ const getSubjectsByTeacher = [
       assignedTeachers: teacherId,
       school: req.schoolId,
     })
-      .populate("assignedTeachers", "firstName lastName")
+      .populate({ path: 'assignedTeachers', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
       .populate("assignedClasses", "name section");
     return successResponse(res, subjects, "Subjects retrieved successfully");
   }),
@@ -200,7 +200,7 @@ const getSubjectById = [
       _id: subjectId,
       school: req.schoolId,
     })
-      .populate("assignedTeachers", "firstName lastName")
+      .populate({ path: 'assignedTeachers', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
       .populate("assignedClasses", "name section");
     if (!subject) {
       return errorResponse(res, "Subject not found", 404);

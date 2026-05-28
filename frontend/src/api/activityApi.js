@@ -7,7 +7,7 @@ export const activityApi = createApi({
   endpoints: (builder) => ({
     getActivities: builder.query({
       query: (params) => ({
-        url: '/activity-logs',
+        url: '/activities',
         params,
       }),
     }),

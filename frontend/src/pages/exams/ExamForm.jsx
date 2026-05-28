@@ -11,9 +11,10 @@ import PageHeader from '../../components/common/PageHeader';
 const examSchema = Yup.object().shape({
   title: Yup.string().required('Title is required'),
   type: Yup.string().required('Type is required'),
-  classId: Yup.string().required('Class is required'),
-  subjectId: Yup.string().required('Subject is required'),
+  class: Yup.string().required('Class is required'),
+  subject: Yup.string().required('Subject is required'),
   date: Yup.date().required('Date is required'),
+  duration: Yup.number().min(1).required('Duration is required'),
   totalMarks: Yup.number().min(1).required('Total marks is required'),
   passingMarks: Yup.number().min(0).required('Passing marks is required'),
 });
@@ -37,9 +38,10 @@ const ExamForm = () => {
     initialValues: {
       title: exam?.title || '',
       type: exam?.type || '',
-      classId: exam?.class?._id || exam?.class || '',
-      subjectId: exam?.subject?._id || exam?.subject || '',
+      class: exam?.class?._id || exam?.class || '',
+      subject: exam?.subject?._id || exam?.subject || '',
       date: exam?.date ? new Date(exam.date).toISOString().split('T')[0] : '',
+      duration: exam?.duration || '',
       totalMarks: exam?.totalMarks || '',
       passingMarks: exam?.passingMarks || '',
       description: exam?.description || '',
@@ -96,23 +98,28 @@ const ExamForm = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Class *</label>
-              <select className={inputClass} name="classId" value={formik.values.classId} onChange={formik.handleChange} onBlur={formik.handleBlur}>
+              <select className={inputClass} name="class" value={formik.values.class} onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <option value="">Select class</option>
                 {classes?.map((c) => <option key={c._id} value={c._id}>{c.name} {c.section}</option>)}
               </select>
-              {formik.touched.classId && formik.errors.classId && <p className={errorClass}>{formik.errors.classId}</p>}
+              {formik.touched.class && formik.errors.class && <p className={errorClass}>{formik.errors.class}</p>}
             </div>
             <div>
               <label className={labelClass}>Subject *</label>
-              <select className={inputClass} name="subjectId" value={formik.values.subjectId} onChange={formik.handleChange} onBlur={formik.handleBlur}>
+              <select className={inputClass} name="subject" value={formik.values.subject} onChange={formik.handleChange} onBlur={formik.handleBlur}>
                 <option value="">Select subject</option>
                 {subjects?.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
               </select>
-              {formik.touched.subjectId && formik.errors.subjectId && <p className={errorClass}>{formik.errors.subjectId}</p>}
+              {formik.touched.subject && formik.errors.subject && <p className={errorClass}>{formik.errors.subject}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Duration (min) *</label>
+              <input type="number" className={inputClass} name="duration" value={formik.values.duration} onChange={formik.handleChange} onBlur={formik.handleBlur} min="1" placeholder="e.g. 90" />
+              {formik.touched.duration && formik.errors.duration && <p className={errorClass}>{formik.errors.duration}</p>}
+            </div>
             <div>
               <label className={labelClass}>Total Marks *</label>
               <input type="number" className={inputClass} name="totalMarks" value={formik.values.totalMarks} onChange={formik.handleChange} onBlur={formik.handleBlur} min="1" />

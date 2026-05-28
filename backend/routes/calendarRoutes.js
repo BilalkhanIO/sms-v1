@@ -28,17 +28,17 @@ router
   )
   .get(protect, setSchoolId, getEvents);
 
+// Special event routes — must be before /events/:id to avoid being shadowed
+router.route("/events/upcoming").get(protect, setSchoolId, getUpcomingEvents);
+router.route("/events/type").get(protect, setSchoolId, getEventsByType);
+router.route("/events/range").get(protect, setSchoolId, getEventsByDateRange);
+
 // Event by ID routes
 router
   .route("/events/:id")
   .get(protect, setSchoolId, getEventById)
   .put(protect, setSchoolId, updateEvent)
   .delete(protect, setSchoolId, deleteEvent);
-
-// Special event routes
-router.route("/events/upcoming").get(protect, setSchoolId, getUpcomingEvents);
-router.route("/events/type").get(protect, setSchoolId, getEventsByType);
-router.route("/events/range").get(protect, setSchoolId, getEventsByDateRange);
 
 // Participant management routes
 router
