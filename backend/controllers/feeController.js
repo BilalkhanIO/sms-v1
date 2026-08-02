@@ -440,7 +440,7 @@ export const getFeeById = [
       _id: req.params.id,
       school: req.schoolId,
     })
-      .populate("student", "admissionNumber")
+      .populate({ path: "student", select: "admissionNumber rollNumber user", populate: { path: "user", select: "firstName lastName" } })
       .lean();
     if (!fee) return errorResponse(res, "Fee record not found", 404);
     return successResponse(res, fee, "Fee retrieved successfully");

@@ -400,14 +400,14 @@ const BackupManagement = () => {
                           {backup.status === 'COMPLETED' && (
                             <>
                               <button
-                                onClick={() => downloadBackup(backup.id)}
+                                onClick={() => downloadBackup(backup._id)}
                                 className="text-blue-600 hover:text-blue-900"
                                 title="Download"
                               >
                                 <Download className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleRestoreBackup(backup.id)}
+                                onClick={() => handleRestoreBackup(backup._id)}
                                 disabled={isRestoring}
                                 className="text-green-600 hover:text-green-900 disabled:opacity-50"
                                 title="Restore"
@@ -424,7 +424,7 @@ const BackupManagement = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteBackup(backup.id)}
+                            onClick={() => handleDeleteBackup(backup._id)}
                             className="text-red-600 hover:text-red-900"
                             title="Delete"
                           >

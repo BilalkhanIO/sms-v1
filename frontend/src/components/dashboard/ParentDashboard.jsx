@@ -253,7 +253,7 @@ const ParentDashboard = () => {
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
-              <Link to="/dashboard/grades">
+              <Link to="/dashboard/exams">
                 <FileText className="w-5 h-5 text-orange-500 mb-2" />
                 <CardDescription className="text-sm font-medium">View Grades</CardDescription>
               </Link>

@@ -49,11 +49,6 @@ const getTeacherById = [
       filter.school = req.schoolId;
     }
 
-    // If a teacher is trying to access their own profile, ensure it's their ID
-    if (req.user.role === "TEACHER" && req.user._id.toString() !== teacherId) {
-      return errorResponse(res, "Not authorized to access this teacher's data", 403);
-    }
-
     const teacher = await Teacher.findOne(filter)
       .populate("user", "firstName lastName email profilePicture")
       .populate("assignedClasses", "name section")
@@ -61,6 +56,11 @@ const getTeacherById = [
 
     if (!teacher) {
       return errorResponse(res, "Teacher not found", 404);
+    }
+
+    // If a teacher is trying to access a profile, ensure it's their own
+    if (req.user.role === "TEACHER" && teacher.user._id.toString() !== req.user._id.toString()) {
+      return errorResponse(res, "Not authorized to access this teacher's data", 403);
     }
 
     return successResponse(res, teacher, "Teacher retrieved successfully");
@@ -376,7 +376,7 @@ const updateTeacher = [
       await Activity.logActivity({
         userId: req.user._id,
         type: "TEACHER_UPDATED",
-        description: `Updated teacher ${updatedTeacher.user.firstName} ${updatedTeacher.user.lastName} (${updatedTeacher.employeeId}) in school ${updatedTeacher.school}`,
+        description: `Updated teacher ${updatedUser.firstName} ${updatedUser.lastName} (${updatedTeacher.employeeId}) in school ${updatedTeacher.school}`,
         context: "teacher-management",
         ip: req.ip,
         userAgent: req.headers["user-agent"],
@@ -652,7 +652,7 @@ const assignTeacherToClass = [
       filter.school = req.schoolId;
     }
 
-    const teacher = await Teacher.findOne(filter); // Find teacher within school scope
+    const teacher = await Teacher.findOne(filter).populate("user", "firstName"); // Find teacher within school scope
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to assign", 404);
     }
@@ -742,7 +742,7 @@ const assignSubjectToTeacher = [
       filter.school = req.schoolId;
     }
 
-    const teacher = await Teacher.findOne(filter); // Find teacher within school scope
+    const teacher = await Teacher.findOne(filter).populate("user", "firstName"); // Find teacher within school scope
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to assign subject", 404);
     }
@@ -848,7 +848,7 @@ const unassignSubjectFromTeacher = [
       filter.school = req.schoolId;
     }
 
-    const teacher = await Teacher.findOne(filter); // Find teacher within school scope
+    const teacher = await Teacher.findOne(filter).populate("user", "firstName"); // Find teacher within school scope
     if (!teacher) {
       return errorResponse(res, "Teacher not found or not authorized to unassign subject", 404);
     }

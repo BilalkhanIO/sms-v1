@@ -88,7 +88,7 @@ const AssignmentDetails = () => {
   const submissions = assignment.submissions || [];
   const mySubmission = role === 'STUDENT'
     ? submissions.find(
-        (s) => (s.student?._id || s.studentId) === (user?._id || user?.id)
+        (s) => s.student?.user?._id?.toString() === user?._id?.toString()
       ) || assignment.mySubmission
     : null;
 

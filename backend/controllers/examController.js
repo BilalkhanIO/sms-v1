@@ -350,7 +350,7 @@ const calculateGrade = (marksObtained, total) => {
 // @access  Private/Teacher
 const submitResults = [
   protect,
-  authorize("TEACHER"),
+  authorize("TEACHER", "SCHOOL_ADMIN", "SUPER_ADMIN"),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { results } = req.body; // [{ studentId, marksObtained, grade?, remarks? }]
@@ -706,7 +706,7 @@ const getExamResults = [
       })
       .populate("class", "name section")
       .populate("subject", "name code")
-      .select("results title date class subject");
+      .select("results title date class subject createdBy");
 
     if (!exam) {
       return errorResponse(res, "Exam not found", 404);

@@ -5,9 +5,9 @@ export const settingsApi = api.injectEndpoints({
     getSettings: builder.query({
       query: () => "settings",
       providesTags: (result) =>
-        result
+        result?.data
           ? [
-              ...result.map(({ id }) => ({ type: "Setting", id })),
+              ...result.data.map(({ settingName }) => ({ type: "Setting", id: settingName })),
               { type: "Setting", id: "LIST" },
             ]
           : [{ type: "Setting", id: "LIST" }],

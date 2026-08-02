@@ -49,7 +49,7 @@ export const authApi = api.injectEndpoints({
       invalidatesTags: ["Auth"],
     }),
     forgotPassword: builder.mutation({
-      query: (email) => ({
+      query: ({ email }) => ({
         url: "/auth/forgot-password",
         method: "POST",
         body: { email },

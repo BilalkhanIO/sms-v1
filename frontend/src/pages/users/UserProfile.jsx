@@ -1,5 +1,5 @@
 import React from 'react';
-import { useGetMyProfileQuery } from '../../api/usersApi';
+import { useGetUserProfileQuery } from '../../api/usersApi';
 import Spinner from '../../components/common/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import PageHeader from '../../components/common/PageHeader';
@@ -12,7 +12,7 @@ import UpdateProfileForm from '../../components/forms/UpdateProfileForm';
 import ChangePasswordForm from '../../components/forms/ChangePasswordForm';
 
 const UserProfile = () => {
-  const { data: userRaw, isLoading, isError, error } = useGetMyProfileQuery();
+  const { data: userRaw, isLoading, isError, error } = useGetUserProfileQuery();
   const user = userRaw?.data || userRaw;
 
   if (isLoading) {

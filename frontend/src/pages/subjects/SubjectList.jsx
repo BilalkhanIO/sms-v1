@@ -73,8 +73,8 @@ const SubjectList = () => {
       key: 'teachers',
       header: 'Teachers',
       className: 'text-gray-500',
-      render: (s) => s.teachers?.length
-        ? s.teachers.map((t) => `${t.user?.firstName ?? ''} ${t.user?.lastName ?? ''}`.trim()).join(', ')
+      render: (s) => s.assignedTeachers?.length
+        ? s.assignedTeachers.map((t) => `${t.user?.firstName ?? ''} ${t.user?.lastName ?? ''}`.trim()).join(', ')
         : 'None',
     },
     {

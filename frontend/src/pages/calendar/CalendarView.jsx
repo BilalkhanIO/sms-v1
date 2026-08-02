@@ -1,234 +1,125 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Calendar } from '../../components/ui/calendar';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { useGetEventsQuery, useCreateEventMutation } from '../../api/calendarApi';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Plus } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from '../../components/ui/use-toast';
+import { Link } from 'react-router-dom';
+import { useGetEventsQuery } from '../../api/calendarApi';
+import Spinner from '../../components/common/Spinner';
+import PageHeader from '../../components/common/PageHeader';
+import { Calendar, Plus } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
+
+const TYPE_COLORS = {
+  GENERAL: 'bg-gray-100 text-gray-800',
+  MEETING: 'bg-blue-100 text-blue-800',
+  EXAM: 'bg-red-100 text-red-800',
+  HOLIDAY: 'bg-green-100 text-green-800',
+  SPORTS: 'bg-yellow-100 text-yellow-800',
+};
 
 const CalendarView = () => {
-  const [date, setDate] = useState(new Date());
-  const [view, setView] = useState('month');
-  const [showEventDialog, setShowEventDialog] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    start: null,
-    end: null,
-    type: 'GENERAL',
-    visibility: 'PUBLIC',
-    participants: []
+  const { can } = useAuth();
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
   });
 
-  const { data: events = [], isLoading } = useGetEventsQuery();
-  const [createEvent] = useCreateEventMutation();
+  const startOfMonth = new Date(selectedMonth.year, selectedMonth.month - 1, 1).toISOString();
+  const endOfMonth = new Date(selectedMonth.year, selectedMonth.month, 0, 23, 59, 59).toISOString();
 
-  const handleEventSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await createEvent({
-        ...newEvent,
-        date: format(date, 'yyyy-MM-dd')
-      }).unwrap();
-      
-      toast({
-        title: 'Success',
-        description: 'Event created successfully.',
-      });
-      
-      setShowEventDialog(false);
-      setNewEvent({
-        title: '',
-        description: '',
-        startTime: '',
-        endTime: '',
-        type: 'general',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to create event. Please try again.',
-        variant: 'destructive',
-      });
-    }
+  const { data: eventsRaw, isLoading, isError } = useGetEventsQuery({ start: startOfMonth, end: endOfMonth });
+  const events = eventsRaw?.data || [];
+
+  const prevMonth = () => {
+    setSelectedMonth(({ year, month }) => {
+      if (month === 1) return { year: year - 1, month: 12 };
+      return { year, month: month - 1 };
+    });
   };
 
-  const getEventTypeColor = (type) => {
-    const colors = {
-      meeting: 'bg-blue-100 text-blue-800',
-      exam: 'bg-red-100 text-red-800',
-      holiday: 'bg-green-100 text-green-800',
-      general: 'bg-gray-100 text-gray-800'
-    };
-    return colors[type] || colors.general;
+  const nextMonth = () => {
+    setSelectedMonth(({ year, month }) => {
+      if (month === 12) return { year: year + 1, month: 1 };
+      return { year, month: month + 1 };
+    });
   };
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 flex justify-center items-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  const monthName = new Date(selectedMonth.year, selectedMonth.month - 1, 1)
+    .toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Academic Calendar</h1>
-        <div className="flex gap-4">
-          <Select value={view} onValueChange={setView}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Select view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Month</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="day">Day</SelectItem>
-            </SelectContent>
-          </Select>
-          <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Event</DialogTitle>
-                <DialogDescription>
-                  Create a new event for {format(date, 'MMMM do, yyyy')}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleEventSubmit}>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Event Title</Label>
-                    <Input
-                      id="title"
-                      value={newEvent.title}
-                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Input
-                      id="description"
-                      value={newEvent.description}
-                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={newEvent.startTime}
-                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="endTime">End Time</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={newEvent.endTime}
-                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="type">Event Type</Label>
-                    <Select
-                      value={newEvent.type}
-                      onValueChange={(value) => setNewEvent({ ...newEvent, type: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select event type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="meeting">Meeting</SelectItem>
-                        <SelectItem value="exam">Exam</SelectItem>
-                        <SelectItem value="holiday">Holiday</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter className="mt-6">
-                  <Button type="button" variant="outline" onClick={() => setShowEventDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Create Event</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+    <div>
+      <PageHeader
+        title="Calendar"
+        backUrl="/dashboard"
+        action={
+          can('calendar', 'edit') && (
+            <Link
+              to="/dashboard/calendar/events/create"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" /> Add Event
+            </Link>
+          )
+        }
+      />
+
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+        {/* Month navigation */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <button onClick={prevMonth} className="px-3 py-1 rounded border text-sm hover:bg-gray-50">← Prev</button>
+          <h2 className="text-lg font-semibold text-gray-800">{monthName}</h2>
+          <button onClick={nextMonth} className="px-3 py-1 rounded border text-sm hover:bg-gray-50">Next →</button>
         </div>
-      </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <CardContent className="p-6">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-            />
-          </CardContent>
-        </Card>
+        {isLoading && (
+          <div className="flex justify-center py-16">
+            <Spinner />
+          </div>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {events.map((event) => (
-                <div
-                  key={event.id}
-                  className="p-4 rounded-lg border"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{event.title}</h3>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getEventTypeColor(event.type)}`}>
-                      {event.type}
-                    </span>
+        {isError && (
+          <div className="p-6 text-center text-red-500 text-sm">Failed to load events.</div>
+        )}
+
+        {!isLoading && !isError && (
+          <div className="divide-y divide-gray-100">
+            {events.length === 0 && (
+              <p className="p-6 text-center text-gray-400 text-sm">No events this month.</p>
+            )}
+            {events.map((event) => (
+              <div key={event._id} className="px-6 py-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-gray-900">
+                        <Link to={`/dashboard/calendar/events/${event._id}`} className="hover:text-blue-600">
+                          {event.title}
+                        </Link>
+                      </h3>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TYPE_COLORS[event.type] || TYPE_COLORS.GENERAL}`}>
+                        {event.type}
+                      </span>
+                    </div>
+                    {event.description && (
+                      <p className="mt-1 text-xs text-gray-500">{event.description}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-400">
+                      {event.start ? new Date(event.start).toLocaleDateString() : '—'}
+                      {event.end && ` — ${new Date(event.end).toLocaleDateString()}`}
+                      {event.location && ` · ${event.location}`}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    <div>{format(new Date(event.date), 'MMMM do, yyyy')}</div>
-                    <div>{event.startTime} - {event.endTime}</div>
-                  </div>
+                  {can('calendar', 'edit') && (
+                    <Link
+                      to={`/dashboard/calendar/events/${event._id}/edit`}
+                      className="text-xs text-blue-600 hover:underline ml-4"
+                    >
+                      Edit
+                    </Link>
+                  )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

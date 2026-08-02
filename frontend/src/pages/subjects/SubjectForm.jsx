@@ -38,7 +38,7 @@ const SubjectForm = () => {
       description: subject?.description || '',
       grade: subject?.grade || '',
       credits: subject?.credits || 0,
-      teacherIds: subject?.teachers?.map(teacher => teacher._id || teacher.id) || [],
+      assignedTeachers: subject?.assignedTeachers?.map(teacher => teacher._id || teacher.id) || [],
     },
     validationSchema: subjectSchema,
     enableReinitialize: true,
@@ -125,18 +125,18 @@ const SubjectForm = () => {
 
           <SelectField
             label="Assigned Teachers"
-            name="teacherIds"
-            value={teacherOptions.filter(option => 
-              formik.values.teacherIds.includes(option.value)
+            name="assignedTeachers"
+            value={teacherOptions.filter(option =>
+              formik.values.assignedTeachers.includes(option.value)
             )}
-            onChange={options => 
+            onChange={options =>
               formik.setFieldValue(
-                'teacherIds',
+                'assignedTeachers',
                 options ? options.map(option => option.value) : []
               )
             }
-            onBlur={() => formik.setFieldTouched('teacherIds')}
-            error={formik.touched.teacherIds && formik.errors.teacherIds}
+            onBlur={() => formik.setFieldTouched('assignedTeachers')}
+            error={formik.touched.assignedTeachers && formik.errors.assignedTeachers}
             options={teacherOptions}
             isMulti
           />

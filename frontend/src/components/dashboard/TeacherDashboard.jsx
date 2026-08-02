@@ -185,7 +185,7 @@ const TeacherDashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <Link to="/dashboard/attendance/create" className="text-sm">
+                      <Link to="/dashboard/attendance/mark" className="text-sm">
                         <Button variant="outline" size="sm">Attendance</Button>
                       </Link>
                     </div>
@@ -209,7 +209,7 @@ const TeacherDashboard = () => {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
-              <Link to="/dashboard/attendance/create">
+              <Link to="/dashboard/attendance/mark">
                 <CheckCircle className="w-5 h-5 text-blue-500 mb-2" />
                 <CardDescription className="text-sm font-medium">Take Attendance</CardDescription>
               </Link>
@@ -227,7 +227,7 @@ const TeacherDashboard = () => {
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-auto p-4 flex-col items-start text-left">
-              <Link to="/dashboard/calendar/create">
+              <Link to="/dashboard/calendar/events/create">
                 <Calendar className="w-5 h-5 text-orange-500 mb-2" />
                 <CardDescription className="text-sm font-medium">Add Event</CardDescription>
               </Link>

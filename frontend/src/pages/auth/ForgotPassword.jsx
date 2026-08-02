@@ -28,7 +28,7 @@ function ForgotPassword() {
       const response = await forgotPassword(values).unwrap();
       toast({
         title: "Reset token sent!",
-        description: "Check your email or use the token: " + response.resetToken,
+        description: "Check your email for the password reset link.",
       });
     } catch (err) {
       toast({

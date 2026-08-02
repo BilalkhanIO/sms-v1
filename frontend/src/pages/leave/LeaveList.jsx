@@ -56,7 +56,7 @@ const LeaveList = () => {
   const [updateLeaveRequest, { isLoading: isUpdating }] = useUpdateLeaveRequestMutation();
   const [deleteLeaveRequest, { isLoading: isDeleting }] = useDeleteLeaveRequestMutation();
 
-  const allLeaves = data?.data || data || [];
+  const allLeaves = data?.data?.leaves || data?.data || data || [];
 
   // For non-admin: filter client-side since backend returns own requests
   const leaveList = isAdmin

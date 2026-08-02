@@ -27,10 +27,11 @@ const CalendarList = () => {
 
   const eventTypes = [
     { value: 'all', label: 'All Events' },
+    { value: 'GENERAL', label: 'General' },
     { value: 'EXAM', label: 'Exam' },
     { value: 'HOLIDAY', label: 'Holiday' },
-    { value: 'EVENT', label: 'Event' },
     { value: 'MEETING', label: 'Meeting' },
+    { value: 'SPORTS', label: 'Sports' },
   ];
 
   const getTypeColor = (type) => {
@@ -104,8 +105,8 @@ const CalendarList = () => {
                   )}
                   <div className="mt-2 flex items-center space-x-4">
                     <span className="text-sm text-gray-500">
-                      {new Date(event.startDate).toLocaleDateString()}
-                      {event.endDate && ` — ${new Date(event.endDate).toLocaleDateString()}`}
+                      {event.start ? new Date(event.start).toLocaleDateString() : '—'}
+                      {event.end && ` — ${new Date(event.end).toLocaleDateString()}`}
                     </span>
                     <span className={`px-2 py-1 text-xs rounded-full ${getTypeColor(event.type)}`}>
                       {event.type}

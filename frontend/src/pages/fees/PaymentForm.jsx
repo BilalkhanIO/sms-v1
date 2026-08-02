@@ -20,10 +20,10 @@ const PaymentForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      amount: '',
-      paymentMethod: 'cash',
+      amountPaid: '',
+      paymentMethod: 'CASH',
       transactionId: '',
-      date: new Date().toISOString().split('T')[0],
+      paidDate: new Date().toISOString().split('T')[0],
       notes: ''
     },
     validationSchema: paymentSchema,
@@ -32,7 +32,7 @@ const PaymentForm = () => {
         await recordPayment({
           feeId: id,
           ...values,
-          amount: parseFloat(values.amount)
+          amountPaid: parseFloat(values.amountPaid)
         }).unwrap();
         navigate(`/dashboard/fees/${id}`);
       } catch (error) {
@@ -57,11 +57,10 @@ const PaymentForm = () => {
 
   const remainingAmount = (fee.amount || 0) - (fee.paidAmount || 0);
   const paymentMethods = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'card', label: 'Credit/Debit Card' },
-    { value: 'bank_transfer', label: 'Bank Transfer' },
-    { value: 'cheque', label: 'Cheque' },
-    { value: 'online', label: 'Online Payment' }
+    { value: 'CASH', label: 'Cash' },
+    { value: 'ONLINE', label: 'Online Payment' },
+    { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
+    { value: 'CHEQUE', label: 'Cheque' },
   ];
 
   return (
@@ -99,12 +98,12 @@ const PaymentForm = () => {
           <FormSection>
             <InputField
               label="Payment Amount"
-              name="amount"
+              name="amountPaid"
               type="number"
-              value={formik.values.amount}
+              value={formik.values.amountPaid}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.amount && formik.errors.amount}
+              error={formik.touched.amountPaid && formik.errors.amountPaid}
               required
               min={0}
               max={remainingAmount}
@@ -134,12 +133,12 @@ const PaymentForm = () => {
 
             <InputField
               label="Payment Date"
-              name="date"
+              name="paidDate"
               type="date"
-              value={formik.values.date}
+              value={formik.values.paidDate}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.date && formik.errors.date}
+              error={formik.touched.paidDate && formik.errors.paidDate}
               required
             />
 

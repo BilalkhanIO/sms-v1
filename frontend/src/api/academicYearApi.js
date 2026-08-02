@@ -27,7 +27,7 @@ export const academicYearApi = api.injectEndpoints({
       invalidatesTags: ['AcademicYears'],
     }),
     setActiveYear: builder.mutation({
-      query: (id) => ({ url: `/academic-years/${id}/activate`, method: 'PATCH' }),
+      query: (id) => ({ url: `/academic-years/${id}/set-active`, method: 'PATCH' }),
       invalidatesTags: ['AcademicYears'],
     }),
   }),

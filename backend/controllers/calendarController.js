@@ -71,7 +71,7 @@ const getEvents = asyncHandler(async (req, res) => {
     query.end = { $lte: new Date(end) };
   }
 
-  if (type) {
+  if (type && type !== 'all') {
     query.type = type;
   }
 

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 const SchoolDetailsDashboard = () => {
-  const { schoolId } = useParams();
+  const { id: schoolId } = useParams();
   const { data: schoolDetails, isLoading, isError, error } = useGetSchoolDetailsQuery(schoolId);
 
   if (isLoading) {

@@ -76,10 +76,10 @@ const TransportList = () => {
         number: form['vehicle.number'],
         type: form['vehicle.type'],
         capacity: Number(form['vehicle.capacity']),
-      },
-      driver: {
-        name: form['driver.name'],
-        phone: form['driver.phone'],
+        driver: {
+          name: form['driver.name'],
+          phone: form['driver.phone'],
+        },
       },
       monthlyFee: form.monthlyFee ? Number(form.monthlyFee) : undefined,
     };
@@ -174,14 +174,14 @@ const TransportList = () => {
                 <div className="flex items-center gap-1.5 text-gray-500">
                   <Users className="h-3.5 w-3.5" />
                   <span>
-                    {route.students?.length ?? 0} / {route.vehicle?.capacity ?? '—'}
+                    {route.assignedStudents?.length ?? 0} / {route.vehicle?.capacity ?? '—'}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-500 col-span-2">
                   <Phone className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="truncate">
-                    {route.driver?.name || '—'}
-                    {route.driver?.phone ? ` · ${route.driver.phone}` : ''}
+                    {route.vehicle?.driver?.name || '—'}
+                    {route.vehicle?.driver?.phone ? ` · ${route.vehicle.driver.phone}` : ''}
                   </span>
                 </div>
                 {route.monthlyFee != null && (

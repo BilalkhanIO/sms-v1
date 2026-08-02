@@ -34,7 +34,7 @@ const UserManagement = () => {
 
   const { user: currentUser } = useAuth();
 
-  const isAdmin = currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'MULTI_SCHOOL_ADMIN';
+  const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'MULTI_SCHOOL_ADMIN';
 
   const { data: allUsers, isLoading: allLoading, error: allError, refetch: allRefetch } = useGetAllUsersQuery(undefined, { skip: !isAdmin });
   const { data: schoolUsers, isLoading: schoolLoading, error: schoolError, refetch: schoolRefetch } = useGetUsersQuery(undefined, { skip: isAdmin });

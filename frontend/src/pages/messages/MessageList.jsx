@@ -56,14 +56,14 @@ const MessageList = () => {
 
   const getUser = (id) => allUsers.find((u) => u._id === id);
 
-  const inbox = inboxData?.data || inboxData || [];
-  const sent = sentData?.data || sentData || [];
+  const inbox = inboxData?.data?.messages || inboxData?.data || inboxData || [];
+  const sent = sentData?.data?.messages || sentData?.data || sentData || [];
   const messages = tab === 'inbox' ? inbox : sent;
-  const isLoading = tab === 'inbox' ? inboxLoading : false;
+  const isLoading = tab === 'inbox' ? inboxLoading : sentLoading;
 
   const isRead = (msg) => {
     if (tab === 'sent') return true;
-    return msg.readBy?.some((r) => r.user === user?._id || r.user?._id === user?._id);
+    return msg.isRead === true;
   };
 
   const handleSend = async (e) => {

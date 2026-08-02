@@ -11,7 +11,7 @@ export const timetableApi = api.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Timetables', id }],
     }),
     getMyTimetable: builder.query({
-      query: () => '/timetables/me',
+      query: () => '/timetables/my',
       providesTags: ['Timetables'],
     }),
     createTimetable: builder.mutation({

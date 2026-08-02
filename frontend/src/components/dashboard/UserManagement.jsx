@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGetManagedUsersQuery, useCreateManagedUserMutation, useUpdateManagedUserMutation, useDeleteManagedUserMutation } from '../../api/multiSchoolAdminApi';
-import { useGetDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
+import { useGetMultiSchoolDashboardStatsQuery } from '../../api/multiSchoolAdminApi';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const UserManagement = () => {
   const { data: users, isLoading, isError, error } = useGetManagedUsersQuery();
-  const { data: schools } = useGetDashboardStatsQuery();
+  const { data: schools } = useGetMultiSchoolDashboardStatsQuery();
   const [createUser, { isLoading: isCreating }] = useCreateManagedUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateManagedUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteManagedUserMutation();

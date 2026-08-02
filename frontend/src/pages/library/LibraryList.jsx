@@ -50,7 +50,7 @@ const LibraryList = () => {
   const { data, isLoading, isError, error } = useGetBooksQuery(
     search ? { search } : undefined
   );
-  const books = data?.data || data || [];
+  const books = data?.data?.books || data?.data || data || [];
 
   const { data: studentsRaw } = useGetStudentsQuery();
   const { data: teachersRaw } = useGetTeachersQuery();

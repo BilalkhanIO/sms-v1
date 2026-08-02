@@ -31,13 +31,14 @@ const FeesForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      title: fee?.data?.title || fee?.title || '',
       description: fee?.data?.description || fee?.description || '',
       amount: fee?.data?.amount || fee?.amount || '',
       dueDate: (fee?.data?.dueDate || fee?.dueDate) ? new Date(fee?.data?.dueDate || fee?.dueDate).toISOString().split('T')[0] : '',
-      studentId: fee?.data?.student?._id || fee?.data?.student || fee?.student?._id || fee?.student || '',
+      student: fee?.data?.student?._id || fee?.data?.student || fee?.student?._id || fee?.student || '',
       type: fee?.data?.type || fee?.type || 'TUITION',
-      status: fee?.data?.status || fee?.status || 'PENDING'
+      status: fee?.data?.status || fee?.status || 'PENDING',
+      academicYear: fee?.data?.academicYear || fee?.academicYear || '',
+      term: fee?.data?.term || fee?.term || 'FIRST',
     },
     validationSchema: feeSchema,
     enableReinitialize: true,
@@ -90,24 +91,46 @@ const FeesForm = () => {
 
       <form onSubmit={formik.handleSubmit} className="max-w-3xl mx-auto">
         <FormSection>
+          <SelectField
+            label="Student"
+            name="student"
+            value={studentOptions.find(option => option.value === formik.values.student)}
+            onChange={option => formik.setFieldValue('student', option?.value)}
+            onBlur={() => formik.setFieldTouched('student')}
+            error={formik.touched.student && formik.errors.student}
+            options={studentOptions}
+            required
+          />
+
           <InputField
-            label="Fee Title"
-            name="title"
-            value={formik.values.title}
+            label="Academic Year"
+            name="academicYear"
+            value={formik.values.academicYear}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            error={formik.touched.title && formik.errors.title}
+            error={formik.touched.academicYear && formik.errors.academicYear}
+            placeholder="e.g. 2024-2025"
             required
           />
 
           <SelectField
-            label="Student"
-            name="studentId"
-            value={studentOptions.find(option => option.value === formik.values.studentId)}
-            onChange={option => formik.setFieldValue('studentId', option?.value)}
-            onBlur={() => formik.setFieldTouched('studentId')}
-            error={formik.touched.studentId && formik.errors.studentId}
-            options={studentOptions}
+            label="Term"
+            name="term"
+            value={[
+              { value: 'FIRST', label: 'First Term' },
+              { value: 'SECOND', label: 'Second Term' },
+              { value: 'THIRD', label: 'Third Term' },
+              { value: 'ANNUAL', label: 'Annual' },
+            ].find(o => o.value === formik.values.term)}
+            onChange={option => formik.setFieldValue('term', option?.value)}
+            onBlur={() => formik.setFieldTouched('term')}
+            error={formik.touched.term && formik.errors.term}
+            options={[
+              { value: 'FIRST', label: 'First Term' },
+              { value: 'SECOND', label: 'Second Term' },
+              { value: 'THIRD', label: 'Third Term' },
+              { value: 'ANNUAL', label: 'Annual' },
+            ]}
             required
           />
 

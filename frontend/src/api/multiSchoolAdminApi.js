@@ -2,7 +2,7 @@ import { api } from './api';
 
 export const multiSchoolAdminApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getDashboardStats: builder.query({
+    getMultiSchoolDashboardStats: builder.query({
       query: () => 'multi-school-admin/dashboard-stats',
       providesTags: ['DashboardStats'],
     }),
@@ -56,7 +56,7 @@ export const multiSchoolAdminApi = api.injectEndpoints({
 });
 
 export const {
-  useGetDashboardStatsQuery,
+  useGetMultiSchoolDashboardStatsQuery,
   useGetSchoolAdminsQuery,
   useAssignSchoolAdminMutation,
   useRemoveSchoolAdminMutation,

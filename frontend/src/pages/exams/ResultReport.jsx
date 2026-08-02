@@ -29,11 +29,21 @@ const ResultReport = () => {
   }
 
   const results = resultsRaw?.data || resultsRaw;
-  const studentList = results?.students || [];
+  // Backend returns { exam, results: [...] } — map to expected shape
+  const resultItems = results?.results || results?.students || [];
+  const studentList = resultItems.map((r) => ({
+    ...r,
+    // Flatten: result item has { student: { id, name, admissionNumber }, marksObtained, grade }
+    _id: r.student?.id || r.student?._id || r._id,
+    rollNumber: r.student?.rollNumber || r.rollNumber,
+    name: r.student?.name || `${r.student?.user?.firstName || ''} ${r.student?.user?.lastName || ''}`.trim(),
+    marksObtained: r.marksObtained,
+    grade: r.grade,
+  }));
   const stats = results?.stats || {};
 
   const filteredResults = studentList.filter(student =>
-    `${student.user?.firstName || ''} ${student.user?.lastName || ''} ${student.rollNumber || ''}`
+    `${student.name || ''} ${student.rollNumber || ''}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -166,8 +176,8 @@ const ResultReport = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredResults?.map((student) => {
-                  const percentage = (student.marks / exam.totalMarks) * 100;
-                  const grade = getGrade(percentage);
+                  const percentage = exam.totalMarks ? (student.marksObtained / exam.totalMarks) * 100 : 0;
+                  const grade = student.grade || getGrade(percentage);
                   return (
                     <tr key={student._id || student.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -175,11 +185,11 @@ const ResultReport = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {student.user?.firstName || ''} {student.user?.lastName || ''}
+                          {student.name}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {student.marks}/{exam.totalMarks}
+                        {student.marksObtained}/{exam.totalMarks}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`text-sm font-medium ${getPerformanceColor(percentage)}`}>

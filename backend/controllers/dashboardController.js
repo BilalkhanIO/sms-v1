@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import Activity from "../models/Activity.js";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import ClassModel from "../models/Class.js";
 import Student from "../models/Student.js";
 import Attendance from "../models/Attendance.js";

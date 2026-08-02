@@ -40,7 +40,7 @@ const AttendanceForm = () => {
     initialValues: {
       classId: attendance?.data?.classId || attendance?.classId || '',
       date: attendance?.data?.date ? new Date(attendance.data.date).toISOString().split('T')[0] : attendance?.date ? new Date(attendance.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      records: attendance?.data?.records || attendance?.records || [],
+      students: attendance?.data?.students || attendance?.students || [],
       notes: attendance?.data?.notes || attendance?.notes || ''
     },
     validationSchema: attendanceSchema,
@@ -68,7 +68,7 @@ const AttendanceForm = () => {
   useEffect(() => {
     if (students.length && !isEditing) {
       formik.setFieldValue(
-        'records',
+        'students',
         students.map(student => ({
           studentId: student._id,
           status: 'PRESENT',
@@ -91,8 +91,8 @@ const AttendanceForm = () => {
 
   const handleBulkAction = (status) => {
     formik.setFieldValue(
-      'records',
-      formik.values.records.map(record => ({
+      'students',
+      formik.values.students.map(record => ({
         ...record,
         status
       }))
@@ -180,7 +180,7 @@ const AttendanceForm = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {students.map((student, index) => {
-                    const record = formik.values.records.find(
+                    const record = formik.values.students.find(
                       r => r.studentId === student._id
                     );
                     const firstName = student.user?.firstName || '';
@@ -197,7 +197,7 @@ const AttendanceForm = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <select
-                            name={`records.${index}.status`}
+                            name={`students.${index}.status`}
                             value={record?.status || 'PRESENT'}
                             onChange={formik.handleChange}
                             className="border rounded-md px-3 py-2"
@@ -212,7 +212,7 @@ const AttendanceForm = () => {
                         <td className="px-6 py-4">
                           <input
                             type="text"
-                            name={`records.${index}.remarks`}
+                            name={`students.${index}.remarks`}
                             value={record?.remarks || ''}
                             onChange={formik.handleChange}
                             placeholder="Add remarks..."

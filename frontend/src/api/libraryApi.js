@@ -40,10 +40,10 @@ export const libraryApi = api.injectEndpoints({
       invalidatesTags: ['Library'],
     }),
     issueBook: builder.mutation({
-      query: ({ bookId, borrowerId, dueDate }) => ({
+      query: ({ bookId, borrowerId, borrowerType, dueDate }) => ({
         url: `/library/books/${bookId}/issue`,
         method: 'POST',
-        body: { borrowerId, dueDate },
+        body: { borrowerId, borrowerType, dueDate },
       }),
       invalidatesTags: (result, error, { bookId }) => [
         'Library',

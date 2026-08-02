@@ -17,8 +17,8 @@ router
   .get(protect, authorize('SUPER_ADMIN'), getSchools);
 router
   .route('/:id')
-  .get(protect, authorize('SUPER_ADMIN'), getSchoolById)
-  .put(protect, authorize('SUPER_ADMIN'), updateSchool)
+  .get(protect, authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'MULTI_SCHOOL_ADMIN'), getSchoolById)
+  .put(protect, authorize('SUPER_ADMIN', 'SCHOOL_ADMIN', 'MULTI_SCHOOL_ADMIN'), updateSchool)
   .delete(protect, authorize('SUPER_ADMIN'), deleteSchool);
 
 export default router;

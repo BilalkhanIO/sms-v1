@@ -67,17 +67,29 @@ const buildGrid = (entries) => {
   return grid;
 };
 
+const flattenSchedule = (rawData) => {
+  const timetable = rawData?.data || rawData;
+  if (!timetable) return [];
+  const schedule = timetable.schedule || timetable.entries || [];
+  if (Array.isArray(schedule) && schedule.length > 0 && schedule[0].day !== undefined) {
+    return schedule.flatMap((d) =>
+      (d.periods || []).map((p) => ({ ...p, day: d.day }))
+    );
+  }
+  return Array.isArray(schedule) ? schedule : [];
+};
+
 const ClassTimetableGrid = ({ classId }) => {
   const { data, isLoading, isError } = useGetTimetableByClassQuery(classId, {
     skip: !classId,
   });
-  const entries = data?.data || data?.entries || data || [];
+  const entries = flattenSchedule(data);
   return <TimetableGrid entries={entries} isLoading={isLoading} isError={isError} />;
 };
 
 const MyTimetableGrid = () => {
   const { data, isLoading, isError } = useGetMyTimetableQuery();
-  const entries = data?.data || data?.entries || data || [];
+  const entries = flattenSchedule(data);
   return <TimetableGrid entries={entries} isLoading={isLoading} isError={isError} />;
 };
 

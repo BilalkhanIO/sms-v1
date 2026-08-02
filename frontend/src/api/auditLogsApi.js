@@ -9,7 +9,7 @@ export const auditLogsApi = api.injectEndpoints({
       }),
       providesTags: (result, error, arg) =>
         result
-          ? [...result.data.map(({ _id }) => ({ type: 'AuditLog', id: _id })), { type: 'AuditLog', id: 'LIST' }]
+          ? [...(result?.data?.map(({ _id }) => ({ type: 'AuditLog', id: _id })) || []), { type: 'AuditLog', id: 'LIST' }]
           : [{ type: 'AuditLog', id: 'LIST' }],
     }),
   }),

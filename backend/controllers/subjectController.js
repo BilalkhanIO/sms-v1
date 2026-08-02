@@ -2,6 +2,7 @@
 import Subject from "../models/Subject.js";
 import ClassModel from "../models/Class.js";
 import Teacher from "../models/Teacher.js";
+import Student from "../models/Student.js";
 import asyncHandler from "express-async-handler";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
@@ -51,8 +52,8 @@ const createSubject = [
       assignedClasses,
     } = req.body;
 
-    // Check for duplicate subject code
-    const existingSubject = await Subject.findOne({ code });
+    // Check for duplicate subject code within this school
+    const existingSubject = await Subject.findOne({ code, school: req.schoolId });
     if (existingSubject) {
       return errorResponse(res, "Subject code already exists", 400);
     }
@@ -208,18 +209,16 @@ const getSubjectById = [
     if (
       req.user.role === "TEACHER" &&
       !subject.assignedTeachers.some((teacher) =>
-        teacher._id?.toString() === req.user._id.toString()
+        teacher.user?.toString() === req.user._id.toString()
       )
     ) {
       return errorResponse(res, "Unauthorized to access this subject", 403);
     }
-    if (
-      req.user.role === "STUDENT" &&
-      !subject.assignedClasses.some((classEl) =>
-        classEl._id.equals(req.user.class)
-      )
-    ) {
-      return errorResponse(res, "Not authorized to access this subject", 403);
+    if (req.user.role === "STUDENT") {
+      const student = await Student.findOne({ user: req.user._id });
+      if (!student || !subject.assignedClasses.some((classEl) => classEl._id.equals(student.class))) {
+        return errorResponse(res, "Not authorized to access this subject", 403);
+      }
     }
     return successResponse(res, subject, "Subject retrieved successfully");
   }),
@@ -284,7 +283,7 @@ const updateSubject = [
 
     // Check if the updated code is already in use by another subject
     if (code && code !== subject.code) {
-      const existingSubject = await Subject.findOne({ code });
+      const existingSubject = await Subject.findOne({ code, school: req.schoolId });
       if (existingSubject) {
         return errorResponse(res, "Subject code already exists", 400);
       }

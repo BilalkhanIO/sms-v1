@@ -72,7 +72,7 @@ export const calendarApi = api.injectEndpoints({
         method: 'PUT',
         body: { participants },
       }),
-      invalidatesTags: (result, error, { eventId }) => [{ type: 'Calendar', eventId }, 'Calendar'],
+      invalidatesTags: (result, error, { eventId }) => [{ type: 'Calendar', id: eventId }, 'Calendar'],
     }),
   }),
 });

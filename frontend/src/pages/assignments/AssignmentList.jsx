@@ -66,11 +66,11 @@ const AssignmentList = () => {
   // For student: group by status
   const now = new Date();
   const pending = isStudent
-    ? rawList.filter((a) => a.status !== 'CLOSED' && a.status !== 'GRADED' && !a.submission && new Date(a.dueDate) >= now)
+    ? rawList.filter((a) => a.submissionStatus === 'PENDING')
     : [];
-  const submitted = isStudent ? rawList.filter((a) => !!a.submission) : [];
+  const submitted = isStudent ? rawList.filter((a) => a.submissionStatus === 'SUBMITTED') : [];
   const overdue = isStudent
-    ? rawList.filter((a) => !a.submission && new Date(a.dueDate) < now)
+    ? rawList.filter((a) => a.submissionStatus === 'OVERDUE')
     : [];
 
   const handleDelete = (assignment) => {

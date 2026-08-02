@@ -55,7 +55,7 @@ export const createParent = asyncHandler(async (req, res) => {
   if (existing) return errorResponse(res, "Parent profile already exists for this user", 400);
   const parent = await Parent.create({ user: userId, contactNumber, address, children: children || [] });
   await parent.populate("user", "firstName lastName email");
-  successResponse(res, parent, 201);
+  successResponse(res, parent, "Parent created successfully", 201);
 });
 
 export const updateParent = asyncHandler(async (req, res) => {

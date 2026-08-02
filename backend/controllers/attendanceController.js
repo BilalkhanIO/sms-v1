@@ -368,8 +368,7 @@ const getAttendanceById = [
       _id: attendanceId,
       school: req.schoolId,
     })
-      .populate("student", "admissionNumber user") // Populate student details
-      .populate({ path: "student.user", select: "firstName lastName" })
+      .populate({ path: "student", select: "admissionNumber rollNumber user", populate: { path: "user", select: "firstName lastName" } })
       .populate("class", "name section"); // Populate class details
 
     if (!attendanceRecord) {
@@ -421,7 +420,7 @@ const getAttendance = [
     }
 
     const attendance = await Attendance.find(query)
-      .populate("student", "admissionNumber rollNumber")
+      .populate({ path: "student", select: "admissionNumber rollNumber user", populate: { path: "user", select: "firstName lastName" } })
       .populate("class", "name section")
       .sort({ date: -1, createdAt: -1 })
       .lean();

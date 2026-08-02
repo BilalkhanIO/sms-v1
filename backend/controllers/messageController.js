@@ -21,18 +21,18 @@ const getMessages = [
     const total = await Message.countDocuments(query);
     const messages = await Message.find(query)
       .populate("sender", "firstName lastName email role")
-      .select("-readBy")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
 
-    // Annotate each message with whether the current user has read it
+    // Annotate each message with whether the current user has read it, then strip readBy
     const userId = req.user._id.toString();
-    const annotated = messages.map((msg) => ({
-      ...msg,
-      isRead: (msg.readBy || []).some((r) => r.user.toString() === userId),
-    }));
+    const annotated = messages.map((msg) => {
+      const isRead = (msg.readBy || []).some((r) => r.user?.toString() === userId);
+      const { readBy: _readBy, ...rest } = msg;
+      return { ...rest, isRead };
+    });
 
     return successResponse(
       res,
@@ -96,7 +96,10 @@ const getMessageById = [
       return errorResponse(res, "Not authorized to view this message", 403);
     }
 
-    return successResponse(res, message, "Message retrieved successfully");
+    // Annotate isRead and strip readBy
+    const isRead = (message.readBy || []).some((r) => r.user?.toString() === userId);
+    const { readBy: _readBy, ...rest } = message;
+    return successResponse(res, { ...rest, isRead }, "Message retrieved successfully");
   }),
 ];
 

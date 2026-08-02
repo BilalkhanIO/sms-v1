@@ -47,10 +47,10 @@ const ResultEntry = () => {
       const existing = prev.find(r => r.studentId === studentId);
       if (existing) {
         return prev.map(r =>
-          r.studentId === studentId ? { ...r, marks } : r
+          r.studentId === studentId ? { ...r, marksObtained: marks } : r
         );
       }
-      return [...prev, { studentId, marks }];
+      return [...prev, { studentId, marksObtained: marks }];
     });
 
     // Validate marks
@@ -76,10 +76,7 @@ const ResultEntry = () => {
     try {
       await submitResults({
         examId: id,
-        results: results.map(result => ({
-          ...result,
-          status: result.marks >= exam.passingMarks ? 'passed' : 'failed'
-        }))
+        results: results.map(({ studentId, marksObtained, remarks }) => ({ studentId, marksObtained, remarks }))
       }).unwrap();
       navigate(`/dashboard/exams/${id}`);
     } catch (error) {
@@ -173,21 +170,21 @@ const ResultEntry = () => {
                           type="number"
                           min="0"
                           max={exam.totalMarks}
-                          value={result?.marks || ''}
+                          value={result?.marksObtained ?? ''}
                           onChange={(e) => handleMarksChange(student._id, e.target.value)}
                           className={`w-24 px-3 py-1 border rounded-md ${
-                            errors[student.id] ? 'border-red-500' : 'border-gray-300'
+                            errors[student._id] ? 'border-red-500' : 'border-gray-300'
                           }`}
                         />
-                        {errors[student.id] && (
+                        {errors[student._id] && (
                           <div className="absolute top-0 -right-6">
                             <AlertCircle className="w-5 h-5 text-red-500" />
                           </div>
                         )}
                       </div>
-                      {errors[student.id] && (
+                      {errors[student._id] && (
                         <p className="mt-1 text-sm text-red-500">
-                          {errors[student.id]}
+                          {errors[student._id]}
                         </p>
                       )}
                     </td>

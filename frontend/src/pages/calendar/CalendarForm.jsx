@@ -3,20 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useCreateEventMutation, useUpdateEventMutation, useGetEventByIdQuery } from '../../api/calendarApi';
-import Button from '../../components/common/Button';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
+import { useUIStore } from '../../store/zustand/useUIStore';
 
 const eventSchema = Yup.object().shape({
   title: Yup.string().required('Title is required'),
   type: Yup.string().required('Type is required'),
-  startDate: Yup.string().required('Start date is required'),
-  endDate: Yup.string().required('End date is required'),
+  start: Yup.string().required('Start date is required'),
+  end: Yup.string().required('End date is required'),
 });
 
-const EVENT_TYPES = ['EXAM', 'HOLIDAY', 'EVENT', 'MEETING'];
+const EVENT_TYPES = ['GENERAL', 'EXAM', 'HOLIDAY', 'MEETING', 'SPORTS'];
 
-const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500';
+const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm';
 const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
 const errorClass = 'mt-1 text-sm text-red-600';
 
@@ -24,6 +24,7 @@ const CalendarForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
+  const addToast = useUIStore((s) => s.addToast);
 
   const { data: eventRaw, isLoading: isLoadingEvent } = useGetEventByIdQuery(id, { skip: !isEditing });
   const event = eventRaw?.data || eventRaw;
@@ -31,28 +32,41 @@ const CalendarForm = () => {
   const [createEvent, { isLoading: isCreating }] = useCreateEventMutation();
   const [updateEvent, { isLoading: isUpdating }] = useUpdateEventMutation();
 
+  const toDateInput = (val) => {
+    if (!val) return '';
+    return new Date(val).toISOString().split('T')[0];
+  };
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
       title: event?.title || '',
       description: event?.description || '',
-      type: event?.type || 'EVENT',
-      startDate: event?.startDate ? event.startDate.split('T')[0] : '',
-      endDate: event?.endDate ? event.endDate.split('T')[0] : '',
+      type: event?.type || 'GENERAL',
+      start: toDateInput(event?.start),
+      end: toDateInput(event?.end),
       location: event?.location || '',
       isAllDay: event?.isAllDay ?? true,
     },
     validationSchema: eventSchema,
     onSubmit: async (values) => {
       try {
+        const payload = {
+          ...values,
+          start: new Date(values.start).toISOString(),
+          end: new Date(values.end).toISOString(),
+        };
         if (isEditing) {
-          await updateEvent({ id, ...values }).unwrap();
+          await updateEvent({ id, ...payload }).unwrap();
+          addToast({ type: 'success', title: 'Event updated successfully' });
         } else {
-          await createEvent(values).unwrap();
+          await createEvent(payload).unwrap();
+          addToast({ type: 'success', title: 'Event created successfully' });
         }
         navigate('/dashboard/calendar/events');
       } catch (err) {
-        console.error('Failed to save event:', err);
+        const msg = err?.data?.message || 'Failed to save event';
+        addToast({ type: 'error', title: 'Error', message: msg });
       }
     },
   });
@@ -111,24 +125,24 @@ const CalendarForm = () => {
               <input
                 type="date"
                 className={inputClass}
-                name="startDate"
-                value={formik.values.startDate}
+                name="start"
+                value={formik.values.start}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
               />
-              {formik.touched.startDate && formik.errors.startDate && <p className={errorClass}>{formik.errors.startDate}</p>}
+              {formik.touched.start && formik.errors.start && <p className={errorClass}>{formik.errors.start}</p>}
             </div>
             <div>
               <label className={labelClass}>End Date *</label>
               <input
                 type="date"
                 className={inputClass}
-                name="endDate"
-                value={formik.values.endDate}
+                name="end"
+                value={formik.values.end}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
               />
-              {formik.touched.endDate && formik.errors.endDate && <p className={errorClass}>{formik.errors.endDate}</p>}
+              {formik.touched.end && formik.errors.end && <p className={errorClass}>{formik.errors.end}</p>}
             </div>
           </div>
 
@@ -164,7 +178,7 @@ const CalendarForm = () => {
             </button>
             <button
               type="submit"
-              disabled={isCreating || isUpdating || !formik.isValid}
+              disabled={isCreating || isUpdating}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
               {isCreating || isUpdating ? 'Saving...' : isEditing ? 'Update Event' : 'Create Event'}

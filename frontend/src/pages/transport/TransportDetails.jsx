@@ -59,7 +59,7 @@ const TransportDetails = () => {
 
   // Exclude students already on this route
   const assignedIds = useMemo(
-    () => new Set((route?.students || []).map((s) => String(s._id || s))),
+    () => new Set((route?.assignedStudents || []).map((s) => String(s._id || s))),
     [route]
   );
 
@@ -159,7 +159,7 @@ const TransportDetails = () => {
     );
   }
 
-  const assignedStudents = route.students || [];
+  const assignedStudents = route.assignedStudents || [];
 
   return (
     <div>
@@ -208,13 +208,13 @@ const TransportDetails = () => {
               <div className="flex items-center gap-2 text-gray-600">
                 <Phone className="h-4 w-4 text-gray-400 shrink-0" />
                 <span className="font-medium text-gray-500 w-28 shrink-0">Driver</span>
-                <span className="text-gray-900">{route.driver?.name || '—'}</span>
+                <span className="text-gray-900">{route.vehicle?.driver?.name || '—'}</span>
               </div>
-              {route.driver?.phone && (
+              {route.vehicle?.driver?.phone && (
                 <div className="flex items-center gap-2 text-gray-600">
                   <Phone className="h-4 w-4 text-gray-400 shrink-0" />
                   <span className="font-medium text-gray-500 w-28 shrink-0">Phone</span>
-                  <span className="text-gray-900">{route.driver.phone}</span>
+                  <span className="text-gray-900">{route.vehicle.driver.phone}</span>
                 </div>
               )}
               {route.monthlyFee != null && (

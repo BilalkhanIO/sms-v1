@@ -3,6 +3,7 @@
 
 export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
+  MULTI_SCHOOL_ADMIN: 'MULTI_SCHOOL_ADMIN',
   SCHOOL_ADMIN: 'SCHOOL_ADMIN',
   TEACHER: 'TEACHER',
   STUDENT: 'STUDENT',
@@ -144,7 +145,7 @@ export const NAV_CONFIG = [
   { to: '/dashboard',               label: 'Dashboard',      icon: 'LayoutDashboard', roles: Object.values(ROLES), group: 'core' },
 
   // Administration
-  { to: '/dashboard/schools',       label: 'Schools',        icon: 'Building2',       roles: [ROLES.SUPER_ADMIN], group: 'admin' },
+  { to: '/dashboard/schools',       label: 'Schools',        icon: 'Building2',       roles: [ROLES.SUPER_ADMIN, ROLES.MULTI_SCHOOL_ADMIN], group: 'admin' },
   { to: '/dashboard/users',         label: 'Users',          icon: 'Users',           roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN], group: 'admin' },
   { to: '/dashboard/academic-years', label: 'Academic Years', icon: 'CalendarRange',  roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN], group: 'admin' },
 
