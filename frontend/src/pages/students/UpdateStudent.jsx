@@ -82,7 +82,7 @@ const UpdateStudent = () => {
           country: formData['address.country'],
         },
       };
-      await updateStudent({ id, ...payload }).unwrap();
+      await updateStudent({ id, data: payload }).unwrap();
       navigate('/dashboard/students');
     } catch (error) {
       const validationErrors = {};

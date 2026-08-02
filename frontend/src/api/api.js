@@ -62,6 +62,7 @@ export const api = createApi({
     "MultiSchoolAdmins",
     "SchoolDetails",
     "Pages",
+    "Parents",
     "Transport",
     "Leave",
     "Messages",
