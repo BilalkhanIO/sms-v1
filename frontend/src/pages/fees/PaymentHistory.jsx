@@ -117,11 +117,11 @@ const PaymentHistory = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {payments?.map((payment) => (
-                <tr key={payment.id}>
+              {(payments?.data || payments || []).map((payment) => (
+                <tr key={payment._id}>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
-                      {payment.transactionId}
+                      {payment.transactionId || '—'}
                     </div>
                     {payment.notes && (
                       <div className="text-sm text-gray-500">
@@ -131,18 +131,19 @@ const PaymentHistory = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {payment.student.firstName} {payment.student.lastName}
+                      {payment.student?.user?.firstName || payment.student?.firstName || '—'}{' '}
+                      {payment.student?.user?.lastName || payment.student?.lastName || ''}
                     </div>
                     <div className="text-sm text-gray-500">
-                      Class: {payment.student.class?.name}
+                      Class: {payment.student?.class?.name || '—'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {payment.fee.title}
+                      {payment.fee?.title || '—'}
                     </div>
                     <div className="text-sm text-gray-500">
-                      Due: ${payment.fee.amount.toFixed(2)}
+                      Due: ${payment.fee?.amount != null ? payment.fee.amount.toFixed(2) : '—'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

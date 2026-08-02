@@ -26,10 +26,12 @@ const AttendanceForm = () => {
   const { data: attendance, isLoading: isLoadingAttendance } = useGetAttendanceByIdQuery(id, {
     skip: !isEditing
   });
-  const { data: classes, isLoading: isLoadingClasses } = useGetClassesQuery();
-  const { data: students, isLoading: isLoadingStudents } = useGetStudentsByClassQuery(selectedClass, {
+  const { data: classesRaw, isLoading: isLoadingClasses } = useGetClassesQuery();
+  const { data: studentsRaw, isLoading: isLoadingStudents } = useGetStudentsByClassQuery(selectedClass, {
     skip: !selectedClass
   });
+  const classes = classesRaw?.data || classesRaw || [];
+  const students = studentsRaw?.data || studentsRaw || [];
 
   const [markAttendance, { isLoading: isMarking }] = useMarkAttendanceMutation();
   const [updateAttendance, { isLoading: isUpdating }] = useUpdateAttendanceMutation();
@@ -64,11 +66,11 @@ const AttendanceForm = () => {
   }, [formik.values.classId]);
 
   useEffect(() => {
-    if (students && !isEditing) {
+    if (students.length && !isEditing) {
       formik.setFieldValue(
         'records',
         students.map(student => ({
-          studentId: student.id,
+          studentId: student._id,
           status: 'PRESENT',
           remarks: ''
         }))
@@ -114,8 +116,8 @@ const AttendanceForm = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.classId && formik.errors.classId}
-              options={classes?.map(cls => ({
-                value: cls.id,
+              options={classes.map(cls => ({
+                value: cls._id,
                 label: cls.name
               }))}
               disabled={isEditing}
@@ -177,15 +179,17 @@ const AttendanceForm = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {students?.map((student, index) => {
+                  {students.map((student, index) => {
                     const record = formik.values.records.find(
-                      r => r.studentId === student.id
+                      r => r.studentId === student._id
                     );
+                    const firstName = student.user?.firstName || '';
+                    const lastName = student.user?.lastName || '';
                     return (
-                      <tr key={student.id}>
+                      <tr key={student._id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
-                            {student.firstName} {student.lastName}
+                            {firstName} {lastName}
                           </div>
                           <div className="text-sm text-gray-500">
                             {student.rollNumber}

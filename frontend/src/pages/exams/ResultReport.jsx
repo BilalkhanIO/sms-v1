@@ -10,15 +10,27 @@ const ResultReport = () => {
   const { id } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: exam, isLoading: isLoadingExam } = useGetExamByIdQuery(id);
-  const { data: results, isLoading: isLoadingResults } = useGetClassResultsQuery(id);
+  const { data: exam, isLoading: isLoadingExam, isError: examError } = useGetExamByIdQuery(id);
+  const { data: resultsRaw, isLoading: isLoadingResults, isError: resultsError } = useGetClassResultsQuery(id);
   const [generateReportCard, { isLoading: isGenerating }] = useGenerateReportCardMutation();
 
   if (isLoadingExam || isLoadingResults) {
     return <Spinner size="large" />;
   }
 
-  const filteredResults = results?.students.filter(student =>
+  if (examError || resultsError || !exam || !resultsRaw) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+        Failed to load exam results.
+      </div>
+    );
+  }
+
+  const results = resultsRaw?.data || resultsRaw;
+  const studentList = results?.students || [];
+  const stats = results?.stats || {};
+
+  const filteredResults = studentList.filter(student =>
     `${student.firstName} ${student.lastName} ${student.rollNumber}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
@@ -60,7 +72,7 @@ const ResultReport = () => {
         <div className="bg-white shadow-md rounded-lg p-6">
           <h2 className="text-xl font-semibold text-gray-900">{exam.title}</h2>
           <div className="mt-2 text-sm text-gray-600">
-            <p>Subject: {exam.subject.name}</p>
+            <p>Subject: {exam.subject?.name || '—'}</p>
             <p>Date: {new Date(exam.date).toLocaleDateString()}</p>
             <p>Total Marks: {exam.totalMarks}</p>
             <p>Passing Marks: {exam.passingMarks}</p>
@@ -73,7 +85,7 @@ const ResultReport = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Students</p>
-                <p className="text-2xl font-semibold">{results.stats.totalStudents}</p>
+                <p className="text-2xl font-semibold">{stats.totalStudents ?? '—'}</p>
               </div>
               <Users className="w-8 h-8 text-blue-500" />
             </div>
@@ -83,7 +95,7 @@ const ResultReport = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Pass Percentage</p>
-                <p className="text-2xl font-semibold">{results.stats.passPercentage}%</p>
+                <p className="text-2xl font-semibold">{stats.passPercentage != null ? `${stats.passPercentage}%` : '—'}</p>
               </div>
               <Percent className="w-8 h-8 text-green-500" />
             </div>
@@ -93,7 +105,7 @@ const ResultReport = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Average Score</p>
-                <p className="text-2xl font-semibold">{results.stats.averageScore}</p>
+                <p className="text-2xl font-semibold">{stats.averageScore ?? '—'}</p>
               </div>
               <TrendingUp className="w-8 h-8 text-purple-500" />
             </div>
@@ -103,7 +115,7 @@ const ResultReport = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Highest Score</p>
-                <p className="text-2xl font-semibold">{results.stats.highestScore}</p>
+                <p className="text-2xl font-semibold">{stats.highestScore ?? '—'}</p>
               </div>
               <Award className="w-8 h-8 text-yellow-500" />
             </div>

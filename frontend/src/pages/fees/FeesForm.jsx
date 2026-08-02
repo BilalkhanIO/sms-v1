@@ -35,7 +35,7 @@ const FeesForm = () => {
       description: fee?.description || '',
       amount: fee?.amount || '',
       dueDate: fee?.dueDate ? new Date(fee.dueDate).toISOString().split('T')[0] : '',
-      studentId: fee?.student?.id || '',
+      studentId: fee?.student?._id || fee?.student || '',
       type: fee?.type || 'TUITION',
       status: fee?.status || 'PENDING'
     },
@@ -59,10 +59,11 @@ const FeesForm = () => {
     return <Spinner size="large" />;
   }
 
-  const studentOptions = students?.map(student => ({
-    value: student.id,
-    label: `${student.firstName} ${student.lastName} (${student.class?.name || 'No Class'})`,
-  })) || [];
+  const studentList = students?.data || students || [];
+  const studentOptions = studentList.map(student => ({
+    value: student._id,
+    label: `${student.user?.firstName || ''} ${student.user?.lastName || ''} (${student.class?.name || student.rollNumber || 'No Class'})`.trim(),
+  }));
 
   const typeOptions = [
     { value: 'TUITION', label: 'Tuition Fee' },

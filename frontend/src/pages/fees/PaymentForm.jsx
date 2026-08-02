@@ -45,7 +45,15 @@ const PaymentForm = () => {
     return <Spinner size="large" />;
   }
 
-  const remainingAmount = fee.amount - (fee.paidAmount || 0);
+  if (!fee) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+        Fee record not found.
+      </div>
+    );
+  }
+
+  const remainingAmount = (fee.amount || 0) - (fee.paidAmount || 0);
   const paymentMethods = [
     { value: 'cash', label: 'Cash' },
     { value: 'card', label: 'Credit/Debit Card' },
@@ -72,7 +80,8 @@ const PaymentForm = () => {
             <div>
               <p className="text-sm text-gray-500">Student</p>
               <p className="font-medium text-gray-900">
-                {fee.student.firstName} {fee.student.lastName}
+                {fee.student?.user?.firstName || fee.student?.firstName || '—'}{' '}
+                {fee.student?.user?.lastName || fee.student?.lastName || ''}
               </p>
             </div>
             <div>

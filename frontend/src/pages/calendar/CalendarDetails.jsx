@@ -13,7 +13,7 @@ import { useState } from 'react';
 const CalendarDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { can } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: event, isLoading, error } = useGetEventByIdQuery(id);
@@ -60,7 +60,7 @@ const CalendarDetails = () => {
         title="Event Details"
         backButton
       >
-        {isAdmin && (
+        {can('calendar', 'edit') && (
           <div className="flex space-x-4">
             <Link to={`/dashboard/calendar/${id}/edit`}>
               <Button variant="secondary">
@@ -132,8 +132,10 @@ const CalendarDetails = () => {
                   <div className="font-medium mb-2">Participants</div>
                   <div className="grid grid-cols-2 gap-2">
                     {event.participants.map((participant) => (
-                      <div key={participant.value} className="text-sm">
-                        {participant.label}
+                      <div key={participant._id || participant} className="text-sm">
+                        {participant.firstName && participant.lastName
+                          ? `${participant.firstName} ${participant.lastName}`
+                          : participant.email || String(participant._id || participant)}
                       </div>
                     ))}
                   </div>
