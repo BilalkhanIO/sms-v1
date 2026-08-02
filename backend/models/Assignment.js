@@ -29,6 +29,11 @@ const assignmentSchema = new Schema(
       ref: "Teacher",
       required: true,
     },
+    school: {
+      type: Schema.Types.ObjectId,
+      ref: "School",
+      required: true,
+    },
     dueDate: {
       type: Date,
       required: true,
@@ -83,7 +88,7 @@ assignmentSchema.virtual('submissions.gradePercentage').get(function() {
 });
 
 // Indexing
-assignmentSchema.index({ subject: 1, class: 1 });
+assignmentSchema.index({ school: 1, subject: 1, class: 1 });
 assignmentSchema.index({ assignedBy: 1 });
 assignmentSchema.index({ dueDate: 1 });
 assignmentSchema.index({ status: 1 });

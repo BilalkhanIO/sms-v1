@@ -787,7 +787,7 @@ const updateExamResult = [
 
     const { marksObtained, grade, remarks } = req.body;
     const examId = req.params.id;
-    const resultId = req.params.resultId;
+    const studentId = req.params.studentId;
 
     const exam = await Exam.findById(examId);
     if (!exam) {
@@ -807,13 +807,13 @@ const updateExamResult = [
       return errorResponse(res, "Not authorized to update this result", 403);
     }
 
-    const result = await Result.findById(resultId);
+    const result = await Result.findOne({ exam: examId, student: studentId });
     if (!result) {
       return errorResponse(res, "Result not found", 404);
     }
 
     // Make sure the result belongs to the exam
-    if (!exam.results.some((r) => r.toString() === resultId)) {
+    if (!exam.results.some((r) => r.toString() === result._id.toString())) {
       return errorResponse(
         res,
         "Result does not belong to the specified exam",
@@ -823,7 +823,7 @@ const updateExamResult = [
 
     // Update the result
     const updatedResult = await Result.findOneAndUpdate(
-      { _id: resultId },
+      { _id: result._id },
       { marksObtained, grade, remarks },
       { new: true, runValidators: true }
     );

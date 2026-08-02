@@ -3,6 +3,9 @@ import "dotenv/config"; // Load environment variables first
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
@@ -37,19 +40,54 @@ import assignmentRoutes from "./routes/assignmentRoutes.js";
 
 const app = express();
 
-// Configure CORS properly (Allow multiple origins)
+// Security headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // allow Cloudinary embeds
+  contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false,
+}));
+
+// CORS — must be explicit in production
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+  : [];
+
+if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+  console.error("FATAL: FRONTEND_URL env var is required in production");
+  process.exit(1);
+}
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL?.split(",") || "*", // Allow multiple origins
+  origin: allowedOrigins.length > 0 ? allowedOrigins : "*",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+// General rate limit: 200 req/15 min per IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, please try again later." },
+});
+
+// Stricter limit for auth endpoints: 20 req/15 min per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many auth requests, please try again later." },
+});
+
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json()); // Parse JSON request bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
-app.use(cookieParser()); // Parse cookies
+app.use(limiter);
+app.use(express.json({ limit: "10mb" })); // Parse JSON with body size cap
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
+app.use(mongoSanitize()); // Strip $ and . from user input to prevent NoSQL injection
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -62,7 +100,7 @@ app.get("/health", (req, res) => {
 });
 
 // API Routes
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/students", studentRoutes);

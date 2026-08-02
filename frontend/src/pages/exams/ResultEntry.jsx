@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGetExamByIdQuery, useSubmitResultsMutation } from '../../api/examApi';
 import { useGetStudentsByClassQuery } from '../../api/studentApi';
@@ -26,10 +26,11 @@ const ResultEntry = () => {
   const studentList = studentsRaw?.data || studentsRaw || [];
   const [submitResults, { isLoading: isSubmitting }] = useSubmitResultsMutation();
 
-  if (!user || !['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (user && !['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   if (isLoadingExam || isLoadingStudents) {
     return <Spinner size="large" />;
@@ -153,7 +154,7 @@ const ResultEntry = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredStudents?.map((student) => {
                 const result = results.find(r => r.studentId === student._id);
-                const status = getResultStatus(result?.marks);
+                const status = getResultStatus(result?.marksObtained);
                 return (
                   <tr key={student._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

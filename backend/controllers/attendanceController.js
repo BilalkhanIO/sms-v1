@@ -483,8 +483,18 @@ export const deleteAttendanceById = [
 // @access  Private (Admin, Teacher, Student self)
 export const getStudentAttendance = [
   protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"),
   asyncHandler(async (req, res) => {
     const { studentId } = req.params;
+
+    // Students can only view their own attendance
+    if (req.user.role === "STUDENT") {
+      const student = await Student.findOne({ user: req.user._id });
+      if (!student || student._id.toString() !== studentId) {
+        return errorResponse(res, "Not authorized", 403);
+      }
+    }
+
     const { startDate, endDate } = req.query;
     const match = { student: studentId, school: req.schoolId };
     if (startDate || endDate) {

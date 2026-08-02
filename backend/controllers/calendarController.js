@@ -38,11 +38,21 @@ const createEvent = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
 
+    const { title, start, end, type, description, location, color, visibility, reminders, recurrence, participants } = req.body;
     const event = await Calendar.create({
-      ...req.body,
+      title,
+      start,
+      end,
+      type,
+      description,
+      location,
+      color,
+      visibility,
+      reminders,
+      recurrence,
       schools: [req.schoolId],
       createdBy: req.user._id,
-      participants: req.body.participants || [],
+      participants: participants || [],
     });
 
     await Activity.logActivity({

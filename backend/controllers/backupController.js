@@ -10,10 +10,23 @@ import unzipper from 'unzipper';
 
 const execPromise = util.promisify(exec);
 
-const backupDir = path.join(process.cwd(), 'backups');
+const backupDir = path.resolve(process.cwd(), 'backups');
 
 if (!fs.existsSync(backupDir)) {
-  fs.mkdirSync(backupDir);
+  fs.mkdirSync(backupDir, { recursive: true });
+}
+
+function safeBackupPath(filename) {
+  // Reject any filename containing path separators or traversal sequences
+  if (!filename || /[/\\]/.test(filename) || filename.includes('..')) {
+    return null;
+  }
+  const resolved = path.resolve(backupDir, filename);
+  // Ensure resolved path is still inside backupDir
+  if (!resolved.startsWith(backupDir + path.sep) && resolved !== backupDir) {
+    return null;
+  }
+  return resolved;
 }
 
 // @desc    Get all backups
@@ -58,7 +71,7 @@ export const createBackup = asyncHandler(async (req, res) => {
   }
   fs.mkdirSync(dumpDir);
 
-  const mongodumpCommand = `mongodump --uri="${process.env.MONGO_URI}" --out="${dumpDir}"`;
+  const mongodumpCommand = `mongodump --uri="${process.env.MONGODB_URI}" --out="${dumpDir}"`;
 
   try {
     await execPromise(mongodumpCommand);
@@ -87,7 +100,11 @@ export const createBackup = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 export const restoreBackup = asyncHandler(async (req, res) => {
   const backupFileName = req.params.id;
-  const backupFilePath = path.join(backupDir, backupFileName);
+  const backupFilePath = safeBackupPath(backupFileName);
+  if (!backupFilePath) {
+    res.status(400);
+    throw new Error('Invalid backup filename');
+  }
   const restoreDir = path.join(backupDir, 'restore');
 
   if (!fs.existsSync(backupFilePath)) {
@@ -104,7 +121,7 @@ export const restoreBackup = asyncHandler(async (req, res) => {
     .pipe(unzipper.Extract({ path: restoreDir }))
     .promise();
 
-  const mongorestoreCommand = `mongorestore --uri="${process.env.MONGO_URI}" --dir="${restoreDir}" --drop`;
+  const mongorestoreCommand = `mongorestore --uri="${process.env.MONGODB_URI}" --dir="${restoreDir}" --drop`;
 
   try {
     await execPromise(mongorestoreCommand);
@@ -123,7 +140,11 @@ export const restoreBackup = asyncHandler(async (req, res) => {
 // @access  Private/SuperAdmin
 export const deleteBackup = asyncHandler(async (req, res) => {
   const backupFileName = req.params.id;
-  const backupFilePath = path.join(backupDir, backupFileName);
+  const backupFilePath = safeBackupPath(backupFileName);
+  if (!backupFilePath) {
+    res.status(400);
+    throw new Error('Invalid backup filename');
+  }
 
   if (fs.existsSync(backupFilePath)) {
     fs.unlinkSync(backupFilePath);

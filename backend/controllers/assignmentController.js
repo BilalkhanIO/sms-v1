@@ -19,6 +19,8 @@ const getAssignments = [
     const { classId, subject, status } = req.query;
     const query = {};
 
+    if (req.schoolId) query.school = req.schoolId;
+
     if (req.user.role === "TEACHER") {
       const teacher = await Teacher.findOne({ user: req.user._id });
       if (!teacher) {
@@ -116,6 +118,10 @@ const createAssignment = [
       return errorResponse(res, "Only teachers can be assigned as the creator of an assignment", 400);
     }
 
+    if (!req.schoolId) {
+      return errorResponse(res, "School context required", 400);
+    }
+
     const assignment = await Assignment.create({
       title,
       description,
@@ -124,6 +130,7 @@ const createAssignment = [
       assignedBy,
       dueDate,
       pointsPossible,
+      school: req.schoolId,
       status: "OPEN",
     });
 

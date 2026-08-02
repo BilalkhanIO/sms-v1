@@ -3,6 +3,11 @@ import "dotenv/config";
 import app from "./app.js";
 import connectDB from "./utils/db.js";
 
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+
 const PORT = process.env.PORT || 6001;
 
 // Connect to MongoDB

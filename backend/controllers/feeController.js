@@ -61,6 +61,8 @@ const generateFeeReport = [
 
     const filter = {};
 
+    if (req.schoolId) filter.school = req.schoolId;
+
     if (startDate && endDate) {
       filter.createdAt = {
         $gte: new Date(startDate),
@@ -322,14 +324,14 @@ const updateFee = [
     const { amount, type, dueDate, academicYear, term, description, status } =
       req.body;
     const updateData = {
-      amount: amount || fee.amount,
-      type: type || fee.type,
-      dueDate: dueDate || fee.dueDate,
-      academicYear: academicYear || fee.academicYear,
-      term: term || fee.term,
-      description: description || fee.description,
-      status: status || fee.status,
-      updatedBy: req.user._id, // Always update the 'updatedBy' field
+      amount: amount ?? fee.amount,
+      type: type ?? fee.type,
+      dueDate: dueDate ?? fee.dueDate,
+      academicYear: academicYear ?? fee.academicYear,
+      term: term ?? fee.term,
+      description: description ?? fee.description,
+      status: status ?? fee.status,
+      updatedBy: req.user._id,
     };
     // Find and update
     const updatedFee = await Fee.findOneAndUpdate(
@@ -400,17 +402,21 @@ const getFees = [
   authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
   asyncHandler(async (req, res) => {
     const { studentId, classId, status, type } = req.query;
-    
+
     let query = { school: req.schoolId };
-    
-    if (studentId) query.student = studentId;
-    if (classId) query.class = classId;
+
+    if (studentId) {
+      query.student = studentId;
+    } else if (classId) {
+      // Fee model has no class field — resolve via students in that class
+      const classStudents = await Student.find({ class: classId, school: req.schoolId }).select("_id");
+      query.student = { $in: classStudents.map((s) => s._id) };
+    }
     if (status) query.status = status;
     if (type) query.type = type;
 
     const fees = await Fee.find(query)
-      .populate("student", "admissionNumber rollNumber")
-      .populate("class", "name section")
+      .populate({ path: "student", select: "admissionNumber rollNumber user", populate: { path: "user", select: "firstName lastName" } })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -484,11 +490,38 @@ export const recordPayment = [
       return errorResponse(res, "Validation failed", 400, errors.array());
     }
     const { feeId, amountPaid, paymentMethod, transactionId, receiptNumber, paidDate } = req.body;
-    req.params.id = feeId; // Reuse controller logic
-    req.body = { amountPaid, paymentMethod, transactionId, receiptNumber, paidDate };
-    return updateFeePayment[7](req, res, (err) => {
-      if (err) return errorResponse(res, err.message || 'Server error', 500);
-    }); // Index 7 is the asyncHandler
+
+    const fee = await Fee.findById(feeId);
+    if (!fee) return errorResponse(res, "Fee record not found", 404);
+    if (fee.status === "PAID") return errorResponse(res, "Fee is already fully paid", 400);
+
+    const updatedPaidAmount = fee.paidAmount + Number(amountPaid);
+    if (updatedPaidAmount > fee.amount) {
+      return errorResponse(res, "Paid amount cannot exceed total amount", 400);
+    }
+
+    const updateData = {
+      paidAmount: updatedPaidAmount,
+      paymentMethod: paymentMethod ?? fee.paymentMethod,
+      transactionId: transactionId ?? fee.transactionId,
+      receiptNumber: receiptNumber ?? fee.receiptNumber,
+      paidDate: paidDate ?? new Date(),
+      status: updatedPaidAmount >= fee.amount ? "PAID" : updatedPaidAmount > 0 ? "PARTIAL" : fee.status,
+    };
+
+    const updatedFee = await Fee.findByIdAndUpdate(feeId, updateData, { new: true, runValidators: true });
+
+    await Activity.logActivity({
+      userId: req.user._id,
+      type: "FEE_PAID",
+      description: `Payment of ${amountPaid} recorded for fee ${feeId}`,
+      context: "fee-management",
+      metadata: { feeId, studentId: fee.student, amountPaid, paymentMethod },
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    return successResponse(res, updatedFee, "Fee payment recorded successfully");
   }),
 ];
 
@@ -497,11 +530,21 @@ export const recordPayment = [
 // @access  Private (Admin, Student self, Parent)
 export const getPaymentHistory = [
   protect,
+  authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "STUDENT", "PARENT"),
   asyncHandler(async (req, res) => {
     const { studentId } = req.params;
-    const fees = await Fee.find({ student: studentId, paidAmount: { $gt: 0 } })
-      .sort("-paidDate")
-      .lean();
+    const filter = { student: studentId, paidAmount: { $gt: 0 } };
+    if (req.schoolId) filter.school = req.schoolId;
+
+    // Students can only see their own history
+    if (req.user.role === "STUDENT") {
+      const student = await Student.findOne({ user: req.user._id });
+      if (!student || student._id.toString() !== studentId) {
+        return errorResponse(res, "Not authorized", 403);
+      }
+    }
+
+    const fees = await Fee.find(filter).sort("-paidDate").lean();
     return successResponse(res, fees, "Payment history retrieved successfully");
   }),
 ];

@@ -15,12 +15,13 @@ const FeesDetails = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: feeRaw, isLoading: isLoadingFee } = useGetFeeByIdQuery(id);
-  const { data: paymentsRaw, isLoading: isLoadingPayments } = useGetPaymentHistoryQuery(id);
+  const fee = feeRaw?.data || feeRaw;
+  const studentId = fee?.student?._id;
+  const { data: paymentsRaw, isLoading: isLoadingPayments } = useGetPaymentHistoryQuery(studentId, { skip: !studentId });
   const [deleteFee, { isLoading: isDeleting }] = useDeleteFeeMutation();
 
   if (isLoadingFee || isLoadingPayments) return <Spinner size="large" />;
 
-  const fee = feeRaw?.data || feeRaw;
   const payments = paymentsRaw?.data || paymentsRaw || [];
 
   if (!fee) return <div className="text-red-500 p-4">Fee not found.</div>;
@@ -141,7 +142,7 @@ const FeesDetails = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="font-medium text-gray-900">
-                      ${payment.amount != null ? payment.amount.toFixed(2) : '—'}
+                      ${payment.paidAmount != null ? payment.paidAmount.toFixed(2) : '—'}
                     </p>
                     <p className="text-sm text-gray-500">
                       {payment.paymentMethod} {payment.transactionId ? `- ${payment.transactionId}` : ''}
@@ -149,16 +150,13 @@ const FeesDetails = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-900">
-                      {payment.date ? new Date(payment.date).toLocaleDateString() : '—'}
+                      {payment.paidDate ? new Date(payment.paidDate).toLocaleDateString() : '—'}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {payment.recordedBy?.firstName
-                        ? `${payment.recordedBy.firstName} ${payment.recordedBy.lastName || ''}`
-                        : payment.recordedBy || '—'}
+                      {payment.type || '—'}
                     </p>
                   </div>
                 </div>
-                {payment.notes && <p className="mt-2 text-sm text-gray-600">{payment.notes}</p>}
               </div>
             ))}
             {payments.length === 0 && (
