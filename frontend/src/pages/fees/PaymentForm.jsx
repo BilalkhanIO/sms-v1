@@ -15,7 +15,7 @@ const PaymentForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: fee, isLoading: isLoadingFee } = useGetFeeByIdQuery(id);
+  const { data: feeRaw, isLoading: isLoadingFee } = useGetFeeByIdQuery(id);
   const [recordPayment, { isLoading: isRecording }] = useRecordPaymentMutation();
 
   const formik = useFormik({
@@ -40,6 +40,8 @@ const PaymentForm = () => {
       }
     },
   });
+
+  const fee = feeRaw?.data || feeRaw;
 
   if (isLoadingFee) {
     return <Spinner size="large" />;

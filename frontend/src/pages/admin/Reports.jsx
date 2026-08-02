@@ -22,7 +22,8 @@ import { useToast } from '../../hooks/useToast';
 
 const Reports = () => {
   const { toast } = useToast();
-  const { data: reportTypes, isLoading: isLoadingReportTypes } = useGetReportTypesQuery();
+  const { data: reportTypesRaw, isLoading: isLoadingReportTypes } = useGetReportTypesQuery();
+  const reportTypes = reportTypesRaw?.data || reportTypesRaw || [];
   const [generateReport, { isLoading: isGenerating }] = useGenerateReportMutation();
 
   const [dateRange, setDateRange] = useState({
@@ -194,11 +195,11 @@ const Reports = () => {
 
       {/* Report Types */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reportTypes?.map((report) => {
+        {reportTypes.map((report) => {
           const Icon = getReportIcon(report.category);
           const CategoryIcon = getReportIcon(report.category);
           return (
-            <div key={report.id} className="bg-white rounded-lg shadow p-6">
+            <div key={report._id || report.id} className="bg-white rounded-lg shadow p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
                   <Icon className="w-8 h-8 text-blue-600 mr-3" />

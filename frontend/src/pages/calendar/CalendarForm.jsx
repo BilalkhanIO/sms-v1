@@ -1,47 +1,48 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFormik } from 'formik';
-import { calendarEventSchema } from '../../utils/validationSchemas';
+import * as Yup from 'yup';
 import { useCreateEventMutation, useUpdateEventMutation, useGetEventByIdQuery } from '../../api/calendarApi';
 import Button from '../../components/common/Button';
-import FormSection from '../../components/forms/FormSection';
-import InputField from '../../components/forms/InputField';
-import SelectField from '../../components/forms/SelectField';
-import DateTimeField from '../../components/common/DateTimeField';
-import FormError from '../../components/forms/FormError';
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
+
+const eventSchema = Yup.object().shape({
+  title: Yup.string().required('Title is required'),
+  type: Yup.string().required('Type is required'),
+  startDate: Yup.string().required('Start date is required'),
+  endDate: Yup.string().required('End date is required'),
+});
+
+const EVENT_TYPES = ['EXAM', 'HOLIDAY', 'EVENT', 'MEETING'];
+
+const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500';
+const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
+const errorClass = 'mt-1 text-sm text-red-600';
 
 const CalendarForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
 
-  const { data: event, isLoading: isLoadingEvent } = useGetEventByIdQuery(id, {
-    skip: !isEditing
-  });
+  const { data: eventRaw, isLoading: isLoadingEvent } = useGetEventByIdQuery(id, { skip: !isEditing });
+  const event = eventRaw?.data || eventRaw;
 
   const [createEvent, { isLoading: isCreating }] = useCreateEventMutation();
   const [updateEvent, { isLoading: isUpdating }] = useUpdateEventMutation();
 
   const formik = useFormik({
+    enableReinitialize: true,
     initialValues: {
       title: event?.title || '',
       description: event?.description || '',
-      startDate: event?.startDate || '',
-      endDate: event?.endDate || '',
       type: event?.type || 'EVENT',
+      startDate: event?.startDate ? event.startDate.split('T')[0] : '',
+      endDate: event?.endDate ? event.endDate.split('T')[0] : '',
       location: event?.location || '',
-      isAllDay: event?.isAllDay || false,
-      participants: event?.participants || [],
-      recurrence: event?.recurrence || {
-        frequency: 'NONE',
-        interval: 1,
-        endDate: null
-      }
+      isAllDay: event?.isAllDay ?? true,
     },
-    validationSchema: calendarEventSchema,
-    enableReinitialize: true,
+    validationSchema: eventSchema,
     onSubmit: async (values) => {
       try {
         if (isEditing) {
@@ -49,184 +50,130 @@ const CalendarForm = () => {
         } else {
           await createEvent(values).unwrap();
         }
-        navigate('/dashboard/calendar');
-      } catch (error) {
-        console.error('Failed to save event:', error);
+        navigate('/dashboard/calendar/events');
+      } catch (err) {
+        console.error('Failed to save event:', err);
       }
-    }
+    },
   });
 
-  if (isEditing && isLoadingEvent) {
-    return <Spinner size="large" />;
-  }
-
-  const eventTypes = [
-    { value: 'EXAM', label: 'Exam' },
-    { value: 'HOLIDAY', label: 'Holiday' },
-    { value: 'EVENT', label: 'Event' },
-    { value: 'MEETING', label: 'Meeting' }
-  ];
-
-  const recurrenceFrequencies = [
-    { value: 'NONE', label: 'None' },
-    { value: 'DAILY', label: 'Daily' },
-    { value: 'WEEKLY', label: 'Weekly' },
-    { value: 'MONTHLY', label: 'Monthly' }
-  ];
+  if (isEditing && isLoadingEvent) return <Spinner />;
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div>
       <PageHeader
         title={isEditing ? 'Edit Event' : 'Create Event'}
-        backButton
+        backUrl="/dashboard/calendar/events"
       />
 
-      <form onSubmit={formik.handleSubmit} className="max-w-3xl mx-auto">
-        <FormSection title="Event Details">
-          <InputField
-            label="Title"
-            name="title"
-            value={formik.values.title}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.title && formik.errors.title}
-            required
-          />
+      <div className="max-w-2xl mx-auto bg-white shadow rounded-lg p-6">
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
+          <div>
+            <label className={labelClass}>Title *</label>
+            <input
+              className={inputClass}
+              name="title"
+              value={formik.values.title}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            />
+            {formik.touched.title && formik.errors.title && <p className={errorClass}>{formik.errors.title}</p>}
+          </div>
 
-          <InputField
-            label="Description"
-            name="description"
-            type="textarea"
-            value={formik.values.description}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.description && formik.errors.description}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Type *</label>
+              <select
+                className={inputClass}
+                name="type"
+                value={formik.values.type}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              >
+                {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              {formik.touched.type && formik.errors.type && <p className={errorClass}>{formik.errors.type}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Location</label>
+              <input
+                className={inputClass}
+                name="location"
+                value={formik.values.location}
+                onChange={formik.handleChange}
+              />
+            </div>
+          </div>
 
-          <SelectField
-            label="Event Type"
-            name="type"
-            value={formik.values.type}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.type && formik.errors.type}
-            options={eventTypes}
-            required
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Start Date *</label>
+              <input
+                type="date"
+                className={inputClass}
+                name="startDate"
+                value={formik.values.startDate}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.startDate && formik.errors.startDate && <p className={errorClass}>{formik.errors.startDate}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>End Date *</label>
+              <input
+                type="date"
+                className={inputClass}
+                name="endDate"
+                value={formik.values.endDate}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.endDate && formik.errors.endDate && <p className={errorClass}>{formik.errors.endDate}</p>}
+            </div>
+          </div>
 
-          <InputField
-            label="Location"
-            name="location"
-            value={formik.values.location}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.location && formik.errors.location}
-          />
-        </FormSection>
+          <div>
+            <label className={labelClass}>Description</label>
+            <textarea
+              className={inputClass}
+              name="description"
+              rows={3}
+              value={formik.values.description}
+              onChange={formik.handleChange}
+            />
+          </div>
 
-        <FormSection title="Date and Time">
-          <div className="flex items-center mb-4">
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="isAllDay"
               name="isAllDay"
               checked={formik.values.isAllDay}
               onChange={formik.handleChange}
-              className="mr-2"
             />
-            <label htmlFor="isAllDay">All Day Event</label>
+            <label htmlFor="isAllDay" className="text-sm text-gray-700">All Day Event</label>
           </div>
 
-          <DateTimeField
-            label="Start Date"
-            name="startDate"
-            value={formik.values.startDate}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.startDate && formik.errors.startDate}
-            type={formik.values.isAllDay ? "date" : "datetime-local"}
-            required
-          />
-
-          <DateTimeField
-            label="End Date"
-            name="endDate"
-            value={formik.values.endDate}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.endDate && formik.errors.endDate}
-            type={formik.values.isAllDay ? "date" : "datetime-local"}
-            required
-          />
-        </FormSection>
-
-        <FormSection title="Recurrence">
-          <SelectField
-            label="Frequency"
-            name="recurrence.frequency"
-            value={formik.values.recurrence.frequency}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={
-              formik.touched.recurrence?.frequency &&
-              formik.errors.recurrence?.frequency
-            }
-            options={recurrenceFrequencies}
-          />
-
-          {formik.values.recurrence.frequency !== 'NONE' && (
-            <>
-              <InputField
-                label="Interval"
-                name="recurrence.interval"
-                type="number"
-                min="1"
-                value={formik.values.recurrence.interval}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.recurrence?.interval &&
-                  formik.errors.recurrence?.interval
-                }
-              />
-
-              <DateTimeField
-                label="End Date"
-                name="recurrence.endDate"
-                value={formik.values.recurrence.endDate}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.recurrence?.endDate &&
-                  formik.errors.recurrence?.endDate
-                }
-                type="date"
-              />
-            </>
-          )}
-        </FormSection>
-
-        {formik.errors.submit && <FormError error={formik.errors.submit} />}
-
-        <div className="mt-6 flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/dashboard/calendar')}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            isLoading={isCreating || isUpdating}
-            disabled={!formik.isValid || !formik.dirty}
-          >
-            {isEditing ? 'Update Event' : 'Create Event'}
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/calendar/events')}
+              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isCreating || isUpdating || !formik.isValid}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isCreating || isUpdating ? 'Saving...' : isEditing ? 'Update Event' : 'Create Event'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
 
-export default CalendarForm; 
+export default CalendarForm;

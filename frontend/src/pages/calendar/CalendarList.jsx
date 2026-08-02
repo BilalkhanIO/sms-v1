@@ -4,7 +4,7 @@ import { useGetEventsQuery } from '../../api/calendarApi';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';
-import { Calendar, Filter, Search } from 'lucide-react';
+import { Calendar, Search } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 const CalendarList = () => {
@@ -16,32 +16,37 @@ const CalendarList = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: events, isLoading, error } = useGetEventsQuery({
+  const { data: eventsRaw, isLoading, error } = useGetEventsQuery({
     ...filters,
     search: searchTerm
   });
+  const events = eventsRaw?.data || eventsRaw || [];
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
-
-  if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
-  }
+  if (isLoading) return <Spinner size="large" />;
+  if (error) return <div className="text-red-500">Error loading events.</div>;
 
   const eventTypes = [
     { value: 'all', label: 'All Events' },
-    { value: 'academic', label: 'Academic' },
-    { value: 'holiday', label: 'Holiday' },
-    { value: 'exam', label: 'Exam' },
-    { value: 'activity', label: 'Activity' }
+    { value: 'EXAM', label: 'Exam' },
+    { value: 'HOLIDAY', label: 'Holiday' },
+    { value: 'EVENT', label: 'Event' },
+    { value: 'MEETING', label: 'Meeting' },
   ];
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'EXAM': return 'bg-purple-100 text-purple-800';
+      case 'HOLIDAY': return 'bg-green-100 text-green-800';
+      case 'MEETING': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-orange-100 text-orange-800';
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader title="Calendar">
+      <PageHeader title="Calendar Events" backUrl="/dashboard/calendar">
         {can('calendar', 'edit') && (
-          <Link to="/dashboard/calendar/create">
+          <Link to="/dashboard/calendar/events/create">
             <Button>
               <Calendar className="w-4 h-4 mr-2" />
               Add Event
@@ -50,7 +55,6 @@ const CalendarList = () => {
         )}
       </PageHeader>
 
-      {/* Filters */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="relative">
           <input
@@ -69,9 +73,7 @@ const CalendarList = () => {
           className="border rounded-lg px-4 py-2"
         >
           {eventTypes.map(type => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
+            <option key={type.value} value={type.value}>{type.label}</option>
           ))}
         </select>
 
@@ -80,40 +82,32 @@ const CalendarList = () => {
           value={`${filters.year}-${filters.month.toString().padStart(2, '0')}`}
           onChange={(e) => {
             const [year, month] = e.target.value.split('-');
-            setFilters(prev => ({
-              ...prev,
-              year: parseInt(year),
-              month: parseInt(month)
-            }));
+            setFilters(prev => ({ ...prev, year: parseInt(year), month: parseInt(month) }));
           }}
           className="border rounded-lg px-4 py-2"
         />
       </div>
 
-      {/* Events List */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="divide-y divide-gray-200">
-          {events?.map((event) => (
-            <div key={event.id} className="p-6 hover:bg-gray-50">
+          {events.map((event) => (
+            <div key={event._id} className="p-6 hover:bg-gray-50">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">
-                    <Link to={`/dashboard/calendar/${event.id}`} className="hover:text-blue-600">
+                    <Link to={`/dashboard/calendar/events/${event._id}`} className="hover:text-blue-600">
                       {event.title}
                     </Link>
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">{event.description}</p>
+                  {event.description && (
+                    <p className="mt-1 text-sm text-gray-500">{event.description}</p>
+                  )}
                   <div className="mt-2 flex items-center space-x-4">
                     <span className="text-sm text-gray-500">
-                      {new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}
+                      {new Date(event.startDate).toLocaleDateString()}
+                      {event.endDate && ` — ${new Date(event.endDate).toLocaleDateString()}`}
                     </span>
-                    <span className={`
-                      px-2 py-1 text-xs rounded-full
-                      ${event.type === 'academic' ? 'bg-blue-100 text-blue-800' :
-                        event.type === 'holiday' ? 'bg-green-100 text-green-800' :
-                        event.type === 'exam' ? 'bg-purple-100 text-purple-800' :
-                        'bg-orange-100 text-orange-800'}
-                    `}>
+                    <span className={`px-2 py-1 text-xs rounded-full ${getTypeColor(event.type)}`}>
                       {event.type}
                     </span>
                   </div>
@@ -121,8 +115,8 @@ const CalendarList = () => {
                 {can('calendar', 'edit') && (
                   <div className="flex space-x-2">
                     <Link
-                      to={`/dashboard/calendar/${event.id}/edit`}
-                      className="text-blue-600 hover:text-blue-800"
+                      to={`/dashboard/calendar/events/${event._id}/edit`}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Edit
                     </Link>
@@ -131,7 +125,7 @@ const CalendarList = () => {
               </div>
             </div>
           ))}
-          {events?.length === 0 && (
+          {events.length === 0 && (
             <div className="p-6 text-center text-gray-500">
               No events found for the selected filters.
             </div>
@@ -142,4 +136,4 @@ const CalendarList = () => {
   );
 };
 
-export default CalendarList; 
+export default CalendarList;

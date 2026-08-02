@@ -48,7 +48,7 @@ const CreateTeacher = () => {
     e.preventDefault();
     try {
       await createTeacher(formData).unwrap();
-      navigate('/teachers');
+      navigate('/dashboard/teachers');
     } catch (error) {
       const validationErrors = {};
       if (error.data?.errors) {
@@ -62,7 +62,7 @@ const CreateTeacher = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader title="Create Teacher" backUrl="/teachers" />
+      <PageHeader title="Create Teacher" backUrl="/dashboard/teachers" />
       
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
         <Input

@@ -39,7 +39,8 @@ const UserManagement = () => {
   const { data: allUsers, isLoading: allLoading, error: allError, refetch: allRefetch } = useGetAllUsersQuery(undefined, { skip: !isAdmin });
   const { data: schoolUsers, isLoading: schoolLoading, error: schoolError, refetch: schoolRefetch } = useGetUsersQuery(undefined, { skip: isAdmin });
 
-  const users = isAdmin ? allUsers : schoolUsers;
+  const usersRaw = isAdmin ? allUsers : schoolUsers;
+  const users = usersRaw?.data || usersRaw;
   const isLoading = isAdmin ? allLoading : schoolLoading;
   const error = isAdmin ? allError : schoolError;
   const refetch = isAdmin ? allRefetch : schoolRefetch;
@@ -457,7 +458,7 @@ const UserManagement = () => {
                         <Eye className="w-4 h-4" />
                       </Link>
                       <Link
-                        to={`/dashboard/users/update/${user._id}`}
+                        to={`/dashboard/users/edit/${user._id}`}
                         className="text-green-600 hover:text-green-900"
                       >
                         <Edit className="w-4 h-4" />

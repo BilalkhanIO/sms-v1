@@ -31,13 +31,13 @@ const FeesForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      title: fee?.title || '',
-      description: fee?.description || '',
-      amount: fee?.amount || '',
-      dueDate: fee?.dueDate ? new Date(fee.dueDate).toISOString().split('T')[0] : '',
-      studentId: fee?.student?._id || fee?.student || '',
-      type: fee?.type || 'TUITION',
-      status: fee?.status || 'PENDING'
+      title: fee?.data?.title || fee?.title || '',
+      description: fee?.data?.description || fee?.description || '',
+      amount: fee?.data?.amount || fee?.amount || '',
+      dueDate: (fee?.data?.dueDate || fee?.dueDate) ? new Date(fee?.data?.dueDate || fee?.dueDate).toISOString().split('T')[0] : '',
+      studentId: fee?.data?.student?._id || fee?.data?.student || fee?.student?._id || fee?.student || '',
+      type: fee?.data?.type || fee?.type || 'TUITION',
+      status: fee?.data?.status || fee?.status || 'PENDING'
     },
     validationSchema: feeSchema,
     enableReinitialize: true,

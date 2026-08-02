@@ -1,229 +1,185 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { toast } from '@/components/ui/use-toast';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { useGetSubjectByIdQuery, useUpdateSubjectMutation } from '../../api/subjectApi';
+import { useGetClassesQuery } from '../../api/classesApi';
+import { useGetTeachersQuery } from '../../api/teacherApi';
+import PageHeader from '../../components/common/PageHeader';
+import Spinner from '../../components/common/Spinner';
 
-const subjectFormSchema = z.object({
-  name: z.string().min(2, 'Subject name must be at least 2 characters'),
-  code: z.string().min(2, 'Subject code must be at least 2 characters'),
-  description: z.string().optional(),
-  credits: z.string().regex(/^\d+$/, 'Credits must be a number'),
-  classId: z.string().min(1, 'Class is required'),
-  teacherId: z.string().min(1, 'Teacher is required'),
+const subjectSchema = Yup.object().shape({
+  name: Yup.string().required('Subject name is required'),
+  code: Yup.string().required('Subject code is required'),
+  credits: Yup.number().required('Credits is required').min(0),
+  type: Yup.string().oneOf(['MANDATORY', 'ELECTIVE']).required('Type is required'),
 });
+
+const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500';
+const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
+const errorClass = 'mt-1 text-sm text-red-600';
 
 const UpdateSubject = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { data: subjectRaw, isLoading: isLoadingSubject } = useGetSubjectByIdQuery(id);
+  const [updateSubject, { isLoading: isUpdating }] = useUpdateSubjectMutation();
+  const { data: classesRaw } = useGetClassesQuery();
+  const { data: teachersRaw } = useGetTeachersQuery();
+  const classes = classesRaw?.data || classesRaw || [];
+  const teachers = teachersRaw?.data || teachersRaw || [];
+  const subject = subjectRaw?.data || subjectRaw;
 
-  // Mock data - replace with API call
-  const subjectData = {
-    id: 1,
-    name: 'Mathematics',
-    code: 'MATH101',
-    description: 'Introduction to Mathematics',
-    credits: '3',
-    classId: '1',
-    teacherId: '1',
-  };
-
-  const form = useForm({
-    resolver: zodResolver(subjectFormSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      description: '',
-      credits: '',
-      classId: '',
-      teacherId: '',
+  const formik = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      name: subject?.name || '',
+      code: subject?.code || '',
+      description: subject?.description || '',
+      credits: subject?.credits ?? '',
+      type: subject?.type || 'MANDATORY',
+      assignedClasses: subject?.assignedClasses?.map(c => c._id || c) || [],
+      assignedTeachers: subject?.assignedTeachers?.map(t => t._id || t) || [],
+    },
+    validationSchema: subjectSchema,
+    onSubmit: async (values) => {
+      try {
+        await updateSubject({
+          id,
+          ...values,
+          credits: Number(values.credits),
+        }).unwrap();
+        navigate('/dashboard/subjects');
+      } catch (err) {
+        console.error('Failed to update subject:', err);
+      }
     },
   });
 
-  useEffect(() => {
-    // Load subject data into form
-    if (subjectData) {
-      Object.keys(subjectData).forEach((key) => {
-        if (form.getValues(key) !== undefined) {
-          form.setValue(key, subjectData[key]);
-        }
-      });
-    }
-  }, [subjectData, form]);
-
-  const onSubmit = async (data) => {
-    try {
-      // TODO: Implement API call to update subject
-      console.log('Updated subject data:', data);
-      
-      toast({
-        title: 'Success',
-        description: 'Subject updated successfully.',
-      });
-      
-      navigate('/dashboard/subjects');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update subject. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
+  if (isLoadingSubject) return <Spinner />;
 
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Update Subject</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter subject name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    <div>
+      <PageHeader title="Edit Subject" backUrl="/dashboard/subjects" />
 
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject Code</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter subject code" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      <div className="max-w-2xl mx-auto bg-white shadow rounded-lg p-6">
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Subject Name *</label>
+              <input
+                className={inputClass}
+                name="name"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.name && formik.errors.name && <p className={errorClass}>{formik.errors.name}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Subject Code *</label>
+              <input
+                className={inputClass}
+                name="code"
+                value={formik.values.code}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.code && formik.errors.code && <p className={errorClass}>{formik.errors.code}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Credits *</label>
+              <input
+                type="number"
+                min="0"
+                className={inputClass}
+                name="credits"
+                value={formik.values.credits}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+              {formik.touched.credits && formik.errors.credits && <p className={errorClass}>{formik.errors.credits}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Type *</label>
+              <select
+                className={inputClass}
+                name="type"
+                value={formik.values.type}
+                onChange={formik.handleChange}
+              >
+                <option value="MANDATORY">Mandatory</option>
+                <option value="ELECTIVE">Elective</option>
+              </select>
+            </div>
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="credits"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Credits</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" placeholder="Enter credits" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <div>
+            <label className={labelClass}>Description</label>
+            <textarea
+              className={inputClass}
+              name="description"
+              rows={3}
+              value={formik.values.description}
+              onChange={formik.handleChange}
+            />
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="classId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Class</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a class" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {/* TODO: Fetch classes from API */}
-                          <SelectItem value="1">Class 1</SelectItem>
-                          <SelectItem value="2">Class 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <div>
+            <label className={labelClass}>Assigned Classes</label>
+            <select
+              multiple
+              className={`${inputClass} h-32`}
+              value={formik.values.assignedClasses}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, o => o.value);
+                formik.setFieldValue('assignedClasses', selected);
+              }}
+            >
+              {classes.map(c => (
+                <option key={c._id} value={c._id}>{c.name} {c.section}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="teacherId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teacher</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a teacher" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {/* TODO: Fetch teachers from API */}
-                          <SelectItem value="1">Teacher 1</SelectItem>
-                          <SelectItem value="2">Teacher 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <div>
+            <label className={labelClass}>Assigned Teachers</label>
+            <select
+              multiple
+              className={`${inputClass} h-32`}
+              value={formik.values.assignedTeachers}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, o => o.value);
+                formik.setFieldValue('assignedTeachers', selected);
+              }}
+            >
+              {teachers.map(t => (
+                <option key={t._id} value={t._id}>
+                  {t.user?.firstName || ''} {t.user?.lastName || ''}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Enter subject description"
-                          className="h-32"
-                        />
-                      </FormControl>
-                      <FormDescription>Optional</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/dashboard/subjects')}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Update Subject</Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/subjects')}
+              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating || !formik.isValid}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isUpdating ? 'Saving...' : 'Update Subject'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

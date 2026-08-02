@@ -38,10 +38,10 @@ const AttendanceForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      classId: attendance?.classId || '',
-      date: attendance?.date || new Date().toISOString().split('T')[0],
-      records: attendance?.records || [],
-      notes: attendance?.notes || ''
+      classId: attendance?.data?.classId || attendance?.classId || '',
+      date: attendance?.data?.date ? new Date(attendance.data.date).toISOString().split('T')[0] : attendance?.date ? new Date(attendance.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      records: attendance?.data?.records || attendance?.records || [],
+      notes: attendance?.data?.notes || attendance?.notes || ''
     },
     validationSchema: attendanceSchema,
     enableReinitialize: true,

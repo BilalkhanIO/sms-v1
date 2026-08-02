@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import PageHeader from '../../components/common/PageHeader';
@@ -52,13 +52,14 @@ const UpdateUser = () => {
   });
 
   useEffect(() => {
-    if (user) {
+    const u = user?.data || user;
+    if (u) {
       setInitialValues({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        role: user.role || '',
-        status: user.status || '',
+        firstName: u.firstName || '',
+        lastName: u.lastName || '',
+        email: u.email || '',
+        role: u.role || '',
+        status: u.status || '',
       });
     }
   }, [user]);
@@ -122,7 +123,7 @@ const UpdateUser = () => {
 
   return (
     <>
-      <PageHeader title={`Edit User: ${user.firstName} ${user.lastName}`} backUrl="/dashboard/users" />
+      <PageHeader title={`Edit User: ${(user?.data || user)?.firstName || ''} ${(user?.data || user)?.lastName || ''}`} backUrl="/dashboard/users" />
       <div className="container mx-auto p-6">
         <Formik
           initialValues={initialValues}

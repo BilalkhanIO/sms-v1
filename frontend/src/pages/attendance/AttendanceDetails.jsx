@@ -1,14 +1,12 @@
-import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useGetAttendanceByIdQuery, useDeleteAttendanceMutation } from '../../api/attendanceApi';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';
-import { Calendar, Users, Clock, Edit, Trash } from 'lucide-react';
+import { Calendar, Users, Clock, Trash } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
-import { format } from 'date-fns';
 import Modal from '../../components/common/Modal';
-import { useState } from 'react';
 
 const AttendanceDetails = () => {
   const { id } = useParams();
@@ -16,68 +14,46 @@ const AttendanceDetails = () => {
   const { can } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const { data: attendance, isLoading, error } = useGetAttendanceByIdQuery(id);
+  const { data: attRaw, isLoading, error } = useGetAttendanceByIdQuery(id);
   const [deleteAttendance, { isLoading: isDeleting }] = useDeleteAttendanceMutation();
+  const attendance = attRaw?.data || attRaw;
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
-
-  if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
-  }
+  if (isLoading) return <Spinner size="large" />;
+  if (error || !attendance) return <div className="text-red-500 p-4">Attendance record not found.</div>;
 
   const handleDelete = async () => {
     try {
       await deleteAttendance(id).unwrap();
       navigate('/dashboard/attendance');
-    } catch (error) {
-      console.error('Failed to delete attendance:', error);
+    } catch (err) {
+      console.error('Failed to delete attendance:', err);
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'present':
-        return 'bg-green-100 text-green-800';
-      case 'absent':
-        return 'bg-red-100 text-red-800';
-      case 'late':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'excused':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    switch ((status || '').toUpperCase()) {
+      case 'PRESENT': return 'bg-green-100 text-green-800';
+      case 'ABSENT': return 'bg-red-100 text-red-800';
+      case 'LATE': return 'bg-yellow-100 text-yellow-800';
+      case 'EXCUSED': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const records = attendance.records || [];
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader
-        title="Attendance Details"
-        backButton
-      >
+      <PageHeader title="Attendance Details" backUrl="/dashboard/attendance">
         {can('attendance', 'edit') && (
-          <div className="flex space-x-4">
-            <Link to={`/dashboard/attendance/${id}/edit`}>
-              <Button variant="secondary">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            </Link>
-            <Button
-              variant="danger"
-              onClick={() => setShowDeleteModal(true)}
-            >
-              <Trash className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
+          <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+            <Trash className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
         )}
       </PageHeader>
 
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header Information */}
         <div className="bg-white shadow-md rounded-lg p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center space-x-3">
@@ -85,7 +61,7 @@ const AttendanceDetails = () => {
               <div>
                 <p className="text-sm text-gray-500">Date</p>
                 <p className="font-medium">
-                  {format(new Date(attendance.date), 'PPP')}
+                  {attendance.date ? new Date(attendance.date).toLocaleDateString() : '—'}
                 </p>
               </div>
             </div>
@@ -93,97 +69,82 @@ const AttendanceDetails = () => {
               <Users className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Class</p>
-                <p className="font-medium">{attendance.class.name}</p>
+                <p className="font-medium">{attendance.class?.name || '—'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Clock className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Recorded By</p>
-                <p className="font-medium">{attendance.recordedBy.name}</p>
+                <p className="font-medium">
+                  {attendance.recordedBy?.firstName
+                    ? `${attendance.recordedBy.firstName} ${attendance.recordedBy.lastName || ''}`
+                    : attendance.recordedBy?.name || '—'}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Student Records */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Student Records</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Student Records ({records.length})
+            </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Remarks
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {attendance.records.map((record) => (
-                  <tr key={record.studentId}>
+                {records.map((record, i) => (
+                  <tr key={record.studentId || record._id || i}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {record.student.firstName} {record.student.lastName}
+                        {record.student?.user?.firstName || record.student?.firstName || '—'}{' '}
+                        {record.student?.user?.lastName || record.student?.lastName || ''}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {record.student.rollNumber}
-                      </div>
+                      <div className="text-sm text-gray-500">{record.student?.rollNumber || ''}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(record.status)}`}>
-                        {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                        {record.status || '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {record.remarks || '-'}
+                      {record.remarks || '—'}
                     </td>
                   </tr>
                 ))}
+                {records.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-4 text-center text-gray-500">No records found.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Additional Notes */}
         {attendance.notes && (
           <div className="bg-white shadow-md rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Notes</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Notes</h3>
             <p className="text-gray-600 whitespace-pre-line">{attendance.notes}</p>
           </div>
         )}
       </div>
 
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="Delete Attendance Record"
-      >
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Attendance Record">
         <div className="p-6">
-          <p className="text-gray-600">
-            Are you sure you want to delete this attendance record? This action cannot be undone.
-          </p>
+          <p className="text-gray-600">Are you sure you want to delete this attendance record? This action cannot be undone.</p>
           <div className="mt-6 flex justify-end space-x-4">
-            <Button
-              variant="secondary"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={isDeleting}
-            >
-              Delete
-            </Button>
+            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>Delete</Button>
           </div>
         </div>
       </Modal>
@@ -191,4 +152,4 @@ const AttendanceDetails = () => {
   );
 };
 
-export default AttendanceDetails; 
+export default AttendanceDetails;

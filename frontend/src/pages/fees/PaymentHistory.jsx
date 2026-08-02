@@ -15,7 +15,7 @@ const PaymentHistory = () => {
     paymentMethod: 'all'
   });
 
-  const { data: payments, isLoading, error } = useGetPaymentHistoryQuery({ studentId, ...filters });
+  const { data: payments, isLoading, error } = useGetPaymentHistoryQuery(studentId);
 
   if (isLoading) {
     return <Spinner size="large" />;

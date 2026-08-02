@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGetEventByIdQuery, useDeleteEventMutation } from '../../api/calendarApi';
 import Button from '../../components/common/Button';
@@ -6,9 +6,7 @@ import Spinner from '../../components/common/Spinner';
 import PageHeader from '../../components/common/PageHeader';
 import { Calendar, MapPin, Clock, Users, Repeat, Trash, Edit } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
-import { format } from 'date-fns';
 import Modal from '../../components/common/Modal';
-import { useState } from 'react';
 
 const CalendarDetails = () => {
   const { id } = useParams();
@@ -16,62 +14,48 @@ const CalendarDetails = () => {
   const { can } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const { data: event, isLoading, error } = useGetEventByIdQuery(id);
+  const { data: eventRaw, isLoading, error } = useGetEventByIdQuery(id);
   const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation();
+  const event = eventRaw?.data || eventRaw;
 
-  if (isLoading) {
-    return <Spinner size="large" />;
-  }
-
-  if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
-  }
+  if (isLoading) return <Spinner size="large" />;
+  if (error || !event) return <div className="text-red-500 p-4">Event not found.</div>;
 
   const handleDelete = async () => {
     try {
       await deleteEvent(id).unwrap();
-      navigate('/dashboard/calendar');
-    } catch (error) {
-      console.error('Failed to delete event:', error);
+      navigate('/dashboard/calendar/events');
+    } catch (err) {
+      console.error('Failed to delete event:', err);
     }
   };
 
-  const formatDate = (date, isAllDay = false) => {
-    return format(new Date(date), isAllDay ? 'PPP' : 'PPP p');
+  const formatDate = (date) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  const getRecurrenceText = (recurrence) => {
-    if (!recurrence || recurrence.frequency === 'NONE') return 'No recurrence';
-    
-    const frequencyText = {
-      DAILY: 'Daily',
-      WEEKLY: 'Weekly',
-      MONTHLY: 'Monthly'
-    }[recurrence.frequency];
-
-    return `${frequencyText}, every ${recurrence.interval} ${recurrence.frequency.toLowerCase()}(s)${
-      recurrence.endDate ? ` until ${format(new Date(recurrence.endDate), 'PPP')}` : ''
-    }`;
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'EXAM': return 'bg-purple-100 text-purple-800';
+      case 'HOLIDAY': return 'bg-green-100 text-green-800';
+      case 'MEETING': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-orange-100 text-orange-800';
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader
-        title="Event Details"
-        backButton
-      >
+      <PageHeader title="Event Details" backUrl="/dashboard/calendar/events">
         {can('calendar', 'edit') && (
           <div className="flex space-x-4">
-            <Link to={`/dashboard/calendar/${id}/edit`}>
+            <Link to={`/dashboard/calendar/events/${id}/edit`}>
               <Button variant="secondary">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Button>
             </Link>
-            <Button
-              variant="danger"
-              onClick={() => setShowDeleteModal(true)}
-            >
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
               <Trash className="w-4 h-4 mr-2" />
               Delete
             </Button>
@@ -83,15 +67,11 @@ const CalendarDetails = () => {
         <div className="p-6">
           <div className="flex items-start justify-between">
             <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
-            <span className={`
-              px-3 py-1 rounded-full text-sm font-medium
-              ${event.type === 'EXAM' ? 'bg-purple-100 text-purple-800' :
-                event.type === 'HOLIDAY' ? 'bg-green-100 text-green-800' :
-                event.type === 'MEETING' ? 'bg-blue-100 text-blue-800' :
-                'bg-orange-100 text-orange-800'}
-            `}>
-              {event.type}
-            </span>
+            {event.type && (
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(event.type)}`}>
+                {event.type}
+              </span>
+            )}
           </div>
 
           {event.description && (
@@ -100,13 +80,11 @@ const CalendarDetails = () => {
 
           <div className="mt-6 space-y-4">
             <div className="flex items-center text-gray-600">
-              <Clock className="w-5 h-5 mr-3" />
+              <Clock className="w-5 h-5 mr-3 flex-shrink-0" />
               <div>
-                <div>{formatDate(event.startDate, event.isAllDay)}</div>
+                <div>{formatDate(event.startDate)}</div>
                 {event.endDate && (
-                  <div className="text-gray-500">
-                    to {formatDate(event.endDate, event.isAllDay)}
-                  </div>
+                  <div className="text-gray-500">to {formatDate(event.endDate)}</div>
                 )}
               </div>
             </div>
@@ -118,10 +96,10 @@ const CalendarDetails = () => {
               </div>
             )}
 
-            {event.recurrence && event.recurrence.frequency !== 'NONE' && (
+            {event.recurrence && event.recurrence.frequency && event.recurrence.frequency !== 'NONE' && (
               <div className="flex items-center text-gray-600">
                 <Repeat className="w-5 h-5 mr-3" />
-                <span>{getRecurrenceText(event.recurrence)}</span>
+                <span>Repeats {event.recurrence.frequency.toLowerCase()}, every {event.recurrence.interval || 1} time(s)</span>
               </div>
             )}
 
@@ -131,11 +109,9 @@ const CalendarDetails = () => {
                 <div>
                   <div className="font-medium mb-2">Participants</div>
                   <div className="grid grid-cols-2 gap-2">
-                    {event.participants.map((participant) => (
-                      <div key={participant._id || participant} className="text-sm">
-                        {participant.firstName && participant.lastName
-                          ? `${participant.firstName} ${participant.lastName}`
-                          : participant.email || String(participant._id || participant)}
+                    {event.participants.map((p) => (
+                      <div key={p._id || String(p)} className="text-sm">
+                        {p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.email || '—'}
                       </div>
                     ))}
                   </div>
@@ -146,29 +122,12 @@ const CalendarDetails = () => {
         </div>
       </div>
 
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="Delete Event"
-      >
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Event">
         <div className="p-6">
-          <p className="text-gray-600">
-            Are you sure you want to delete this event? This action cannot be undone.
-          </p>
+          <p className="text-gray-600">Are you sure you want to delete this event? This action cannot be undone.</p>
           <div className="mt-6 flex justify-end space-x-4">
-            <Button
-              variant="secondary"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={isDeleting}
-            >
-              Delete
-            </Button>
+            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>Delete</Button>
           </div>
         </div>
       </Modal>
@@ -176,4 +135,4 @@ const CalendarDetails = () => {
   );
 };
 
-export default CalendarDetails; 
+export default CalendarDetails;
