@@ -20,8 +20,9 @@ const CentralizedAdminManagement = () => {
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
 
   const sortedUsers = useMemo(() => {
-    if (!users) return [];
-    let sortableUsers = [...users];
+    const userList = users?.data || users || [];
+    if (!Array.isArray(userList)) return [];
+    let sortableUsers = [...userList];
     sortableUsers.sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -35,10 +36,11 @@ const CentralizedAdminManagement = () => {
   }, [users, sortConfig]);
 
   const filteredUsers = useMemo(() => {
-    return sortedUsers.filter((user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return sortedUsers.filter((user) => {
+      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim().toLowerCase();
+      return name.includes(searchTerm.toLowerCase()) ||
+        (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+    });
   }, [sortedUsers, searchTerm]);
 
   const requestSort = (key) => {
@@ -90,7 +92,7 @@ const CentralizedAdminManagement = () => {
         <TableBody>
           {filteredUsers.map((user) => (
             <TableRow key={user._id}>
-              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.firstName} {user.lastName}</TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>{user.school?.name || 'N/A'}</TableCell>

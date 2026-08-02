@@ -27,7 +27,7 @@ const SuperAdminStatsDashboard = () => {
     totalStudents,
     totalTeachers,
     totalClasses,
-  } = data?.overview || {};
+  } = (data?.data || data)?.overview || {};
 
   return (
     <div>
@@ -57,7 +57,7 @@ const SuperAdminStatsDashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={userRoleDistribution}
+                  data={userRoleDistribution?.data || userRoleDistribution || []}
                   dataKey="count"
                   nameKey="_id"
                   cx="50%"
@@ -75,7 +75,7 @@ const SuperAdminStatsDashboard = () => {
           <h2 className="text-xl font-bold mb-4">Recent Activities</h2>
           <div className="p-4 bg-white rounded-lg shadow">
             <ul>
-              {recentActivities?.data.map((activity) => (
+              {(recentActivities?.data || recentActivities || []).map((activity) => (
                 <li key={activity._id} className="border-b last:border-b-0 py-2">
                   <p className="font-semibold">{activity.description}</p>
                   <p className="text-sm text-gray-500">

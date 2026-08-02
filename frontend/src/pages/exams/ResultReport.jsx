@@ -10,13 +10,15 @@ const ResultReport = () => {
   const { id } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: exam, isLoading: isLoadingExam, isError: examError } = useGetExamByIdQuery(id);
+  const { data: examRaw, isLoading: isLoadingExam, isError: examError } = useGetExamByIdQuery(id);
   const { data: resultsRaw, isLoading: isLoadingResults, isError: resultsError } = useGetClassResultsQuery(id);
   const [generateReportCard, { isLoading: isGenerating }] = useGenerateReportCardMutation();
 
   if (isLoadingExam || isLoadingResults) {
     return <Spinner size="large" />;
   }
+
+  const exam = examRaw?.data || examRaw;
 
   if (examError || resultsError || !exam || !resultsRaw) {
     return (
@@ -31,7 +33,7 @@ const ResultReport = () => {
   const stats = results?.stats || {};
 
   const filteredResults = studentList.filter(student =>
-    `${student.firstName} ${student.lastName} ${student.rollNumber}`
+    `${student.user?.firstName || ''} ${student.user?.lastName || ''} ${student.rollNumber || ''}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -167,13 +169,13 @@ const ResultReport = () => {
                   const percentage = (student.marks / exam.totalMarks) * 100;
                   const grade = getGrade(percentage);
                   return (
-                    <tr key={student.id}>
+                    <tr key={student._id || student.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {student.rollNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {student.firstName} {student.lastName}
+                          {student.user?.firstName || ''} {student.user?.lastName || ''}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -192,7 +194,7 @@ const ResultReport = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <Button
                           size="small"
-                          onClick={() => handleGenerateReportCard(student.id)}
+                          onClick={() => handleGenerateReportCard(student._id || student.id)}
                           isLoading={isGenerating}
                         >
                           <Download className="w-4 h-4 mr-2" />

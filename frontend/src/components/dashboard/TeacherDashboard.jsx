@@ -67,7 +67,10 @@ const TeacherDashboard = () => {
     );
   }
 
-  const teacherOverview = stats?.teacherOverview || {};
+  const statsData = stats?.data || stats || {};
+  const teacherOverview = statsData?.teacherOverview || {};
+  const upcomingExams = statsData?.upcomingExams || [];
+  const schedule = statsData?.schedule || [];
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -97,7 +100,7 @@ const TeacherDashboard = () => {
         />
         <StatCard
           title="Upcoming Exams"
-          value={stats?.upcomingExams?.length || 0}
+          value={upcomingExams.length}
           icon={FileText}
           color="orange"
         />
@@ -110,7 +113,7 @@ const TeacherDashboard = () => {
             <CardTitle>Today's Schedule</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {stats?.schedule?.map((daySchedule) => (
+            {schedule.map((daySchedule) => (
               <div key={daySchedule._id} className="flex items-start space-x-3">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div className="flex-1 min-w-0">
@@ -125,7 +128,7 @@ const TeacherDashboard = () => {
                 </div>
               </div>
             ))}
-            {(!stats?.schedule || stats.schedule.length === 0) && (
+            {schedule.length === 0 && (
               <CardDescription>No schedule available</CardDescription>
             )}
           </CardContent>
@@ -137,7 +140,7 @@ const TeacherDashboard = () => {
             <CardTitle>Recent Submissions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {stats?.upcomingExams?.map((exam) => (
+            {upcomingExams.map((exam) => (
               <div key={exam._id} className="flex items-start space-x-3">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 <div className="flex-1 min-w-0">
@@ -151,7 +154,7 @@ const TeacherDashboard = () => {
                 <Badge variant="outline">{exam.status}</Badge>
               </div>
             ))}
-            {(!stats?.upcomingExams || stats.upcomingExams.length === 0) && (
+            {upcomingExams.length === 0 && (
               <CardDescription>No upcoming exams</CardDescription>
             )}
           </CardContent>
@@ -164,7 +167,7 @@ const TeacherDashboard = () => {
           <CardTitle>Today's Classes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {stats?.schedule?.map((daySchedule) => {
+          {schedule.map((daySchedule) => {
             const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
             if (daySchedule._id === today) {
               return (
@@ -192,7 +195,7 @@ const TeacherDashboard = () => {
             }
             return null;
           })}
-          {(!stats?.schedule || stats.schedule.length === 0) && (
+          {schedule.length === 0 && (
             <CardDescription>No classes scheduled for today</CardDescription>
           )}
         </CardContent>
@@ -234,14 +237,14 @@ const TeacherDashboard = () => {
       </Card>
 
       {/* Upcoming Exams */}
-      {stats?.upcomingExams && stats.upcomingExams.length > 0 && (
+      {upcomingExams.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Upcoming Exams</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats.upcomingExams.map((exam) => (
+              {upcomingExams.map((exam) => (
                 <Card key={exam._id} className="p-4 bg-muted">
                   <div className="flex items-center justify-between mb-2">
                     <CardTitle className="text-sm">{exam.title}</CardTitle>

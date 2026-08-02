@@ -55,7 +55,11 @@ const ParentDashboard = () => {
     );
   }
 
-  const parentOverview = stats?.parentOverview || {};
+  const statsData = stats?.data || stats || {};
+  const parentOverview = statsData?.parentOverview || {};
+  const upcomingEvents = statsData?.upcomingEvents || [];
+  const recentGrades = statsData?.recentGrades || [];
+  const activities = statsData?.activities || [];
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -146,8 +150,8 @@ const ParentDashboard = () => {
             <CardTitle>Upcoming Events</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {stats.upcomingEvents?.length > 0 ? (
-              stats.upcomingEvents.map((event) => (
+            {upcomingEvents.length > 0 ? (
+              upcomingEvents.map((event) => (
                 <div key={event._id} className="flex items-start space-x-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
@@ -171,8 +175,8 @@ const ParentDashboard = () => {
             <CardTitle>Recent Grades</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {stats.recentGrades && stats.recentGrades.length > 0 ? (
-              stats.recentGrades.map((grade) => (
+            {recentGrades.length > 0 ? (
+              recentGrades.map((grade) => (
                 <div key={grade._id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Award className="h-5 w-5 text-muted-foreground" />
@@ -206,8 +210,8 @@ const ParentDashboard = () => {
             <CardTitle>Recent Activities</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {stats.activities?.length > 0 ? (
-              stats.activities.map((activity) => (
+            {activities.length > 0 ? (
+              activities.map((activity) => (
                 <div
                   key={activity._id}
                   className="flex items-start space-x-3"

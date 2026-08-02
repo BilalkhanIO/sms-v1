@@ -36,7 +36,7 @@ const StudentDashboard = () => {
     );
   }
 
-  const studentOverview = stats?.studentOverview || {};
+  const studentOverview = (stats?.data || stats)?.studentOverview || {};
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

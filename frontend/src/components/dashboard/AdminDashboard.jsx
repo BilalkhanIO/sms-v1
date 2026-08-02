@@ -54,10 +54,10 @@ const AdminDashboard = () => {
     );
   }
 
-  // Adjusted to match backend structure
-  const overview = stats?.overview || {};
-  const recentExams = stats?.recentExams || [];
-  const activities = stats?.activities || [];
+  const statsData = stats?.data || stats || {};
+  const overview = statsData?.overview || {};
+  const recentExams = statsData?.recentExams || [];
+  const activities = statsData?.activities || [];
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
