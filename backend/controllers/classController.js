@@ -61,7 +61,9 @@ const getClassById = [
         const classData = await ClassModel.findOne(filter)
             .populate({ path: 'classTeacher', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } })
             .populate('subjects', 'name code')
-            .populate({ path: 'students', select: 'admissionNumber user', populate: { path: 'user', select: 'firstName lastName' } });
+            .populate({ path: 'students', select: 'admissionNumber user', populate: { path: 'user', select: 'firstName lastName' } })
+            .populate('schedule.periods.subject', 'name code')
+            .populate({ path: 'schedule.periods.teacher', select: 'user employeeId', populate: { path: 'user', select: 'firstName lastName' } });
 
         if (!classData) {
             return errorResponse(res, 'Class not found', 404);

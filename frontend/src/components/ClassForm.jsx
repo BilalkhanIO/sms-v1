@@ -1,11 +1,18 @@
-import { useEffect } from "react";
 import { useGetClassByIdQuery, useCreateClassMutation, useUpdateClassMutation } from "../api/classesApi";
 import { useNavigate, useParams } from "react-router-dom";
 import AsyncSelect from "react-select/async";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import * as Yup from "yup";
-import { useGetTeachersQuery } from "../api/teacherApi"; // Import useGetTeachersQuery
-import { useGetSubjectsQuery } from "../api/subjectApi"; // Import useGetSubjectsQuery
+import { useGetTeachersQuery } from "../api/teacherApi";
+import { useGetSubjectsQuery } from "../api/subjectApi";
+import { useUIStore } from "../store/zustand/useUIStore";
+import Spinner from "./common/Spinner";
+
+const inputClass = 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm';
+const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
+const selectStyles = { control: (base) => ({ ...base, borderColor: '#d1d5db', '&:hover': { borderColor: '#d1d5db' }, minHeight: '38px', fontSize: '0.875rem' }) };
+
+const daysOfWeek = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Class name is required"),
@@ -13,33 +20,35 @@ const validationSchema = Yup.object().shape({
   academicYear: Yup.string().required("Academic year is required"),
   classTeacher: Yup.object()
     .nullable()
+    .required("Class teacher is required")
     .shape({
       value: Yup.string().required("Class teacher is required"),
-      label: Yup.string().required("Class teacher is required"), // Add label
+      label: Yup.string().required(),
     }),
   subjects: Yup.array().of(
     Yup.object().shape({
-      subject: Yup.object().shape({
-        // Validate as an object
-        value: Yup.string().required("Subject is required"),
-        label: Yup.string().required("Subject is required"),
-      }),
-      // teacher field removed from here
+      subject: Yup.object()
+        .nullable()
+        .required("Subject is required")
+        .shape({
+          value: Yup.string().required("Subject is required"),
+          label: Yup.string().required(),
+        }),
     })
   ),
   schedule: Yup.array().of(
     Yup.object().shape({
-      day: Yup.string().required("Day is required"),
+      day: Yup.string().required(),
       periods: Yup.array().of(
         Yup.object().shape({
-          subject: Yup.object().shape({
-            value: Yup.string().required("Subject is required"),
-            label: Yup.string().required("Subject is required"),
-          }),
-          teacher: Yup.object().shape({
-            value: Yup.string().required("Teacher is required"),
-            label: Yup.string().required("Teacher is required"),
-          }),
+          subject: Yup.object()
+            .nullable()
+            .required("Subject is required")
+            .shape({ value: Yup.string().required(), label: Yup.string().required() }),
+          teacher: Yup.object()
+            .nullable()
+            .required("Teacher is required")
+            .shape({ value: Yup.string().required(), label: Yup.string().required() }),
           startTime: Yup.string().required("Start time is required"),
           endTime: Yup.string().required("End time is required"),
         })
@@ -49,21 +58,11 @@ const validationSchema = Yup.object().shape({
 });
 
 const ClassForm = () => {
-  const daysOfWeek = [
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
-    "SUNDAY",
-  ];
-  const { id } = useParams(); // Get class ID from URL params
+  const { id } = useParams();
   const navigate = useNavigate();
+  const addToast = useUIStore((s) => s.addToast);
 
-  const { data: classItemRaw, isLoading: isClassLoading, isError: isClassError, error: classError } = useGetClassByIdQuery(id, {
-    skip: !id,
-  });
+  const { data: classItemRaw, isLoading: isClassLoading, isError: isClassError, error: classError } = useGetClassByIdQuery(id, { skip: !id });
   const [createClassMutation] = useCreateClassMutation();
   const [updateClassMutation] = useUpdateClassMutation();
 
@@ -86,71 +85,86 @@ const ClassForm = () => {
       : null,
     subjects:
       classItem?.subjects?.length > 0
-        ? classItem.subjects.map((sub) => ({
-            subject: { value: sub._id, label: sub.name },
-          }))
+        ? classItem.subjects.map((sub) => ({ subject: { value: sub._id, label: sub.name } }))
         : [],
     schedule:
       classItem?.schedule?.length > 0
-        ? classItem.schedule
-        : daysOfWeek.map((day) => ({
-            day: day,
-            periods: [],
-          })),
+        ? classItem.schedule.map((daySchedule) => ({
+            day: daySchedule.day,
+            periods: daySchedule.periods.map((period) => ({
+              subject: period.subject?._id
+                ? { value: period.subject._id, label: period.subject.name || '' }
+                : null,
+              teacher: period.teacher?._id
+                ? {
+                    value: period.teacher._id,
+                    label: `${period.teacher.user?.firstName || ''} ${period.teacher.user?.lastName || ''} (${period.teacher.employeeId || ''})`.trim(),
+                  }
+                : null,
+              startTime: period.startTime || '',
+              endTime: period.endTime || '',
+            })),
+          }))
+        : daysOfWeek.map((day) => ({ day, periods: [] })),
   };
 
   const loadTeachers = async () => {
     if (isTeachersLoading || !Array.isArray(teacherList)) return [];
     return teacherList.map((t) => ({
-      value: t.user?._id,
+      value: t._id,
       label: `${t.user?.firstName || ''} ${t.user?.lastName || ''} (${t.employeeId || ''})`.trim(),
     }));
   };
 
   const loadSubjects = async () => {
     if (isSubjectsLoading || !Array.isArray(subjectList)) return [];
-    return subjectList.map((s) => ({
-      value: s._id,
-      label: s.name,
-    }));
+    return subjectList.map((s) => ({ value: s._id, label: s.name }));
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const classData = {
-        ...values,
-        classTeacher: values.classTeacher.value,
-        subjects: values.subjects.map((s) => s.subject.value),
+        name: values.name,
+        section: values.section,
+        academicYear: values.academicYear,
+        classTeacher: values.classTeacher?.value,
+        subjects: values.subjects.filter((s) => s.subject?.value).map((s) => s.subject.value),
         schedule: values.schedule.map((daySchedule) => ({
           day: daySchedule.day,
-          periods: daySchedule.periods.map((period) => ({
-            subject: period.subject.value,
-            teacher: period.teacher.value,
-            startTime: period.startTime,
-            endTime: period.endTime,
-          })),
+          periods: daySchedule.periods
+            .filter((p) => p.subject?.value && p.teacher?.value)
+            .map((period) => ({
+              subject: period.subject.value,
+              teacher: period.teacher.value,
+              startTime: period.startTime,
+              endTime: period.endTime,
+            })),
         })),
       };
 
       if (id) {
         await updateClassMutation({ id, ...classData }).unwrap();
+        addToast({ type: 'success', title: 'Class updated successfully' });
       } else {
         await createClassMutation(classData).unwrap();
+        addToast({ type: 'success', title: 'Class created successfully' });
       }
       navigate("/dashboard/classes");
     } catch (error) {
-      console.error("Error submitting class:", error);
-      // Handle error (e.g., show error message)
+      const msg = error.data?.message || error.error || 'Failed to save class';
+      addToast({ type: 'error', title: 'Error', message: msg });
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (id && isClassLoading) {
-    return <div>Loading...</div>;
-  }
+  if (id && isClassLoading) return <Spinner size="large" />;
   if (isClassError) {
-    return <div>Error: {classError.message}</div>; // Display error message
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+        {classError?.data?.message || classError?.error || 'Failed to load class data.'}
+      </div>
+    );
   }
 
   return (
@@ -158,107 +172,72 @@ const ClassForm = () => {
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={handleSubmit}
-      enableReinitialize // Important for updating form with fetched data
+      enableReinitialize
     >
       {({ isSubmitting, values, setFieldValue }) => (
-        <Form className="space-y-4">
+        <Form className="max-w-2xl mx-auto bg-white shadow rounded-lg p-6 space-y-6">
+
+          {/* Basic Info */}
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Class Name
-            </label>
-            <Field
-              type="text"
-              name="name"
-              id="name"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-            />
-            <ErrorMessage
-              name="name"
-              component="div"
-              className="text-red-500 text-xs"
-            />
-          </div>
-          <div>
-            <label htmlFor="section">Section</label>
-            <Field
-              type="text"
-              name="section"
-              id="section"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-            />
-            <ErrorMessage
-              name="section"
-              component="div"
-              className="text-red-500 text-xs"
-            />
-          </div>
-          <div>
-            <label htmlFor="academicYear">Academic Year</label>
-            <Field
-              type="text"
-              name="academicYear"
-              id="academicYear"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-            />
-            <ErrorMessage
-              name="academicYear"
-              component="div"
-              className="text-red-500 text-xs"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Class Teacher
-            </label>
-            <AsyncSelect
-              cacheOptions
-              defaultOptions
-              loadOptions={loadTeachers}
-              getOptionValue={(option) => option.value}
-              getOptionLabel={(option) => option.label}
-              onChange={(option) => setFieldValue("classTeacher", option)}
-              value={values.classTeacher}
-              isLoading={isTeachersLoading} // Show loading indicator
-            />
-            <ErrorMessage
-              name="classTeacher"
-              component="div"
-              className="text-red-500 text-xs"
-            />
+            <h4 className="text-base font-semibold text-gray-800 mb-3">Class Information</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Class Name *</label>
+                <Field type="text" name="name" className={inputClass} placeholder="e.g. Grade 10" />
+                <ErrorMessage name="name" component="p" className="mt-1 text-sm text-red-600" />
+              </div>
+              <div>
+                <label className={labelClass}>Section *</label>
+                <Field type="text" name="section" className={inputClass} placeholder="e.g. A" />
+                <ErrorMessage name="section" component="p" className="mt-1 text-sm text-red-600" />
+              </div>
+              <div className="col-span-2">
+                <label className={labelClass}>Academic Year *</label>
+                <Field type="text" name="academicYear" className={inputClass} placeholder="e.g. 2024-2025" />
+                <ErrorMessage name="academicYear" component="p" className="mt-1 text-sm text-red-600" />
+              </div>
+              <div className="col-span-2">
+                <label className={labelClass}>Class Teacher *</label>
+                <AsyncSelect
+                  cacheOptions
+                  defaultOptions
+                  loadOptions={loadTeachers}
+                  onChange={(option) => setFieldValue("classTeacher", option)}
+                  value={values.classTeacher}
+                  isLoading={isTeachersLoading}
+                  placeholder="Select teacher..."
+                  isClearable
+                  styles={selectStyles}
+                />
+                <ErrorMessage name="classTeacher" component="p" className="mt-1 text-sm text-red-600" />
+              </div>
+            </div>
           </div>
 
+          {/* Subjects */}
           <div>
-            <label className="block text-sm font-medium mb-1">Subjects</label>
+            <h4 className="text-base font-semibold text-gray-800 mb-3">Subjects</h4>
             <FieldArray name="subjects">
               {({ push, remove }) => (
-                <div>
-                  {values.subjects.map((subject, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-2 mb-2"
-                    >
-                      <AsyncSelect
-                        cacheOptions
-                        defaultOptions
-                        loadOptions={loadSubjects}
-                        getOptionValue={(option) => option.value}
-                        getOptionLabel={(option) => option.label}
-                        onChange={(option) =>
-                          setFieldValue(`subjects.${index}.subject`, option)
-                        }
-                        value={values.subjects[index].subject}
-                        className="flex-grow"
-                        name={`subjects.${index}.subject`}
-                        isLoading={isSubjectsLoading} // Show loading indicator
-                      />
-                      {/* Teacher select removed from here */}
+                <div className="space-y-2">
+                  {values.subjects.map((_, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <AsyncSelect
+                          cacheOptions
+                          defaultOptions
+                          loadOptions={loadSubjects}
+                          onChange={(option) => setFieldValue(`subjects.${index}.subject`, option)}
+                          value={values.subjects[index].subject}
+                          isLoading={isSubjectsLoading}
+                          placeholder="Select subject..."
+                          styles={selectStyles}
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => remove(index)}
-                        className="text-red-500"
+                        className="px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
                       >
                         Remove
                       </button>
@@ -267,89 +246,69 @@ const ClassForm = () => {
                   <button
                     type="button"
                     onClick={() => push({ subject: null })}
-                    className="text-blue-500"
+                    className="text-sm text-blue-600 hover:underline"
                   >
-                    Add Subject
+                    + Add Subject
                   </button>
                 </div>
               )}
             </FieldArray>
           </div>
 
+          {/* Schedule */}
           <div>
-            <label className="block text-sm font-medium mb-1">Schedule</label>
+            <h4 className="text-base font-semibold text-gray-800 mb-3">Weekly Schedule</h4>
             <FieldArray name="schedule">
               {() => (
-                <div>
+                <div className="space-y-3">
                   {values.schedule.map((daySchedule, dayIndex) => (
-                    <div key={dayIndex} className="mb-4 border p-4 rounded-md">
-                      <h4 className="font-semibold">{daySchedule.day}</h4>
+                    <div key={dayIndex} className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="text-sm font-semibold text-gray-700 mb-2">{daySchedule.day}</h5>
                       <FieldArray name={`schedule.${dayIndex}.periods`}>
                         {({ push: pushPeriod, remove: removePeriod }) => (
-                          <div>
+                          <div className="space-y-2">
                             {daySchedule.periods.map((period, periodIndex) => (
-                              <div
-                                key={periodIndex}
-                                className="mb-2 flex items-center space-x-2"
-                              >
-                                <AsyncSelect
-                                  cacheOptions
-                                  defaultOptions
-                                  loadOptions={loadSubjects}
-                                  getOptionValue={(option) => option.value}
-                                  getOptionLabel={(option) => option.label}
-                                  onChange={(option) =>
-                                    setFieldValue(
-                                      `schedule.${dayIndex}.periods.${periodIndex}.subject`,
-                                      option
-                                    )
-                                  }
-                                  value={
-                                    values.schedule[dayIndex].periods[
-                                      periodIndex
-                                    ].subject
-                                  }
-                                  className="flex-grow"
-                                  name={`schedule.${dayIndex}.periods.${periodIndex}.subject`}
-                                  isLoading={isSubjectsLoading}
-                                />
-
-                                <AsyncSelect
-                                  cacheOptions
-                                  defaultOptions
-                                  loadOptions={loadTeachers}
-                                  getOptionValue={(option) => option.value}
-                                  getOptionLabel={(option) => option.label}
-                                  onChange={(option) =>
-                                    setFieldValue(
-                                      `schedule.${dayIndex}.periods.${periodIndex}.teacher`,
-                                      option
-                                    )
-                                  }
-                                  value={
-                                    values.schedule[dayIndex].periods[
-                                      periodIndex
-                                    ].teacher
-                                  }
-                                  className="flex-grow"
-                                  name={`schedule.${dayIndex}.periods.${periodIndex}.teacher`}
-                                  isLoading={isTeachersLoading}
-                                />
-
-                                <Field
+                              <div key={periodIndex} className="flex items-center gap-2 flex-wrap">
+                                <div className="flex-1 min-w-[140px]">
+                                  <AsyncSelect
+                                    cacheOptions
+                                    defaultOptions
+                                    loadOptions={loadSubjects}
+                                    onChange={(option) => setFieldValue(`schedule.${dayIndex}.periods.${periodIndex}.subject`, option)}
+                                    value={values.schedule[dayIndex].periods[periodIndex].subject}
+                                    isLoading={isSubjectsLoading}
+                                    placeholder="Subject..."
+                                    styles={selectStyles}
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-[140px]">
+                                  <AsyncSelect
+                                    cacheOptions
+                                    defaultOptions
+                                    loadOptions={loadTeachers}
+                                    onChange={(option) => setFieldValue(`schedule.${dayIndex}.periods.${periodIndex}.teacher`, option)}
+                                    value={values.schedule[dayIndex].periods[periodIndex].teacher}
+                                    isLoading={isTeachersLoading}
+                                    placeholder="Teacher..."
+                                    styles={selectStyles}
+                                  />
+                                </div>
+                                <input
                                   type="time"
-                                  name={`schedule.${dayIndex}.periods.${periodIndex}.startTime`}
-                                  className="border rounded p-2"
+                                  value={period.startTime}
+                                  onChange={(e) => setFieldValue(`schedule.${dayIndex}.periods.${periodIndex}.startTime`, e.target.value)}
+                                  className="px-2 py-1.5 border border-gray-300 rounded text-sm"
                                 />
-                                <Field
+                                <input
                                   type="time"
-                                  name={`schedule.${dayIndex}.periods.${periodIndex}.endTime`}
-                                  className="border rounded p-2"
+                                  value={period.endTime}
+                                  onChange={(e) => setFieldValue(`schedule.${dayIndex}.periods.${periodIndex}.endTime`, e.target.value)}
+                                  className="px-2 py-1.5 border border-gray-300 rounded text-sm"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => removePeriod(periodIndex)}
-                                  className="text-red-500"
+                                  className="text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded"
                                 >
                                   Remove
                                 </button>
@@ -357,17 +316,10 @@ const ClassForm = () => {
                             ))}
                             <button
                               type="button"
-                              onClick={() =>
-                                pushPeriod({
-                                  subject: null,
-                                  teacher: null,
-                                  startTime: "",
-                                  endTime: "",
-                                })
-                              }
-                              className="text-blue-500"
+                              onClick={() => pushPeriod({ subject: null, teacher: null, startTime: '', endTime: '' })}
+                              className="text-sm text-blue-600 hover:underline"
                             >
-                              Add Period
+                              + Add Period
                             </button>
                           </div>
                         )}
@@ -379,13 +331,22 @@ const ClassForm = () => {
             </FieldArray>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            {isSubmitting ? "Saving..." : "Save Class"}
-          </button>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/classes')}
+              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isSubmitting ? 'Saving...' : id ? 'Update Class' : 'Create Class'}
+            </button>
+          </div>
         </Form>
       )}
     </Formik>

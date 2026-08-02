@@ -54,12 +54,12 @@ const ClassDetails = () => {
               <dd className="font-medium text-gray-900">{classData.section || '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-500">Grade</dt>
-              <dd className="font-medium text-gray-900">{classData.grade ? `Grade ${classData.grade}` : '—'}</dd>
+              <dt className="text-gray-500">Total Students</dt>
+              <dd className="font-medium text-gray-900">{classData.students?.length ?? 0}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-500">Capacity</dt>
-              <dd className="font-medium text-gray-900">{classData.capacity ?? '—'}</dd>
+              <dt className="text-gray-500">Total Subjects</dt>
+              <dd className="font-medium text-gray-900">{classData.subjects?.length ?? 0}</dd>
             </div>
           </dl>
         </div>
@@ -74,7 +74,7 @@ const ClassDetails = () => {
               <p className="font-medium text-gray-900">
                 {`${classData.classTeacher.user?.firstName ?? ''} ${classData.classTeacher.user?.lastName ?? ''}`.trim() || '—'}
               </p>
-              <p className="text-gray-500 mt-0.5">{classData.classTeacher.user?.email || '—'}</p>
+              <p className="text-gray-500 mt-0.5">Employee ID: {classData.classTeacher.employeeId || '—'}</p>
               <Link
                 to={`/dashboard/teachers/${classData.classTeacher._id}`}
                 className="text-blue-600 hover:underline text-xs mt-2 inline-block"
@@ -104,7 +104,7 @@ const ClassDetails = () => {
                   <p className="text-sm font-medium text-gray-900">
                     {`${student.user?.firstName ?? ''} ${student.user?.lastName ?? ''}`.trim() || '—'}
                   </p>
-                  <p className="text-xs text-gray-400">{student.rollNumber || ''}</p>
+                  <p className="text-xs text-gray-400">{student.admissionNumber || ''}</p>
                 </div>
                 <Link
                   to={`/dashboard/students/${student._id}`}
