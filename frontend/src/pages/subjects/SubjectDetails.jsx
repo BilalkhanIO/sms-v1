@@ -11,7 +11,7 @@ import Modal from '../../components/common/Modal';
 const SubjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { can } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: subject, isLoading, error } = useGetSubjectByIdQuery(id);
@@ -40,7 +40,7 @@ const SubjectDetails = () => {
         title="Subject Details"
         backUrl="/dashboard/subjects"
       >
-        {isAdmin && (
+        {can('subjects', 'edit') && (
           <div className="flex space-x-4">
             <Link to={`/dashboard/subjects/${id}/edit`}>
               <Button variant="secondary">

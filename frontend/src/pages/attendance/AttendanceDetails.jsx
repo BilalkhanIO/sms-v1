@@ -13,7 +13,7 @@ import { useState } from 'react';
 const AttendanceDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isTeacher, isAdmin } = useAuth();
+  const { can } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: attendance, isLoading, error } = useGetAttendanceByIdQuery(id);
@@ -57,7 +57,7 @@ const AttendanceDetails = () => {
         title="Attendance Details"
         backButton
       >
-        {(isTeacher || isAdmin) && (
+        {can('attendance', 'edit') && (
           <div className="flex space-x-4">
             <Link to={`/dashboard/attendance/${id}/edit`}>
               <Button variant="secondary">

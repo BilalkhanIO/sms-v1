@@ -8,7 +8,7 @@ import { Calendar, Filter, Search } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 const CalendarList = () => {
-  const { isAdmin } = useAuth();
+  const { can } = useAuth();
   const [filters, setFilters] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
@@ -40,7 +40,7 @@ const CalendarList = () => {
   return (
     <div className="container mx-auto px-4 py-6">
       <PageHeader title="Calendar">
-        {isAdmin && (
+        {can('calendar', 'edit') && (
           <Link to="/dashboard/calendar/create">
             <Button>
               <Calendar className="w-4 h-4 mr-2" />
@@ -118,7 +118,7 @@ const CalendarList = () => {
                     </span>
                   </div>
                 </div>
-                {isAdmin && (
+                {can('calendar', 'edit') && (
                   <div className="flex space-x-2">
                     <Link
                       to={`/dashboard/calendar/${event.id}/edit`}

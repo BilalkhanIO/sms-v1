@@ -11,7 +11,7 @@ import Modal from '../../components/common/Modal';
 const FeesDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { can } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: fee, isLoading: isLoadingFee } = useGetFeeByIdQuery(id);
@@ -52,7 +52,7 @@ const FeesDetails = () => {
         title="Fee Details"
         backUrl="/dashboard/fees"
       >
-        {isAdmin && (
+        {can('fees', 'edit') && (
           <div className="flex space-x-4">
             <Link to={`/dashboard/fees/${id}/payment`}>
               <Button variant="primary">
