@@ -22,26 +22,26 @@ const SchoolDetailsDashboard = () => {
     );
   }
 
-  const {
-    schoolName,
-    studentCount,
-    teacherCount,
-    classCount,
-    averageAttendance,
-    revenue,
-    expenses,
-    genderDistribution,
-  } = schoolDetails || {};
+  const { school, overview, recentExams } = schoolDetails || {};
 
-  const financialData = [
-    { name: 'Revenue', value: revenue },
-    { name: 'Expenses', value: expenses },
-    { name: 'Profit', value: revenue - expenses },
-  ];
+  const feeChartData = overview?.feeSummary
+    ? [
+        { name: 'Billed', value: overview.feeSummary.totalAmount || 0 },
+        { name: 'Paid', value: overview.feeSummary.totalPaid || 0 },
+        { name: 'Pending', value: overview.feeSummary.pending || 0 },
+      ]
+    : [];
+
+  const attendanceChartData = overview?.todayAttendance
+    ? Object.entries(overview.todayAttendance).map(([status, count]) => ({
+        name: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
+        count,
+      }))
+    : [];
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">{schoolName} - Detailed Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">{school?.name} - Detailed Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card>
@@ -49,7 +49,7 @@ const SchoolDetailsDashboard = () => {
             <CardTitle>Total Students</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{studentCount}</p>
+            <p className="text-4xl font-bold">{overview?.totalStudents ?? '—'}</p>
           </CardContent>
         </Card>
         <Card>
@@ -57,7 +57,7 @@ const SchoolDetailsDashboard = () => {
             <CardTitle>Total Teachers</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{teacherCount}</p>
+            <p className="text-4xl font-bold">{overview?.totalTeachers ?? '—'}</p>
           </CardContent>
         </Card>
         <Card>
@@ -65,15 +65,15 @@ const SchoolDetailsDashboard = () => {
             <CardTitle>Total Classes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{classCount}</p>
+            <p className="text-4xl font-bold">{overview?.totalClasses ?? '—'}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Avg. Attendance</CardTitle>
+            <CardTitle>Active Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{averageAttendance}%</p>
+            <p className="text-4xl font-bold">{overview?.activeUsers ?? '—'}</p>
           </CardContent>
         </Card>
       </div>
@@ -81,11 +81,11 @@ const SchoolDetailsDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Financial Overview</CardTitle>
+            <CardTitle>Fee Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={financialData}>
+              <BarChart data={feeChartData}>
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
@@ -97,11 +97,11 @@ const SchoolDetailsDashboard = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Student Gender Distribution</CardTitle>
+            <CardTitle>Today&apos;s Attendance</CardTitle>
           </CardHeader>
           <CardContent>
-             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={genderDistribution}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={attendanceChartData}>
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />

@@ -25,10 +25,11 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     if (userProfile) {
+      const profile = userProfile.data || userProfile;
       setFormData({
-        firstName: userProfile.firstName || '',
-        lastName: userProfile.lastName || '',
-        email: userProfile.email || '',
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        email: profile.email || '',
       });
     }
   }, [userProfile]);

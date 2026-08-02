@@ -34,9 +34,10 @@ const TeacherList = () => {
   };
 
   const handleDelete = (teacher) => {
+    const teacherName = `${teacher.user?.firstName ?? ''} ${teacher.user?.lastName ?? ''}`.trim() || teacher.employeeId || 'this teacher';
     openConfirm({
       title: 'Delete Teacher',
-      message: `Are you sure you want to delete ${teacher.user?.firstName} ${teacher.user?.lastName}? This cannot be undone.`,
+      message: `Are you sure you want to delete ${teacherName}? This cannot be undone.`,
       danger: true,
       onConfirm: async () => {
         try {
