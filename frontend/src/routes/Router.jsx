@@ -94,6 +94,7 @@ import BackupManagement from "../pages/admin/BackupManagement";
 // New Modules
 import TimetableView from "../pages/timetable/TimetableView";
 import TimetableManage from "../pages/timetable/TimetableManage";
+import TimetableEdit from "../pages/timetable/TimetableEdit";
 import AssignmentList from "../pages/assignments/AssignmentList";
 import AssignmentDetails from "../pages/assignments/AssignmentDetails";
 import LibraryList from "../pages/library/LibraryList";
@@ -186,6 +187,7 @@ const Router = () => {
         {/* Timetable */}
         <Route path="timetable" element={<PrivateRoute><TimetableView /></PrivateRoute>} />
         <Route path="timetable/manage" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><TimetableManage /></PrivateRoute>} />
+        <Route path="timetable/class/:classId/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><TimetableEdit /></PrivateRoute>} />
 
         {/* Assignments */}
         <Route path="assignments" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentList /></PrivateRoute>} />

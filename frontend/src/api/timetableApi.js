@@ -6,6 +6,10 @@ export const timetableApi = api.injectEndpoints({
       query: (classId) => `/timetables/class/${classId}`,
       providesTags: (result, error, classId) => [{ type: 'Timetables', id: classId }],
     }),
+    getTimetableById: builder.query({
+      query: (id) => `/timetables/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Timetables', id }],
+    }),
     getMyTimetable: builder.query({
       query: () => '/timetables/me',
       providesTags: ['Timetables'],
@@ -41,6 +45,7 @@ export const timetableApi = api.injectEndpoints({
 
 export const {
   useGetTimetableByClassQuery,
+  useGetTimetableByIdQuery,
   useGetMyTimetableQuery,
   useCreateTimetableMutation,
   useUpdateTimetableMutation,
