@@ -48,6 +48,10 @@ export const multiSchoolAdminApi = api.injectEndpoints({
       }),
       invalidatesTags: ['MultiSchoolAdmins'],
     }),
+    getAllManagedUsers: builder.query({
+      query: () => 'users/all',
+      providesTags: ['Users'],
+    }),
   }),
 });
 
@@ -60,4 +64,5 @@ export const {
   useGetMultiSchoolAdminsQuery,
   useAssignMultiSchoolAdminMutation,
   useRemoveMultiSchoolAdminMutation,
+  useGetAllManagedUsersQuery,
 } = multiSchoolAdminApi;
