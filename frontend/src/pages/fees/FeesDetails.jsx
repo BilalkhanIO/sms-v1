@@ -54,7 +54,7 @@ const FeesDetails = () => {
       >
         {can('fees', 'edit') && (
           <div className="flex space-x-4">
-            <Link to={`/dashboard/fees/${id}/payment`}>
+            <Link to={`/dashboard/fees/${id}/pay`}>
               <Button variant="primary">
                 <Receipt className="w-4 h-4 mr-2" />
                 Record Payment

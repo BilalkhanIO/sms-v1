@@ -16,11 +16,14 @@ const ResultEntry = () => {
   const [results, setResults] = useState([]);
   const [errors, setErrors] = useState({});
 
-  const { data: exam, isLoading: isLoadingExam } = useGetExamByIdQuery(id);
-  const { data: students, isLoading: isLoadingStudents } = useGetStudentsByClassQuery(
-    exam?.classId,
-    { skip: !exam?.classId }
+  const { data: examRaw, isLoading: isLoadingExam } = useGetExamByIdQuery(id);
+  const exam = examRaw?.data || examRaw;
+  const classId = exam?.class?._id || exam?.class;
+  const { data: studentsRaw, isLoading: isLoadingStudents } = useGetStudentsByClassQuery(
+    classId,
+    { skip: !classId }
   );
+  const studentList = studentsRaw?.data || studentsRaw || [];
   const [submitResults, { isLoading: isSubmitting }] = useSubmitResultsMutation();
 
   if (!user || !['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
@@ -32,8 +35,8 @@ const ResultEntry = () => {
     return <Spinner size="large" />;
   }
 
-  const filteredStudents = students?.filter(student =>
-    `${student.firstName} ${student.lastName} ${student.rollNumber}`
+  const filteredStudents = studentList.filter(student =>
+    `${student.user?.firstName ?? ''} ${student.user?.lastName ?? ''} ${student.rollNumber ?? ''}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -152,16 +155,16 @@ const ResultEntry = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredStudents?.map((student) => {
-                const result = results.find(r => r.studentId === student.id);
+                const result = results.find(r => r.studentId === student._id);
                 const status = getResultStatus(result?.marks);
                 return (
-                  <tr key={student.id}>
+                  <tr key={student._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {student.rollNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {student.firstName} {student.lastName}
+                        {student.user?.firstName ?? ''} {student.user?.lastName ?? ''}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -171,7 +174,7 @@ const ResultEntry = () => {
                           min="0"
                           max={exam.totalMarks}
                           value={result?.marks || ''}
-                          onChange={(e) => handleMarksChange(student.id, e.target.value)}
+                          onChange={(e) => handleMarksChange(student._id, e.target.value)}
                           className={`w-24 px-3 py-1 border rounded-md ${
                             errors[student.id] ? 'border-red-500' : 'border-gray-300'
                           }`}

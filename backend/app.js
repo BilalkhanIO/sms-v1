@@ -32,6 +32,8 @@ import leaveRoutes from "./routes/leaveRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import academicYearRoutes from "./routes/academicYearRoutes.js";
 import timetableRoutes from "./routes/timetableRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import assignmentRoutes from "./routes/assignmentRoutes.js";
 
 const app = express();
 
@@ -90,6 +92,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/academic-years", academicYearRoutes);
 app.use("/api/timetables", timetableRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/assignments", assignmentRoutes);
 
 // Handle 404 errors (Route not found)
 app.use((req, res, next) => {

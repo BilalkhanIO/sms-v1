@@ -144,7 +144,7 @@ const Router = () => {
         <Route path="exams/:id" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ExamDetails /></PrivateRoute>} />
         <Route path="exams/:id/edit" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ExamForm /></PrivateRoute>} />
         <Route path="exams/:id/results" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ResultEntry /></PrivateRoute>} />
-        <Route path="exams/reports" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ResultReport /></PrivateRoute>} />
+        <Route path="exams/:id/report" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]}><ResultReport /></PrivateRoute>} />
 
         {/* Fee Routes */}
         <Route path="fees" element={<PrivateRoute roles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}><FeesList /></PrivateRoute>} />

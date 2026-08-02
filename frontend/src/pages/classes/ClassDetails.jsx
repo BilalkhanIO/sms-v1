@@ -1,148 +1,150 @@
-// src/pages/classes/ClassDetails.jsx
-import  { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetClassByIdQuery } from '../../api/classesApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import ScheduleView from '../../components/ScheduleView';
-import StudentList from '../../components/StudentList';
-import API from '../../api';
-import AsyncSelect from 'react-select/async';
+import Spinner from '../../components/common/Spinner';
+import PageHeader from '../../components/common/PageHeader';
+import useAuth from '../../hooks/useAuth';
+import { GraduationCap, Users, BookOpen, Edit } from 'lucide-react';
 
-export default function ClassDetails() {
+const ClassDetails = () => {
   const { id } = useParams();
-  const { data: classDetails, isLoading, error } = useGetClassByIdQuery(id);
-  const [isEnrolling, setIsEnrolling] = useState(false);
-  const [studentToAdd, setStudentToAdd] = useState(null);
-  const [serverError, setServerError] = useState(null);
-  const [students, setStudents] = useState([]);
+  const { can } = useAuth();
 
-  // Class data is now fetched automatically by RTK Query
+  const { data, isLoading, isError, error } = useGetClassByIdQuery(id);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const response = await API.get('/students');
-        setStudents(response.data);
-      } catch (error) {
-        console.error('Error fetching students:', error);
-      }
-    };
-
-    fetchStudents();
-  }, []);
-
-  const handleEnrollStudents = async () => {
-    setServerError(null);
-    if (!studentToAdd) return;
-
-    setIsEnrolling(true);
-    try {
-      await dispatch(addStudentToClass({ classId: id, studentId: studentToAdd.value }));
-      setStudentToAdd(null);
-    } catch (error) {
-      console.error("Error enrolling student:", error);
-      if (error.response && error.response.data && error.response.data.message) {
-        setServerError(error.response.data.message);
-      } else {
-        setServerError("An error occurred while enrolling the student.");
-      }
-    } finally {
-      setIsEnrolling(false);
-    }
-  };
-
-  const handleRemoveStudent = async (studentId) => {
-    setServerError(null);
-    try {
-      await dispatch(removeStudentFromClass({ classId: id, studentId }));
-    } catch (error) {
-      console.error("Error removing student:", error);
-      if (error.response && error.response.data && error.response.data.message) {
-        setServerError(error.response.data.message);
-      } else {
-        setServerError("An error occurred while removing the student.");
-      }
-    }
-  };
-
-  const loadStudents = async (inputValue) => {
-    const res = await API.get(`/students?search=${inputValue}`);
-    return res.data.map((s) => ({
-      value: s._id,
-      label: `${s.user?.firstName} ${s.user?.lastName} (${s.rollNumber})`,
-    }));
-  };
-
-  if (isLoading || !classDetails) {
-    return <LoadingSpinner />;
+  if (isLoading) return <Spinner size="large" />;
+  if (isError || !data) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+        {error?.data?.message || 'Failed to load class details.'}
+      </div>
+    );
   }
 
-  if (error) {
-    return <div>Error: {error?.data?.message || 'Failed to load class details'}</div>;
-  }
+  const classData = data?.data || data;
 
   return (
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">
-              {classDetails?.name} - {classDetails?.section} {/* Optional Chaining */}
-            </h1>
-            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-            {classDetails?.academicYear} {/* Optional Chaining */}
-          </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-semibold mb-2">Class Teacher</h3>
-              <p>
-                {classDetails?.classTeacher?.user?.firstName}{" "} {/* Optional Chaining */}
-                {classDetails?.classTeacher?.user?.lastName} {/* Optional Chaining */}
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Total Students</h3>
-              <p>{classDetails?.students?.length || 0}</p> {/* Optional Chaining */}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-bold mb-4">Class Schedule</h2>
-          <ScheduleView schedule={classDetails?.schedule} /> {/* Optional Chaining */}
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Students</h2>
-            <Link to={`/classes/${id}/add-students`} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-              Add Students
+    <div>
+      <PageHeader
+        title={`${classData.name}${classData.section ? ` — ${classData.section}` : ''}`}
+        backUrl="/dashboard/classes"
+        action={
+          can('classes', 'edit') && (
+            <Link
+              to={`/dashboard/classes/update/${id}`}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            >
+              <Edit className="h-4 w-4" /> Edit Class
             </Link>
-          </div>
-          {serverError && <div className="text-red-500 mb-4">{serverError}</div>}
-          <AsyncSelect
-              cacheOptions
-              defaultOptions
-              loadOptions={loadStudents}
-              getOptionValue={(option) => option.value}
-              getOptionLabel={(option) => option.label}
-              onChange={(option) => setStudentToAdd(option)}
-              value={studentToAdd}
-          />
-          <button
-              onClick={handleEnrollStudents}
-              disabled={isEnrolling || !studentToAdd}
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2 disabled:bg-gray-400"
-          >
-            {isEnrolling ? 'Enrolling...' : 'Enroll Student'}
-          </button>
+          )
+        }
+      />
 
-          <StudentList
-              students={classDetails?.students}
-              onRemove={handleRemoveStudent}
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Basic Info */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-base font-semibold text-gray-800 mb-4">Class Information</h3>
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-gray-500">Academic Year</dt>
+              <dd className="font-medium text-gray-900">{classData.academicYear || '—'}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-gray-500">Section</dt>
+              <dd className="font-medium text-gray-900">{classData.section || '—'}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-gray-500">Grade</dt>
+              <dd className="font-medium text-gray-900">{classData.grade ? `Grade ${classData.grade}` : '—'}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-gray-500">Capacity</dt>
+              <dd className="font-medium text-gray-900">{classData.capacity ?? '—'}</dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Class Teacher */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-gray-400" /> Class Teacher
+          </h3>
+          {classData.classTeacher ? (
+            <div className="text-sm">
+              <p className="font-medium text-gray-900">
+                {`${classData.classTeacher.user?.firstName ?? ''} ${classData.classTeacher.user?.lastName ?? ''}`.trim() || '—'}
+              </p>
+              <p className="text-gray-500 mt-0.5">{classData.classTeacher.user?.email || '—'}</p>
+              <Link
+                to={`/dashboard/teachers/${classData.classTeacher._id}`}
+                className="text-blue-600 hover:underline text-xs mt-2 inline-block"
+              >
+                View Teacher Profile →
+              </Link>
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No class teacher assigned.</p>
+          )}
         </div>
       </div>
+
+      {/* Students */}
+      <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <Users className="h-5 w-5 text-gray-400" />
+            Students ({classData.students?.length ?? 0})
+          </h3>
+        </div>
+        {classData.students?.length > 0 ? (
+          <div className="divide-y divide-gray-100">
+            {classData.students.map((student) => (
+              <div key={student._id} className="px-6 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {`${student.user?.firstName ?? ''} ${student.user?.lastName ?? ''}`.trim() || '—'}
+                  </p>
+                  <p className="text-xs text-gray-400">{student.rollNumber || ''}</p>
+                </div>
+                <Link
+                  to={`/dashboard/students/${student._id}`}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  View →
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="px-6 py-8 text-center text-gray-400 text-sm">No students enrolled in this class.</p>
+        )}
+      </div>
+
+      {/* Subjects */}
+      {classData.subjects?.length > 0 && (
+        <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-gray-400" /> Subjects
+            </h3>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {classData.subjects.map((subject) => (
+              <div key={subject._id} className="px-6 py-3 flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-900">{subject.name || '—'}</p>
+                <Link
+                  to={`/dashboard/subjects/${subject._id}`}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  View →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default ClassDetails;

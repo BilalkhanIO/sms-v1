@@ -387,7 +387,12 @@ const getUserRegistrationTrends = asyncHandler(async (req, res) => {
 });
 
 
-export { getDashboardStats, getSuperAdminStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends, getSchoolDetails };
+const getSuperAdminStatsHandler = asyncHandler(async (req, res) => {
+  const stats = await getSuperAdminStats();
+  res.status(200).json({ success: true, message: 'Stats retrieved', data: stats });
+});
+
+export { getDashboardStats, getSuperAdminStatsHandler as getSuperAdminStats, getSchoolStats, getUserRoleDistribution, getUserStatusDistribution, getSchoolStatusDistribution, getUserRegistrationTrends, getSchoolDetails };
 
 const getSchoolAdminStats = async (schoolId) => {
   const [

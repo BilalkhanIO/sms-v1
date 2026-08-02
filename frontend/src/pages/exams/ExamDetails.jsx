@@ -110,9 +110,14 @@ const ExamDetails = () => {
         <div className="mt-6 bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4 text-gray-800">Results Summary</h3>
           <p className="text-gray-500">{exam.results.length} result(s) recorded.</p>
-          <Link to={`/dashboard/exams/${id}/results`} className="text-blue-600 hover:underline text-sm mt-2 inline-block">
-            View / Edit Results →
-          </Link>
+          <div className="flex gap-4 mt-2">
+            <Link to={`/dashboard/exams/${id}/results`} className="text-blue-600 hover:underline text-sm inline-block">
+              Enter / Edit Results →
+            </Link>
+            <Link to={`/dashboard/exams/${id}/report`} className="text-green-600 hover:underline text-sm inline-block">
+              View Results Report →
+            </Link>
+          </div>
         </div>
       )}
     </div>

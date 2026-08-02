@@ -27,8 +27,10 @@ const ExamForm = () => {
   const isEditing = Boolean(id);
 
   const { data: exam, isLoading: isLoadingExam } = useGetExamByIdQuery(id, { skip: !isEditing });
-  const { data: classes } = useGetClassesQuery();
-  const { data: subjects } = useGetSubjectsQuery();
+  const { data: classesRaw } = useGetClassesQuery();
+  const { data: subjectsRaw } = useGetSubjectsQuery();
+  const classes = classesRaw?.data || classesRaw || [];
+  const subjects = subjectsRaw?.data || subjectsRaw || [];
   const [createExam, { isLoading: isCreating }] = useCreateExamMutation();
   const [updateExam, { isLoading: isUpdating }] = useUpdateExamMutation();
 

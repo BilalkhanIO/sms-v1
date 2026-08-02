@@ -44,6 +44,25 @@ router
     getAttendanceReport
   );
 
+// Static paths must come before /:id
+router.route("/student/:studentId").get(protect, setSchoolId, getStudentAttendance);
+router
+  .route("/class/:classId")
+  .get(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    setSchoolId,
+    getClassAttendance
+  );
+router
+  .route("/stats")
+  .get(
+    protect,
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
+    setSchoolId,
+    getAttendanceStats
+  );
+
 // GET /api/attendance/:id - Get attendance by ID (Admin, Teacher)
 router
   .route("/:id")
@@ -64,25 +83,6 @@ router
     authorize("TEACHER", "SUPER_ADMIN", "SCHOOL_ADMIN"),
     setSchoolId,
     deleteAttendanceById
-  );
-
-// Additional listings and stats
-router.route("/student/:studentId").get(protect, setSchoolId, getStudentAttendance);
-router
-  .route("/class/:classId")
-  .get(
-    protect,
-    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
-    setSchoolId,
-    getClassAttendance
-  );
-router
-  .route("/stats")
-  .get(
-    protect,
-    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"),
-    setSchoolId,
-    getAttendanceStats
   );
 
 export default router;

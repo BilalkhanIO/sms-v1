@@ -66,7 +66,7 @@ const updateUserTypeData = async (role, userId, userData, session) => {
 // @access  Private/SuperAdmin
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find({}).populate('school', 'name');
-  res.json(users);
+  return successResponse(res, users, 'Users retrieved successfully');
 });
 
 // @desc       Get all users (Admin only)

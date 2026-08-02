@@ -217,7 +217,6 @@ const createFee = [
       "LABORATORY",
       "SPORTS",
       "OTHER",
-      "ANNOUNCEMENT",
     ])
     .withMessage("Invalid fee type"),
   body("dueDate").isISO8601().withMessage("Invalid due date").toDate(),
@@ -288,7 +287,6 @@ const updateFee = [
       "LABORATORY",
       "SPORTS",
       "OTHER",
-      "ANNOUNCEMENT",
     ])
     .withMessage("Invalid fee type"),
   body("dueDate")
@@ -488,7 +486,9 @@ export const recordPayment = [
     const { feeId, amountPaid, paymentMethod, transactionId, receiptNumber, paidDate } = req.body;
     req.params.id = feeId; // Reuse controller logic
     req.body = { amountPaid, paymentMethod, transactionId, receiptNumber, paidDate };
-    return updateFeePayment[2](req, res); // Call the async handler
+    return updateFeePayment[7](req, res, (err) => {
+      if (err) return errorResponse(res, err.message || 'Server error', 500);
+    }); // Index 7 is the asyncHandler
   }),
 ];
 
