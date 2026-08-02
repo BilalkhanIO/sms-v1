@@ -22,7 +22,7 @@ const SchoolDetailsDashboard = () => {
     );
   }
 
-  const { school, overview, recentExams } = schoolDetails || {};
+  const { school, overview, recentExams } = schoolDetails?.data || schoolDetails || {};
 
   const feeChartData = overview?.feeSummary
     ? [

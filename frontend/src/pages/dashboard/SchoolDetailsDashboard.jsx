@@ -24,7 +24,7 @@ const SchoolDetailsDashboard = () => {
     return <div>No school details found.</div>;
   }
 
-  const { school, overview, recentExams } = schoolDetails;
+  const { school, overview, recentExams } = schoolDetails?.data || schoolDetails || {};
 
   return (
     <div>

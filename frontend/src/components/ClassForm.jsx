@@ -61,16 +61,18 @@ const ClassForm = () => {
   const { id } = useParams(); // Get class ID from URL params
   const navigate = useNavigate();
 
-  const { data: classItem, isLoading: isClassLoading, isError: isClassError, error: classError } = useGetClassByIdQuery(id, {
-    skip: !id, // Skip fetching if no ID is present (for new class creation)
+  const { data: classItemRaw, isLoading: isClassLoading, isError: isClassError, error: classError } = useGetClassByIdQuery(id, {
+    skip: !id,
   });
   const [createClassMutation] = useCreateClassMutation();
   const [updateClassMutation] = useUpdateClassMutation();
 
-  const { data: teachers, isLoading: isTeachersLoading } =
-    useGetTeachersQuery(); // Fetch teachers using RTK Query
-  const { data: subjects, isLoading: isSubjectsLoading } =
-    useGetSubjectsQuery(); // Fetch subjects using RTK Query
+  const { data: teachersRaw, isLoading: isTeachersLoading } = useGetTeachersQuery();
+  const { data: subjectsRaw, isLoading: isSubjectsLoading } = useGetSubjectsQuery();
+
+  const classItem = classItemRaw?.data || classItemRaw;
+  const teacherList = teachersRaw?.data || teachersRaw || [];
+  const subjectList = subjectsRaw?.data || subjectsRaw || [];
 
   const initialValues = {
     name: classItem?.name || "",
@@ -79,7 +81,7 @@ const ClassForm = () => {
     classTeacher: classItem?.classTeacher
       ? {
           value: classItem.classTeacher._id,
-          label: `${classItem.classTeacher.firstName} ${classItem.classTeacher.lastName}`,
+          label: `${classItem.classTeacher.user?.firstName || ''} ${classItem.classTeacher.user?.lastName || ''} (${classItem.classTeacher.employeeId || ''})`.trim(),
         }
       : null,
     subjects:
@@ -97,23 +99,18 @@ const ClassForm = () => {
           })),
   };
 
-  // Use RTK Query's data directly for options
   const loadTeachers = async () => {
-    if (isTeachersLoading) {
-      return [];
-    }
-    return teachers.map((t) => ({
-      value: t.user._id, // Use  _id directly
-      label: `${t.user.firstName} ${t.user.lastName} (${t.employeeId})`,
+    if (isTeachersLoading || !Array.isArray(teacherList)) return [];
+    return teacherList.map((t) => ({
+      value: t.user?._id,
+      label: `${t.user?.firstName || ''} ${t.user?.lastName || ''} (${t.employeeId || ''})`.trim(),
     }));
   };
 
   const loadSubjects = async () => {
-    if (isSubjectsLoading) {
-      return [];
-    }
-    return subjects.map((s) => ({
-      value: s._id, // Use _id directly
+    if (isSubjectsLoading || !Array.isArray(subjectList)) return [];
+    return subjectList.map((s) => ({
+      value: s._id,
       label: s.name,
     }));
   };

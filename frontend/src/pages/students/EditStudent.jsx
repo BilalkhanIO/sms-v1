@@ -6,7 +6,8 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 
 const EditStudent = () => {
   const { id } = useParams();
-  const { data: student, isLoading, error } = useGetStudentByIdQuery(id);
+  const { data: studentRaw, isLoading, error } = useGetStudentByIdQuery(id);
+  const student = studentRaw?.data || studentRaw;
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <div className="text-red-500 p-4">Error: {error.message}</div>;

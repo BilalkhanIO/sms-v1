@@ -122,8 +122,8 @@ const TransportDetails = () => {
 
   const handleRemoveStudent = (student) => {
     const name =
-      student.firstName && student.lastName
-        ? `${student.firstName} ${student.lastName}`
+      student.user?.firstName
+        ? `${student.user.firstName} ${student.user.lastName || ''}`.trim()
         : student._id;
     openConfirm({
       title: 'Remove Student',
@@ -322,8 +322,8 @@ const TransportDetails = () => {
               <div className="divide-y divide-gray-100">
                 {assignedStudents.map((student) => {
                   const fullName =
-                    student.firstName && student.lastName
-                      ? `${student.firstName} ${student.lastName}`
+                    student.user?.firstName
+                      ? `${student.user.firstName} ${student.user.lastName || ''}`.trim()
                       : student.name || student._id;
                   const initials = fullName
                     .split(' ')
@@ -343,8 +343,8 @@ const TransportDetails = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">{fullName}</p>
-                          {student.email && (
-                            <p className="text-xs text-gray-500">{student.email}</p>
+                          {student.user?.email && (
+                            <p className="text-xs text-gray-500">{student.user.email}</p>
                           )}
                           {student.rollNumber && (
                             <p className="text-xs text-gray-400">Roll #{student.rollNumber}</p>

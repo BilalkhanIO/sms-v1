@@ -21,13 +21,15 @@ const SubjectForm = () => {
   const navigate = useNavigate();
   const isEditing = Boolean(id);
 
-  const { data: subject, isLoading: isLoadingSubject } = useGetSubjectByIdQuery(id, {
+  const { data: subjectRaw, isLoading: isLoadingSubject } = useGetSubjectByIdQuery(id, {
     skip: !isEditing,
   });
+  const subject = subjectRaw?.data || subjectRaw;
 
   const [createSubject, { isLoading: isCreating }] = useCreateSubjectMutation();
   const [updateSubject, { isLoading: isUpdating }] = useUpdateSubjectMutation();
-  const { data: teachers } = useGetTeachersQuery();
+  const { data: teachersRaw } = useGetTeachersQuery();
+  const teacherList = teachersRaw?.data || teachersRaw || [];
 
   const formik = useFormik({
     initialValues: {
@@ -36,7 +38,7 @@ const SubjectForm = () => {
       description: subject?.description || '',
       grade: subject?.grade || '',
       credits: subject?.credits || 0,
-      teacherIds: subject?.teachers?.map(teacher => teacher.id) || [],
+      teacherIds: subject?.teachers?.map(teacher => teacher._id || teacher.id) || [],
     },
     validationSchema: subjectSchema,
     enableReinitialize: true,
@@ -58,10 +60,10 @@ const SubjectForm = () => {
     return <Spinner size="large" />;
   }
 
-  const teacherOptions = teachers?.map(teacher => ({
-    value: teacher.id,
-    label: `${teacher.firstName} ${teacher.lastName}`,
-  })) || [];
+  const teacherOptions = Array.isArray(teacherList) ? teacherList.map(teacher => ({
+    value: teacher._id || teacher.id,
+    label: `${teacher.user?.firstName || ''} ${teacher.user?.lastName || ''}`.trim() || teacher._id,
+  })) : [];
 
   const gradeOptions = [
     { value: '9', label: 'Grade 9' },

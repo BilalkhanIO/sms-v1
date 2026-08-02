@@ -9,6 +9,7 @@ import {
   Calendar,
   Clock,
   AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -58,8 +59,10 @@ const TeacherDashboard = () => {
     );
   }
 
-  const teacherOverview = stats?.teacherOverview || {};
-  const schedule = stats?.schedule || [];
+  const statsData = stats?.data || stats || {};
+  const teacherOverview = statsData?.teacherOverview || {};
+  const schedule = statsData?.schedule || [];
+  const upcomingExams = statsData?.upcomingExams || [];
 
   return (
     <div className="space-y-6">
@@ -128,8 +131,8 @@ const TeacherDashboard = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Upcoming Exams
             </h3>
-            {stats.upcomingExams?.length > 0 ? (
-              stats.upcomingExams.map((exam) => (
+            {upcomingExams.length > 0 ? (
+              upcomingExams.map((exam) => (
                 <div key={exam._id} className="flex items-start space-x-3 mb-4">
                   <Calendar className="h-5 w-5 text-gray-400" />
                   <div className="flex-1 min-w-0">

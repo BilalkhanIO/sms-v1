@@ -12,7 +12,8 @@ const ExamDetails = () => {
   const { user } = useAuth();
   const canManage = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER'].includes(user?.role);
 
-  const { data: exam, isLoading, isError } = useGetExamByIdQuery(id);
+  const { data: examRaw, isLoading, isError } = useGetExamByIdQuery(id);
+  const exam = examRaw?.data || examRaw;
   const [deleteExam, { isLoading: isDeleting }] = useDeleteExamMutation();
 
   const handleDelete = async () => {

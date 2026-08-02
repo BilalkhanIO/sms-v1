@@ -26,7 +26,8 @@ const ExamForm = () => {
   const navigate = useNavigate();
   const isEditing = Boolean(id);
 
-  const { data: exam, isLoading: isLoadingExam } = useGetExamByIdQuery(id, { skip: !isEditing });
+  const { data: examRaw, isLoading: isLoadingExam } = useGetExamByIdQuery(id, { skip: !isEditing });
+  const exam = examRaw?.data || examRaw;
   const { data: classesRaw } = useGetClassesQuery();
   const { data: subjectsRaw } = useGetSubjectsQuery();
   const classes = classesRaw?.data || classesRaw || [];

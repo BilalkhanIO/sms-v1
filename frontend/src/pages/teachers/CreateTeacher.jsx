@@ -172,7 +172,7 @@ const CreateTeacher = () => {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => navigate('/teachers')}
+            onClick={() => navigate('/dashboard/teachers')}
           >
             Cancel
           </Button>
