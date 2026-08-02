@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Bus,
@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
   UserMinus,
+  Search,
 } from 'lucide-react';
 import {
   useGetRouteByIdQuery,
@@ -19,6 +20,7 @@ import {
   useAssignStudentMutation,
   useRemoveStudentMutation,
 } from '../../api/transportApi';
+import { useGetStudentsQuery } from '../../api/studentApi';
 import useAuth from '../../hooks/useAuth';
 import PageHeader from '../../components/common/PageHeader';
 import Button from '../../components/common/Button';
@@ -50,6 +52,32 @@ const TransportDetails = () => {
   // Assign student modal
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [studentIdInput, setStudentIdInput] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+
+  const { data: studentsRaw } = useGetStudentsQuery();
+  const allStudents = studentsRaw?.data || studentsRaw || [];
+
+  // Exclude students already on this route
+  const assignedIds = useMemo(
+    () => new Set((route?.students || []).map((s) => String(s._id || s))),
+    [route]
+  );
+
+  const studentOptions = useMemo(() => {
+    const term = studentSearch.toLowerCase();
+    return allStudents
+      .filter((s) => !assignedIds.has(String(s._id)))
+      .filter((s) => {
+        const name = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
+        const roll = (s.rollNumber || '').toLowerCase();
+        return !term || name.includes(term) || roll.includes(term);
+      })
+      .map((s) => ({
+        value: s._id,
+        label: `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.trim() || s.rollNumber || String(s._id),
+        sub: s.rollNumber ? `Roll: ${s.rollNumber}` : '',
+      }));
+  }, [allStudents, assignedIds, studentSearch]);
 
   const handleAddStop = () => {
     const trimmed = newStop.trim();
@@ -86,6 +114,7 @@ const TransportDetails = () => {
       addToast({ type: 'success', title: 'Student assigned to route' });
       setAssignModalOpen(false);
       setStudentIdInput('');
+      setStudentSearch('');
     } catch (err) {
       addToast({ type: 'error', title: 'Failed to assign student', message: err?.data?.message });
     }
@@ -347,9 +376,10 @@ const TransportDetails = () => {
         onClose={() => {
           setAssignModalOpen(false);
           setStudentIdInput('');
+          setStudentSearch('');
         }}
         title="Assign Student to Route"
-        size="sm"
+        size="default"
         footer={
           <>
             <Button
@@ -357,6 +387,7 @@ const TransportDetails = () => {
               onClick={() => {
                 setAssignModalOpen(false);
                 setStudentIdInput('');
+                setStudentSearch('');
               }}
             >
               Cancel
@@ -365,27 +396,41 @@ const TransportDetails = () => {
               type="submit"
               form="assign-student-form"
               isLoading={isAssigning}
+              disabled={!studentIdInput}
             >
               Assign
             </Button>
           </>
         }
       >
-        <form id="assign-student-form" onSubmit={handleAssignStudent} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Student ID
-            </label>
+        <form id="assign-student-form" onSubmit={handleAssignStudent} className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <input
-              value={studentIdInput}
-              onChange={(e) => setStudentIdInput(e.target.value)}
-              placeholder="Enter student ID"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              type="text"
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              placeholder="Search student name or roll number…"
+              className="block w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Enter the MongoDB ObjectId of the student to assign.
-            </p>
           </div>
+          <select
+            required
+            value={studentIdInput}
+            onChange={(e) => setStudentIdInput(e.target.value)}
+            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            size={Math.min(6, studentOptions.length + 1)}
+          >
+            <option value="">— Select a student —</option>
+            {studentOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}{opt.sub ? ` (${opt.sub})` : ''}
+              </option>
+            ))}
+          </select>
+          {studentOptions.length === 0 && studentSearch && (
+            <p className="text-xs text-gray-400">No students match your search.</p>
+          )}
         </form>
       </Modal>
     </div>

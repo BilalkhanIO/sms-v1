@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Inbox, Mail, MailOpen, Trash2, PlusCircle } from 'lucide-react';
+import { Send, Inbox, Mail, MailOpen, Trash2, PlusCircle, Search, X } from 'lucide-react';
 import { useGetMessagesQuery, useGetSentMessagesQuery, useDeleteMessageMutation, useSendMessageMutation } from '../../api/messageApi';
+import { useGetUsersQuery } from '../../api/usersApi';
 import useAuth from '../../hooks/useAuth';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable';
@@ -9,7 +10,7 @@ import Modal from '../../components/common/Modal';
 import Button from '../../components/common/Button';
 import { useUIStore } from '../../store/zustand/useUIStore';
 
-const EMPTY = { recipients: '', subject: '', body: '', type: 'DIRECT' };
+const EMPTY = { recipientIds: [], subject: '', body: '', type: 'DIRECT' };
 
 const MessageList = () => {
   const navigate = useNavigate();
@@ -20,11 +21,40 @@ const MessageList = () => {
   const [composeOpen, setComposeOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [sending, setSending] = useState(false);
+  const [recipientSearch, setRecipientSearch] = useState('');
 
   const { data: inboxData, isLoading: inboxLoading } = useGetMessagesQuery();
   const { data: sentData, isLoading: sentLoading } = useGetSentMessagesQuery();
+  const { data: usersRaw } = useGetUsersQuery();
+  const allUsers = useMemo(() => usersRaw?.data || usersRaw || [], [usersRaw]);
   const [sendMessage] = useSendMessageMutation();
   const [deleteMessage] = useDeleteMessageMutation();
+
+  const filteredUsers = useMemo(() => {
+    const term = recipientSearch.toLowerCase();
+    const selectedSet = new Set(form.recipientIds);
+    return allUsers
+      .filter((u) => u._id !== user?._id)
+      .filter((u) => !selectedSet.has(u._id))
+      .filter((u) => {
+        if (!term) return true;
+        const name = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        return name.includes(term) || email.includes(term);
+      })
+      .slice(0, 8);
+  }, [allUsers, user, form.recipientIds, recipientSearch]);
+
+  const addRecipient = (u) => {
+    setForm((f) => ({ ...f, recipientIds: [...f.recipientIds, u._id] }));
+    setRecipientSearch('');
+  };
+
+  const removeRecipient = (id) => {
+    setForm((f) => ({ ...f, recipientIds: f.recipientIds.filter((r) => r !== id) }));
+  };
+
+  const getUser = (id) => allUsers.find((u) => u._id === id);
 
   const inbox = inboxData?.data || inboxData || [];
   const sent = sentData?.data || sentData || [];
@@ -38,16 +68,22 @@ const MessageList = () => {
 
   const handleSend = async (e) => {
     e.preventDefault();
+    if (form.recipientIds.length === 0) {
+      addToast({ type: 'error', title: 'Please add at least one recipient' });
+      return;
+    }
     setSending(true);
     try {
-      const recipientList = form.recipients
-        .split(',')
-        .map((r) => r.trim())
-        .filter(Boolean);
-      await sendMessage({ ...form, recipients: recipientList }).unwrap();
+      await sendMessage({
+        recipients: form.recipientIds,
+        subject: form.subject,
+        body: form.body,
+        type: form.type,
+      }).unwrap();
       addToast({ type: 'success', title: 'Message sent' });
       setComposeOpen(false);
       setForm(EMPTY);
+      setRecipientSearch('');
     } catch (err) {
       addToast({ type: 'error', title: 'Send failed', message: err.data?.message });
     } finally {
@@ -177,19 +213,72 @@ const MessageList = () => {
       />
 
       {/* Compose Modal */}
-      <Modal isOpen={composeOpen} onClose={() => setComposeOpen(false)} title="New Message" size="lg">
+      <Modal
+        isOpen={composeOpen}
+        onClose={() => { setComposeOpen(false); setForm(EMPTY); setRecipientSearch(''); }}
+        title="New Message"
+        size="lg"
+      >
         <form onSubmit={handleSend} className="space-y-4">
+          {/* Recipients */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              To <span className="text-gray-400 font-normal">(user IDs or emails, comma-separated)</span>
-            </label>
-            <input
-              value={form.recipients}
-              onChange={(e) => setForm((p) => ({ ...p, recipients: e.target.value }))}
-              placeholder="user@school.com, another@school.com"
-              required
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">To *</label>
+            {/* Chips */}
+            {form.recipientIds.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {form.recipientIds.map((id) => {
+                  const u = getUser(id);
+                  const name = u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email : id;
+                  return (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    >
+                      {name}
+                      <button type="button" onClick={() => removeRecipient(id)} className="hover:text-blue-900">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                value={recipientSearch}
+                onChange={(e) => setRecipientSearch(e.target.value)}
+                placeholder="Search by name or email…"
+                className="block w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            {/* Dropdown results */}
+            {recipientSearch && filteredUsers.length > 0 && (
+              <ul className="mt-1 border border-gray-200 rounded-md overflow-hidden shadow-sm">
+                {filteredUsers.map((u) => (
+                  <li key={u._id}>
+                    <button
+                      type="button"
+                      onClick={() => addRecipient(u)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center gap-2"
+                    >
+                      <span className="font-medium text-gray-900">
+                        {u.firstName} {u.lastName}
+                      </span>
+                      <span className="text-gray-400 text-xs">{u.email}</span>
+                      <span className="ml-auto text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">
+                        {u.role}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {recipientSearch && filteredUsers.length === 0 && (
+              <p className="mt-1 text-xs text-gray-400">No users found.</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>

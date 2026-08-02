@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BookOpen, PlusCircle, BookMarked, RotateCcw, Trash2, Search } from 'lucide-react';
 import {
   useGetBooksQuery,
@@ -7,6 +7,8 @@ import {
   useIssueBookMutation,
   useReturnBookMutation,
 } from '../../api/libraryApi';
+import { useGetStudentsQuery } from '../../api/studentApi';
+import { useGetTeachersQuery } from '../../api/teacherApi';
 import useAuth from '../../hooks/useAuth';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/common/DataTable';
@@ -27,6 +29,7 @@ const INITIAL_BOOK_FORM = {
 };
 
 const INITIAL_ISSUE_FORM = {
+  borrowerType: 'STUDENT',
   borrowerId: '',
   dueDate: '',
 };
@@ -48,6 +51,40 @@ const LibraryList = () => {
     search ? { search } : undefined
   );
   const books = data?.data || data || [];
+
+  const { data: studentsRaw } = useGetStudentsQuery();
+  const { data: teachersRaw } = useGetTeachersQuery();
+  const [borrowerSearch, setBorrowerSearch] = useState('');
+
+  const allStudents = studentsRaw?.data || studentsRaw || [];
+  const allTeachers = teachersRaw?.data || teachersRaw || [];
+
+  const borrowerOptions = useMemo(() => {
+    const term = borrowerSearch.toLowerCase();
+    if (issueForm.borrowerType === 'STUDENT') {
+      return allStudents
+        .filter((s) => {
+          const name = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
+          const roll = (s.rollNumber || '').toLowerCase();
+          return !term || name.includes(term) || roll.includes(term);
+        })
+        .map((s) => ({
+          value: s.user?._id || s.user,
+          label: `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.trim() || s.rollNumber || String(s._id),
+          sub: s.rollNumber ? `Roll: ${s.rollNumber}` : '',
+        }));
+    }
+    return allTeachers
+      .filter((t) => {
+        const name = `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.toLowerCase();
+        return !term || name.includes(term);
+      })
+      .map((t) => ({
+        value: t.user?._id || t.user,
+        label: `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.trim() || String(t._id),
+        sub: t.employeeId ? `ID: ${t.employeeId}` : '',
+      }));
+  }, [issueForm.borrowerType, borrowerSearch, allStudents, allTeachers]);
 
   const [createBook, { isLoading: isCreating }] = useCreateBookMutation();
   const [deleteBook, { isLoading: isDeleting }] = useDeleteBookMutation();
@@ -89,6 +126,7 @@ const LibraryList = () => {
   const openIssueModal = (book) => {
     setIssueTarget(book);
     setIssueForm(INITIAL_ISSUE_FORM);
+    setBorrowerSearch('');
     setIssueOpen(true);
   };
 
@@ -98,6 +136,7 @@ const LibraryList = () => {
       await issueBook({
         bookId: issueTarget._id,
         borrowerId: issueForm.borrowerId,
+        borrowerType: issueForm.borrowerType,
         dueDate: issueForm.dueDate,
       }).unwrap();
       addToast({ type: 'success', title: 'Book issued successfully' });
@@ -402,22 +441,61 @@ const LibraryList = () => {
         }
       >
         <form id="issue-book-form" onSubmit={handleIssue} className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Enter the borrower's ID and set a due date for this book.
-          </p>
+          {/* Borrower type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Borrower Type *</label>
+            <div className="flex gap-3">
+              {['STUDENT', 'TEACHER'].map((t) => (
+                <label key={t} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="borrowerType"
+                    value={t}
+                    checked={issueForm.borrowerType === t}
+                    onChange={() => {
+                      setIssueForm((f) => ({ ...f, borrowerType: t, borrowerId: '' }));
+                      setBorrowerSearch('');
+                    }}
+                    className="text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">{t.charAt(0) + t.slice(1).toLowerCase()}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Borrower search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Borrower ID (Student / Staff) *
+              {issueForm.borrowerType === 'STUDENT' ? 'Student' : 'Teacher'} *
             </label>
-            <input
-              type="text"
+            <div className="relative mb-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                value={borrowerSearch}
+                onChange={(e) => setBorrowerSearch(e.target.value)}
+                placeholder={`Search ${issueForm.borrowerType === 'STUDENT' ? 'student name or roll no.' : 'teacher name'}…`}
+                className="block w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <select
               required
               value={issueForm.borrowerId}
               onChange={(e) => setIssueForm((f) => ({ ...f, borrowerId: e.target.value }))}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Enter borrower ID"
-            />
+              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              size={Math.min(5, borrowerOptions.length + 1)}
+            >
+              <option value="">— Select —</option>
+              {borrowerOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}{opt.sub ? ` (${opt.sub})` : ''}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* Due date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Due Date *</label>
             <input
