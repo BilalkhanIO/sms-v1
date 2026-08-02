@@ -28,10 +28,11 @@ import { toast } from "react-hot-toast";
 
 const PageManagement = () => {
   const {
-    data: pages,
+    data: pagesRaw,
     isLoading: pagesLoading,
     error: pagesError,
   } = useGetSuperAdminPagesQuery();
+  const pages = pagesRaw?.data || pagesRaw || [];
   const [createPage, { isLoading: createLoading }] =
     useCreateSuperAdminPageMutation();
   const [updatePage, { isLoading: updateLoading }] =

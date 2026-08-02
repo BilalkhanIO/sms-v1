@@ -33,7 +33,8 @@ import { useToast } from '../../hooks/useToast';
 
 const BackupManagement = () => {
   const { toast } = useToast();
-  const { data: backups, isLoading: isLoadingBackups, refetch } = useGetBackupsQuery();
+  const { data: backupsRaw, isLoading: isLoadingBackups, refetch } = useGetBackupsQuery();
+  const backups = backupsRaw?.data || backupsRaw || [];
   const [createBackup, { isLoading: isCreatingBackup }] = useCreateBackupMutation();
   const [restoreBackup, { isLoading: isRestoring }] = useRestoreBackupMutation();
   const [deleteBackup] = useDeleteBackupMutation();

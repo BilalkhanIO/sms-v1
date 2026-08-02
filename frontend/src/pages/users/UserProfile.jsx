@@ -12,7 +12,8 @@ import UpdateProfileForm from '../../components/forms/UpdateProfileForm';
 import ChangePasswordForm from '../../components/forms/ChangePasswordForm';
 
 const UserProfile = () => {
-  const { data: user, isLoading, isError, error } = useGetMyProfileQuery();
+  const { data: userRaw, isLoading, isError, error } = useGetMyProfileQuery();
+  const user = userRaw?.data || userRaw;
 
   if (isLoading) {
     return <Spinner size="large" />;
@@ -50,7 +51,7 @@ const UserProfile = () => {
             <h3 className="text-lg font-semibold">Parent Details</h3>
             <ul>
               {user?.parentDetails?.wards.map((ward) => (
-                <li key={ward._id}>{`${ward.firstName} ${ward.lastName}`}</li>
+                <li key={ward._id}>{`${ward.user?.firstName || ''} ${ward.user?.lastName || ''}`.trim() || ward._id}</li>
               ))}
             </ul>
           </TabsContent>

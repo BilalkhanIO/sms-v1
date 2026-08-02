@@ -33,7 +33,9 @@ const SystemSettings = () => {
 
   useEffect(() => {
     if (fetchedSettings) {
-      const settingsByCategory = fetchedSettings.reduce((acc, setting) => {
+      const settingsList = fetchedSettings?.data || fetchedSettings;
+      if (!Array.isArray(settingsList)) return;
+      const settingsByCategory = settingsList.reduce((acc, setting) => {
         const [category, key] = setting.settingName.split('.');
         if (!acc[category]) {
           acc[category] = {};
