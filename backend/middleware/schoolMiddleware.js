@@ -9,7 +9,7 @@ const setSchoolId = asyncHandler(async (req, res, next) => {
   } else if (req.user.role === "MULTI_SCHOOL_ADMIN") {
     const schoolId = req.query.schoolId || req.body.schoolId;
     if (schoolId) {
-      if (!req.user.managedSchools.includes(schoolId)) {
+      if (!req.user.managedSchools.some((id) => id.equals(schoolId))) {
         return errorResponse(
           res,
           "You are not authorized to manage this school.",

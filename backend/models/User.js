@@ -102,6 +102,8 @@ const userSchema = new Schema(
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    refreshToken: { type: String, select: false },
+    refreshTokenExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );

@@ -29,7 +29,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 // @access  Private/MULTI_SCHOOL_ADMIN
 export const getSchoolAdmins = asyncHandler(async (req, res) => {
   const { schoolId } = req.params;
-  if (!req.user.managedSchools.includes(schoolId)) {
+  if (!req.user.managedSchools.some((id) => id.equals(schoolId))) {
     res.status(403);
     throw new Error('You are not authorized to manage this school');
   }
@@ -44,7 +44,7 @@ export const assignSchoolAdmin = asyncHandler(async (req, res) => {
   const { schoolId } = req.params;
   const { email } = req.body;
 
-  if (!req.user.managedSchools.includes(schoolId)) {
+  if (!req.user.managedSchools.some((id) => id.equals(schoolId))) {
     res.status(403);
     throw new Error('You are not authorized to manage this school');
   }
@@ -68,7 +68,7 @@ export const assignSchoolAdmin = asyncHandler(async (req, res) => {
 export const removeSchoolAdmin = asyncHandler(async (req, res) => {
   const { schoolId, adminId } = req.params;
 
-  if (!req.user.managedSchools.includes(schoolId)) {
+  if (!req.user.managedSchools.some((id) => id.equals(schoolId))) {
     res.status(403);
     throw new Error('You are not authorized to manage this school');
   }
@@ -92,7 +92,7 @@ export const removeSchoolAdmin = asyncHandler(async (req, res) => {
 export const inviteSchoolAdmin = asyncHandler(async (req, res) => {
   const { email, schoolId } = req.body;
 
-  if (!req.user.managedSchools.includes(schoolId)) {
+  if (!req.user.managedSchools.some((id) => id.equals(schoolId))) {
     res.status(403);
     throw new Error('You are not authorized to manage this school');
   }

@@ -670,7 +670,7 @@ const assignSchoolAdmin = [
     // ensure they manage this school
     if (
       req.user.role === "MULTI_SCHOOL_ADMIN" &&
-      !req.user.managedSchools.includes(schoolId)
+      !req.user.managedSchools.some((id) => id.equals(schoolId))
     ) {
       return errorResponse(
         res,

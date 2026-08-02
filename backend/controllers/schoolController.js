@@ -162,7 +162,7 @@ const getSchoolById = [
     }
     if (
       req.user.role === "MULTI_SCHOOL_ADMIN" &&
-      !req.user.managedSchools.includes(schoolId)
+      !req.user.managedSchools.some((id) => id.equals(schoolId))
     ) {
       return errorResponse(
         res,
@@ -226,7 +226,7 @@ const updateSchool = [
     // Multi-School Admins can only update schools they manage
     if (
         req.user.role === "MULTI_SCHOOL_ADMIN" &&
-        !req.user.managedSchools.includes(req.params.id)
+        !req.user.managedSchools.some((id) => id.equals(req.params.id))
     ) {
         return errorResponse(
             res,

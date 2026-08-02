@@ -22,10 +22,10 @@ const router = express.Router();
 // POST /api/teachers - Create a new teacher (Admin only)
 router
   .route("/")
-  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN"), setSchoolId, getTeachers)
+  .get(protect, authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"), setSchoolId, getTeachers)
   .post(
     protect,
-    authorize("SUPER_ADMIN", "SCHOOL_ADMIN"),
+    authorize("SUPER_ADMIN", "SCHOOL_ADMIN", "MULTI_SCHOOL_ADMIN"),
     setSchoolId,
     createTeacher
   );
