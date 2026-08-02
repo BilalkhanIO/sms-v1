@@ -26,8 +26,9 @@ const formSchema = z.object({
 const UpdateSchool = () => {
   const navigate = useNavigate();
   const { id: schoolId } = useParams();
-  const { data: school, isLoading: isSchoolLoading, isError: isSchoolError, error: schoolError } = useGetSchoolByIdQuery(schoolId);
+  const { data: schoolRaw, isLoading: isSchoolLoading, isError: isSchoolError, error: schoolError } = useGetSchoolByIdQuery(schoolId);
   const [updateSchool, { isLoading: isUpdating }] = useUpdateSchoolMutation();
+  const school = schoolRaw?.data || schoolRaw;
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -43,15 +44,17 @@ const UpdateSchool = () => {
   });
 
   useEffect(() => {
-    if (school?.data?.school) {
+    if (school?.name) {
       form.reset({
-        name: school.data.school.name || '',
-        address: school.data.school.address || '',
+        name: school.name || '',
+        address: typeof school.address === 'object'
+          ? [school.address?.street, school.address?.city, school.address?.country].filter(Boolean).join(', ')
+          : school.address || '',
         contactInfo: {
-          phone: school.data.school.contactInfo?.phone || '',
-          email: school.data.school.contactInfo?.email || '',
+          phone: school.contactInfo?.phone || '',
+          email: school.contactInfo?.email || '',
         },
-        status: school.data.school.status || 'PENDING_APPROVAL',
+        status: school.status || 'PENDING_APPROVAL',
       });
     }
   }, [school, form]);
@@ -80,7 +83,7 @@ const UpdateSchool = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader title={`Edit School: ${school?.data?.name}`} backUrl="/dashboard/schools" />
+      <PageHeader title={`Edit School: ${school?.name || ''}`} backUrl="/dashboard/schools" />
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>School Details</CardTitle>

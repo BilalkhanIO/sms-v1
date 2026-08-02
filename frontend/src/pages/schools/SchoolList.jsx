@@ -16,13 +16,14 @@ const SchoolList = () => {
   const openConfirm = useUIStore((s) => s.openConfirm);
   const addToast = useUIStore((s) => s.addToast);
 
+  const isSchoolAdmin = user?.role === 'SCHOOL_ADMIN' && user?.school;
+  const { data, isLoading, isError, error } = useGetSchoolsQuery(undefined, { skip: isSchoolAdmin });
+  const [deleteSchool, { isLoading: isDeleting }] = useDeleteSchoolMutation();
+
   // SCHOOL_ADMIN sees only their own school
-  if (user?.role === 'SCHOOL_ADMIN' && user?.school) {
+  if (isSchoolAdmin) {
     return <Navigate to={`/dashboard/schools/${user.school}`} replace />;
   }
-
-  const { data, isLoading, isError, error } = useGetSchoolsQuery();
-  const [deleteSchool, { isLoading: isDeleting }] = useDeleteSchoolMutation();
 
   const schools = data?.data || data || [];
 

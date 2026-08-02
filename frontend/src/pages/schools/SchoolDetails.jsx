@@ -8,7 +8,9 @@ import { Edit } from 'lucide-react';
 
 const SchoolDetails = () => {
   const { id: schoolId } = useParams();
-  const { data: school, isLoading, isError, error } = useGetSchoolByIdQuery(schoolId);
+  const { data: schoolRaw, isLoading, isError, error } = useGetSchoolByIdQuery(schoolId);
+
+  const school = schoolRaw?.data || schoolRaw;
 
   if (isLoading) {
     return <Spinner size="large" />;
@@ -43,7 +45,11 @@ const SchoolDetails = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-600">Address</p>
-            <p className="text-lg text-gray-900">{school.address}</p>
+            <p className="text-lg text-gray-900">
+              {typeof school.address === 'object'
+                ? [school.address?.street, school.address?.city, school.address?.country].filter(Boolean).join(', ')
+                : school.address || 'N/A'}
+            </p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-600">Contact Phone</p>
